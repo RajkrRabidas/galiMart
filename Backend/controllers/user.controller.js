@@ -152,16 +152,60 @@ const verifyOtp = async (req, res) => {
     await redisClient.del(activeOtpKey);
     await redisClient.del(attemptKey);
 
-       const newUser = await userModel.create({
+    const newUser = await userModel.create({
       phone: parsed.phone,
       role: parsed.role,
     });
 
     const tokens = await generateToken(newUser.id, res);
 
-  res.status(200).json({ message: `welcome ${newUser.name}`, user: newUser, accessToken: tokens.accessToken })
+    res
+      .status(200)
+      .json({ message: `welcome ${newUser.name}`, user: newUser, tokens });
   } catch (error) {
     console.error("Verify OTP error:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+const completeProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sanitizedBody = sanitize(req.body);
+    const validation = registerSchema.safeParse(sanitizedBody);
+
+    if (!validation.success) {
+      const zodError = validation.error;
+      let firstErrorMessage = "Validation Failed";
+      let allError = [];
+
+      if (zodError?.issues && Array.isArray(zodError.issues)) {
+        allError = zodError.issues.map((issue) => ({
+          field: issue.path ? issue.path.join(".") : "unknown",
+          message: issue.message || "validation error",
+          code: issue.code || "validation_error",
+        }));
+        firstErrorMessage = allError[0]?.message || "Validation Failed";
+      }
+
+      return res.status(400).json({
+        message: firstErrorMessage,
+        errors: allError,
+      });
+    }
+
+    const { name, email, address, pinCode, location } = validation.data;
+
+    const updatedUser = await userModel.findByIdAndUpdate(
+      userId,
+      { name, email, address, pinCode, location },
+      { new: true },
+    );
+
+    return res.status(200).json({ message: "Profile updated successfully.", user: updatedUser });
+
+  } catch (error) {
+    console.error("Complete profile error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -169,4 +213,5 @@ const verifyOtp = async (req, res) => {
 module.exports = {
   registerUser,
   verifyOtp,
+  completeProfile,
 };

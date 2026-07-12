@@ -17,21 +17,21 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    // address: {
-    //     type: String,
-    //     required: true,
-    // },
-    // pinCode: {
-    //     type: String,
-    //     required: true,
-    // },
-    // location: {
-    //     type: {
-    //         type: String,
-    //         enum: ["Point"],
-    //         required: true,
-    //     },
-    // },
+    address: {
+        type: String,
+        required: true,
+    },
+    pinCode: {
+        type: String,
+        required: true,
+    },
+    location: {
+        type: {
+            type: String,
+            enum: ["Point"],
+            required: true,
+        },
+    },
     role: {
         type: String,
         enum: ["user", "shopkeeper", "service_provider", "delivery_partner", "admin"],
