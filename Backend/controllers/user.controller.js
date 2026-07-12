@@ -4,6 +4,7 @@ const sanitize = require("mongo-sanitize");
 const { registerSchema } = require("../config/zod");
 const { redisClient } = require("../services/redis");
 const twilio = require("twilio");
+const { generateToken } = require("../config/generateToken");
 
 const accountSid = process.env.accountSid;
 const authToken = process.env.authToken;
@@ -12,7 +13,7 @@ const twilioClient = new twilio(accountSid, authToken);
 
 const OTP_TTL_SECONDS = 300;
 const OTP_ATTEMPT_LIMIT = 5;
-const OTP_BLOCK_DURATION_SECONDS = 600; 
+const OTP_BLOCK_DURATION_SECONDS = 600;
 const OTP_RATE_LIMIT_SECONDS = 60; // 1 minute for rate limiting
 
 const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
@@ -78,12 +79,11 @@ const registerUser = async (req, res) => {
     await redisClient.set(verifyKey, dataToStore, { EX: OTP_TTL_SECONDS });
     await redisClient.del(attemptKey);
 
-    await twilioClient.messages
-      .create({
-        body: `Your Otp is: ${otp}`,
-        to: phone, // Text your number
-        from: "+15717478662", // From a valid Twilio number
-      })
+    await twilioClient.messages.create({
+      body: `Your Otp is: ${otp}`,
+      to: phone, // Text your number
+      from: "+15717478662", // From a valid Twilio number
+    });
 
     await redisClient.set(phoneRateLimitKey, "true", {
       EX: OTP_RATE_LIMIT_SECONDS,
@@ -113,12 +113,9 @@ const verifyOtp = async (req, res) => {
 
     const storedData = await redisClient.get(activeOtpKey);
     if (!storedData) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "No active OTP or OTP has expired. Please request a new one.",
-        });
+      return res.status(400).json({
+        message: "No active OTP or OTP has expired. Please request a new one.",
+      });
     }
 
     const parsed = JSON.parse(storedData);
@@ -129,11 +126,9 @@ const verifyOtp = async (req, res) => {
       10,
     );
     if (currentAttempts >= OTP_ATTEMPT_LIMIT) {
-      return res
-        .status(429)
-        .json({
-          message: "Too many OTP attempts. Try again after 10 minutes.",
-        });
+      return res.status(429).json({
+        message: "Too many OTP attempts. Try again after 10 minutes.",
+      });
     }
 
     if (otp !== storedOtp) {
@@ -143,11 +138,9 @@ const verifyOtp = async (req, res) => {
       }
 
       if (attempts >= OTP_ATTEMPT_LIMIT) {
-        return res
-          .status(429)
-          .json({
-            message: "Too many OTP attempts. Try again after 10 minutes.",
-          });
+        return res.status(429).json({
+          message: "Too many OTP attempts. Try again after 10 minutes.",
+        });
       }
 
       return res.status(400).json({
@@ -159,7 +152,14 @@ const verifyOtp = async (req, res) => {
     await redisClient.del(activeOtpKey);
     await redisClient.del(attemptKey);
 
-    return res.status(200).json({ message: "OTP verified successfully." });
+       const newUser = await userModel.create({
+      phone: parsed.phone,
+      role: parsed.role,
+    });
+
+    const tokens = await generateToken(newUser.id, res);
+
+  res.status(200).json({ message: `welcome ${newUser.name}`, user: newUser, accessToken: tokens.accessToken })
   } catch (error) {
     console.error("Verify OTP error:", error);
     return res.status(500).json({ message: "Internal server error" });
