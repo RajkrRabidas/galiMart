@@ -1,70 +1,93 @@
-const jwt = require("jsonwebtoken")
-const { redisClient } = require("../services/redis")
+const jwt = require("jsonwebtoken");
+const { redisClient } = require("../services/redis");
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "none",
+};
+
+const jwtSecret = process.env.JWT_SECRET;
+const refreshSecret = process.env.REFRESH_SECRET || process.env.REFRESH_SECERET;
 
 const generateToken = async (id, res) => {
-    const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '60m'
-    })
-    const refreshToken = jwt.sign({ id }, process.env.REFRESH_SECERET, {
-        expiresIn: "7d"
-    })
+  const accessToken = jwt.sign({ id }, jwtSecret, {
+    expiresIn: "60m",
+  });
+  const refreshToken = jwt.sign({ id }, refreshSecret, {
+    expiresIn: "7d",
+  });
 
-    const refreshTokenKey = `refresh_token:${id}`
+  const refreshTokenKey = `refresh_token:${id}`;
 
-    await redisClient.set(refreshTokenKey, refreshToken, { EX: 7 * 24 * 60 * 60 })
+  await redisClient.set(refreshTokenKey, refreshToken, { EX: 7 * 24 * 60 * 60 });
 
-    res.cookie("access_token", accessToken, {
+  res.cookie("access_token", accessToken, {
+    ...cookieOptions,
+    maxAge: 60 * 60 * 1000,
+  });
 
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 60 * 60 * 1000, // 60 minutes
+  res.cookie("refresh_token", refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
-    })
-
-    res.cookie("refresh_token", refreshToken, {
-
-        httpOnly: true,
-        secure: true,
-        sameSite: "none",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    })
-
-    // const csrfToken = await generateCSRFToken(id, res)
-
-    return { accessToken, refreshToken} // csrfToken}
-
-}
+  return { accessToken, refreshToken };
+};
 
 const VerifyRefreshToken = async (refreshToken) => {
-    try {
-        const decoded = jwt.verify(refreshToken, process.env.REFRESH_SECERET)
-        const storedRefreshToken = await redisClient.get(`refresh_token:${decoded.id}`)
+  try {
+    const decoded = jwt.verify(refreshToken, refreshSecret);
+    const storedRefreshToken = await redisClient.get(`refresh_token:${decoded.id}`);
 
-        if(storedRefreshToken === refreshToken) {
-            return decoded
-        }
-
-        return null
-    }catch (error) {
-        return null
+    if (storedRefreshToken === refreshToken) {
+      return decoded;
     }
-}
+
+    return null;
+  } catch (error) {
+    return null;
+  }
+};
 
 const generateNewAccessToken = async (id, res) => {
-        const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '60m' })
+  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "60m" });
 
-        res.cookie("access_token", accessToken, {
-            httpOnly: true,
-            secure: true,
-            sameSite: "none",
-            maxAge: 60 * 60 * 1000, // 60 minutes
-        })
-}
+  res.cookie("access_token", accessToken, {
+    ...cookieOptions,
+    maxAge: 60 * 60 * 1000,
+  });
+
+  return { accessToken };
+};
+
+const rotateRefreshToken = async (id, res, oldRefreshToken) => {
+  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "60m" });
+  const refreshToken = jwt.sign({ id }, refreshSecret, { expiresIn: "7d" });
+
+  await redisClient.del(`refresh_token:${id}`);
+  await redisClient.set(`refresh_token:${id}`, refreshToken, { EX: 7 * 24 * 60 * 60 });
+
+  res.cookie("access_token", accessToken, {
+    ...cookieOptions,
+    maxAge: 60 * 60 * 1000,
+  });
+  res.cookie("refresh_token", refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  return { accessToken, refreshToken };
+};
 
 const revokeRefreshToken = async (id) => {
-    await redisClient.del(`refresh_token:${id}`)
-    await revokeCSRFToken()
-}
+  await redisClient.del(`refresh_token:${id}`);
+};
 
-module.exports = {generateToken, VerifyRefreshToken, generateNewAccessToken, revokeRefreshToken}
+module.exports = {
+  generateToken,
+  VerifyRefreshToken,
+  generateNewAccessToken,
+  rotateRefreshToken,
+  revokeRefreshToken,
+};
