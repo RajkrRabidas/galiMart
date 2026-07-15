@@ -354,14 +354,15 @@ const resendOtp = async (req, res) => {
 
 const myProfile = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const user = await userModel.findById(userId).select("-password");
+    const userDetails = await userDetailsModel.findById(userId);
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    return res.status(200).json({ message: "Profile retrieved successfully.", user });
+    return res.status(200).json({ message: "Profile retrieved successfully.", user, userDetails });
   } catch (error) {
     console.error("My profile error:", error);
     return res.status(500).json({ message: "Internal server error" });
@@ -444,7 +445,7 @@ const completeProfile = async (req, res) => {
     const updatedUser = await userDetailsModel.findOneAndUpdate(
       { userId },
       { $set: profilePayload },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
     );
 
     return res.status(200).json({ message: "Profile updated successfully.", user: updatedUser });

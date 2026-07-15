@@ -12,7 +12,7 @@ const refreshSecret = process.env.REFRESH_SECRET || process.env.REFRESH_SECERET;
 
 const generateToken = async (id, res) => {
   const accessToken = jwt.sign({ id }, jwtSecret, {
-    expiresIn: "60m",
+    expiresIn: "1m",
   });
   const refreshToken = jwt.sign({ id }, refreshSecret, {
     expiresIn: "7d",
@@ -24,7 +24,7 @@ const generateToken = async (id, res) => {
 
   res.cookie("access_token", accessToken, {
     ...cookieOptions,
-    maxAge: 60 * 60 * 1000,
+    maxAge: 60 * 1000,
   });
 
   res.cookie("refresh_token", refreshToken, {
@@ -51,18 +51,18 @@ const VerifyRefreshToken = async (refreshToken) => {
 };
 
 const generateNewAccessToken = async (id, res) => {
-  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "60m" });
+  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "1m" });
 
   res.cookie("access_token", accessToken, {
     ...cookieOptions,
-    maxAge: 60 * 60 * 1000,
+    maxAge: 60 * 1000,
   });
 
   return { accessToken };
 };
 
 const rotateRefreshToken = async (id, res, oldRefreshToken) => {
-  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "60m" });
+  const accessToken = jwt.sign({ id }, jwtSecret, { expiresIn: "1m" });
   const refreshToken = jwt.sign({ id }, refreshSecret, { expiresIn: "7d" });
 
   await redisClient.del(`refresh_token:${id}`);
@@ -70,7 +70,7 @@ const rotateRefreshToken = async (id, res, oldRefreshToken) => {
 
   res.cookie("access_token", accessToken, {
     ...cookieOptions,
-    maxAge: 60 * 60 * 1000,
+    maxAge: 60 * 1000,
   });
   res.cookie("refresh_token", refreshToken, {
     ...cookieOptions,
