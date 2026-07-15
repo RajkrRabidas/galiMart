@@ -1,0 +1,59 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "backend-test",
+			"type": "shell",
+			"command": "npm test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "backend-test",
+			"type": "shell",
+			"command": "powershell -Command \"Set-Location 'e:\\galiMart\\Backend'; npm test\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "direct-node-test",
+			"type": "shell",
+			"command": "node e:\\galiMart\\Backend\\tests\\authorization.test.js",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "direct-node-test",
+			"type": "shell",
+			"command": "cmd /c \"cd /d e:\\galiMart\\Backend && node tests\\authorization.test.js\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "backend-auth-check",
+			"type": "shell",
+			"command": "pwd && node tests/authorization.test.js",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"label": "run-authorization-test",
+			"type": "shell",
+			"command": "node e:\\galiMart\\Backend\\tests\\authorization.test.js",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		}
+	]
+}

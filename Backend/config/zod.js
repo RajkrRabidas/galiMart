@@ -1,8 +1,9 @@
 const z = require("zod");
+const ROLES = require("../constants/roles");
 
 const registerSchema = z.object({
   phone: z.string().min(10, "Phone number must be at least 10 characters long"),
-  role: z.string().optional(),
+  role: z.enum(Object.values(ROLES)).optional(),
 });
 
 const loginSchema = z.object({

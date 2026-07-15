@@ -6,6 +6,7 @@ const bcrypt = require("bcryptjs");
 const { registerSchema, loginSchema, completeProfileSchema } = require("../config/zod");
 const { redisClient } = require("../services/redis");
 const twilio = require("twilio");
+const ROLES = require("../constants/roles");
 const {
   generateToken,
   VerifyRefreshToken,
@@ -235,7 +236,7 @@ const verifyOtp = async (req, res) => {
 
     const newUser = await userModel.create({
       phone: parsed.phone,
-      role: parsed.role || "user",
+      role: parsed.role || ROLES.CUSTOMER,
       isVerified: true,
       isBlocked: false,
       isDeleted: false,
@@ -340,7 +341,7 @@ const resendOtp = async (req, res) => {
       }
     }
 
-    const otpResult = await issueOtp({ phone, role: purpose === "register" ? "user" : undefined, purpose });
+    const otpResult = await issueOtp({ phone, role: purpose === "register" ? ROLES.CUSTOMER : undefined, purpose });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
     }
@@ -356,7 +357,7 @@ const myProfile = async (req, res) => {
   try {
     const userId = req.user._id;
     const user = await userModel.findById(userId).select("-password");
-    const userDetails = await userDetailsModel.findById(userId);
+    const userDetails = await userDetailsModel.findOne({ userId });
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });

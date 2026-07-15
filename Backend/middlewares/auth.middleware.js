@@ -7,13 +7,19 @@ const authMiddleware = async (req, res, next) => {
     const token = req.cookies?.access_token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
 
     if (!token) {
-      return res.status(401).json({ message: "Please login - no token provided" });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decodedData) {
-      return res.status(401).json({ message: "Token expired or invalid" });
+    if (!decodedData?.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
     }
 
     const cacheUser = await redisClient.get(`user${decodedData.id}`);
@@ -26,7 +32,10 @@ const authMiddleware = async (req, res, next) => {
     const user = await userModel.findById(decodedData.id).select("-password");
 
     if (!user || user.isBlocked || user.isDeleted) {
-      return res.status(404).json({ message: "No user with this ID" });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
     await redisClient.setEx(`user${user.id}`, 3600, JSON.stringify(user));
@@ -35,7 +44,10 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("auth middleware error:", error);
-    res.status(500).json({ message: "Internal Server Error" });
+    res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
   }
 };
 

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const ROLES = require("../constants/roles");
 
 const userSchema = new mongoose.Schema(
   {
@@ -9,8 +10,8 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "shopkeeper", "service_provider", "delivery_partner", "admin"],
-      default: "user",
+      enum: Object.values(ROLES),
+      default: ROLES.CUSTOMER,
       required: true,
     },
     isVerified: {
