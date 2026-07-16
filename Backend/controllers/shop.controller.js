@@ -1,5 +1,7 @@
 const cloudinary = require("cloudinary")
 const shopModel = require("../models/shop.model")
+const getBuffer = require("../config/dataUri")
+const uploadCloudinary = require("../utils/cloudinary")
 
 const uploadToCloudinary = async (req, res) => {
     try{
@@ -16,7 +18,8 @@ const uploadToCloudinary = async (req, res) => {
 }
 
 const CreateShop  = async (req, res) => {
-    const user = req.user;
+    try{
+        const user = req.user;
 
     if(!user){
         return res.status(401).json({ message: "Unauthorized" });
@@ -46,5 +49,28 @@ const CreateShop  = async (req, res) => {
         return res.status(500).json({message:"Filed to Create file Buffer"})
     }
 
-    
+    const cloudinaryUrl = await uploadCloudinary(fileBuffer)
+
+    if(!cloudinaryUrl){
+        return res.status(500).json({message:"Filed to upload image"})
+    }
+
+    const newShop = await shopModel.create({
+        name,
+        description,
+        image: cloudinaryUrl,
+        ownerId: user._id,
+        phone,
+        autoLocation: {
+            type: "Point",
+            coordinates: [longitude, latitude],
+            formattedAddress: formatted,
+        },
+    });
+    return res.status(201).json({ message: "Shop created successfully", shop: newShop });
+    }catch(error){
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 }
+
+module.exports = {CreateShop, uploadToCloudinary}

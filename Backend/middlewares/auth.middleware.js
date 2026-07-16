@@ -2,7 +2,7 @@ const jwt = require("jsonwebtoken");
 const { redisClient } = require("../services/redis");
 const userModel = require("../models/user.model");
 
-const authMiddleware = async (req, res, next) => {
+const isAuth = async (req, res, next) => {
   try {
     const token = req.cookies?.access_token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
 
@@ -63,4 +63,4 @@ const isAdmin = async (req, res, next) => {
   next();
 };
 
-module.exports = { authMiddleware, isSeller, isAdmin };
+module.exports = { isAuth, isSeller, isAdmin };

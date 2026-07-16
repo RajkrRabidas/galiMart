@@ -43,7 +43,7 @@ const shopSchema = new mongoose.Schema({
     }
 },{timestamps: true});
 
-schema.index({ autoLocation: '2dsphere' });
+shopSchema.index({ autoLocation: '2dsphere' });
 
 const shopModel = mongoose.model("Shop", shopSchema)
 module.exports = shopModel

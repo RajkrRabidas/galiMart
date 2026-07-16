@@ -10,7 +10,7 @@ const {
   refreshToken,
   logoutUser,
 } = require("../controllers/user.controller");
-const {authMiddleware} = require("../middlewares/auth.middleware");
+const {isAuth} = require("../middlewares/auth.middleware");
 const allowRoles = require("../middlewares/role.middleware");
 const ROLES = require("../constants/roles");
 
@@ -22,13 +22,13 @@ router.post("/login", loginUser);
 router.post("/verify-login-otp", verifyLoginOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/refresh-token", refreshToken);
-router.post("/logout", authMiddleware, logoutUser);
-router.get("/me", authMiddleware, myProfile);
-router.patch("/complete-profile", authMiddleware, completeProfile);
+router.post("/logout", isAuth, logoutUser);
+router.get("/me", isAuth, myProfile);
+router.patch("/complete-profile", isAuth, completeProfile);
 
 router.get(
   "/admin-only",
-  authMiddleware,
+  isAuth,
   allowRoles(ROLES.ADMIN),
   (req, res) => {
     res.status(200).json({
