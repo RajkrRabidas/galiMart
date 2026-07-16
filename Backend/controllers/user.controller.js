@@ -79,11 +79,12 @@ const registerUser = async (req, res) => {
     await redisClient.set(verifyKey, dataToStore, { EX: OTP_TTL_SECONDS });
     await redisClient.del(attemptKey);
 
-    await twilioClient.messages.create({
-      body: `Your Otp is: ${otp}`,
-      to: phone, // Text your number
-      from: "+15717478662", // From a valid Twilio number
-    });
+    console.log("Generated OTP:", otp);
+    //await twilioClient.messages.create({
+    //  body: `Your Otp is: ${otp}`,
+    //  to: phone, // Text your number
+    //  from: "+15717478662", // From a valid Twilio number
+    //});
 
     await redisClient.set(phoneRateLimitKey, "true", {
       EX: OTP_RATE_LIMIT_SECONDS,
