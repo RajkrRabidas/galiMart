@@ -10,7 +10,7 @@ const {
   refreshToken,
   logoutUser,
 } = require("../controllers/user.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const allowRoles = require("../middlewares/role.middleware");
 const ROLES = require("../constants/roles");
 

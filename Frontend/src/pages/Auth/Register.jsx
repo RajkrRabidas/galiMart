@@ -10,7 +10,7 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("user");
+  const [role, setRole] = useState("customer");
   const [error, setError] = useState("");
   
 
@@ -160,7 +160,7 @@ const Register = () => {
 
             >
 
-              <option value="user">
+              <option value="customer">
                 Customer
               </option>
 
@@ -168,7 +168,7 @@ const Register = () => {
                 Shopkeeper
               </option>
 
-              <option value="delivery_partner">
+              <option value="delivery">
                 Delivery Partner
               </option>
 

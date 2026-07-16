@@ -206,25 +206,9 @@ const registerUser = async (req, res) => {
     await redisClient.set(phoneRateLimitKey, "true", { EX: OTP_RATE_LIMIT_SECONDS });
     await redisClient.set(ipRateLimitKey, "true", { EX: OTP_RATE_LIMIT_SECONDS });
 
-    await redisClient.set(verifyKey, dataToStore, { EX: OTP_TTL_SECONDS });
-    await redisClient.del(attemptKey);
-
-    console.log("Generated OTP:", otp);
-    //await twilioClient.messages.create({
-    //  body: `Your Otp is: ${otp}`,
-    //  to: phone, // Text your number
-    //  from: "+15717478662", // From a valid Twilio number
-    //});
-
-    await redisClient.set(phoneRateLimitKey, "true", {
-      EX: OTP_RATE_LIMIT_SECONDS,
-    });
-    await redisClient.set(ipRateLimitKey, "true", {
-      EX: OTP_RATE_LIMIT_SECONDS,
-    });
-
-    return res.status(202).json({ message: "OTP sent successfully.", otp });
-    return res.status(otpResult.status).json(otpResult.body,{message:"OTP sent successfully. Please verify to complete registration.", otpResult});
+    return res.status(otpResult.status).json(
+  otpResult.body
+);
   } catch (error) {
     console.error("Register error:", error);
     return res.status(500).json({ message: "Internal server error" });
