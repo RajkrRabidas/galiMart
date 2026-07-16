@@ -7,19 +7,13 @@ const authMiddleware = async (req, res, next) => {
     const token = req.cookies?.access_token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+      return res.status(401).json({ message: "Please login - no token provided" });
     }
 
     const decodedData = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!decodedData?.id) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid token",
-      });
+    if (!decodedData) {
+      return res.status(401).json({ message: "Token expired or invalid" });
     }
 
     const cacheUser = await redisClient.get(`user${decodedData.id}`);
@@ -32,10 +26,7 @@ const authMiddleware = async (req, res, next) => {
     const user = await userModel.findById(decodedData.id).select("-password");
 
     if (!user || user.isBlocked || user.isDeleted) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized",
-      });
+      return res.status(404).json({ message: "No user with this ID" });
     }
 
     await redisClient.setEx(`user${user.id}`, 3600, JSON.stringify(user));
@@ -44,12 +35,32 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error("auth middleware error:", error);
-    res.status(401).json({
-      success: false,
-      message: "Invalid token",
-    });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-module.exports = authMiddleware;
-module.exports.authMiddleware = authMiddleware;
+const isSeller = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Please login first" });
+  }
+
+  if (req.user.role !== "seller") {
+    return res.status(403).json({ message: "Access denied. Only sellers can perform this action." });
+  }
+
+  next();
+};
+
+const isAdmin = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Please login first" });
+  }
+
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ message: "Access denied. Only admins can perform this action." });
+  }
+
+  next();
+};
+
+module.exports = { authMiddleware, isSeller, isAdmin };
