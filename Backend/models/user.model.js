@@ -1,45 +1,39 @@
 const mongoose = require("mongoose");
+const ROLES = require("../constants/roles");
 
-const userSchema = new mongoose.Schema({
-    // fullName: {
-    //     type: String,
-    //     required: true,
-    // },
-    // email: {
-    //     type: String,
-    //     required: true,
-    //     unique: true,
-    // },
-    // password: {
-    //     type: String,
-    // },
+const userSchema = new mongoose.Schema(
+  {
     phone: {
-        type: String,
-        required: true,
-    },
-    address: {
-        type: String,
-        required: true,
-    },
-    pinCode: {
-        type: String,
-        required: true,
-    },
-    location: {
-        type: {
-            type: String,
-            enum: ["Point"],
-            required: true,
-        },
+      type: String,
+      required: true,
+      unique: true,
     },
     role: {
-        type: String,
-        enum: ["user", "shopkeeper", "service_provider", "delivery_partner", "admin"],
-        default: "user",
-        required: true,
-    }
-
-}, { timestamps: true });
+      type: String,
+      enum: Object.values(ROLES),
+      default: ROLES.CUSTOMER,
+      required: true,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    isBlocked: {
+      type: Boolean,
+      default: false,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    lastLogin: {
+      type: Date,
+      default: null,
+    },
+    
+  },
+  { timestamps: true },
+);
 
 const userModel = mongoose.model("User", userSchema);
 module.exports = userModel;
