@@ -206,7 +206,9 @@ const registerUser = async (req, res) => {
     await redisClient.set(phoneRateLimitKey, "true", { EX: OTP_RATE_LIMIT_SECONDS });
     await redisClient.set(ipRateLimitKey, "true", { EX: OTP_RATE_LIMIT_SECONDS });
 
-    return res.status(otpResult.status).json(otpResult.body,{message:"OTP sent successfully. Please verify to complete registration.", otpResult});
+    return res.status(otpResult.status).json(
+  otpResult.body
+);
   } catch (error) {
     console.error("Register error:", error);
     return res.status(500).json({ message: "Internal server error" });
