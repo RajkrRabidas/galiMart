@@ -11,7 +11,7 @@ const shopSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        require: true,
+        // require: true,
     },
     ownerId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -20,6 +20,11 @@ const shopSchema = new mongoose.Schema({
     phone: {
         type: Number,
         require: true,
+    },
+    status: {
+        type: String,
+        enum: ["pending", "approved", "rejected", "suspended"],
+        default: "pending",
     },
     isVerified: {
         type: Boolean,

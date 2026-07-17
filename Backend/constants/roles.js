@@ -1,6 +1,6 @@
 const ROLES = Object.freeze({
-  CUSTOMER: "customer",
-  SHOPKEEPER: "shopkeeper",
+  CUSTOMER: "user",
+  SHOPKEEPER: "seller",
   DELIVERY: "delivery",
   SERVICE_PROVIDER: "service_provider",
   ADMIN: "admin",

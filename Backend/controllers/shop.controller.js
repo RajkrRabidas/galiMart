@@ -1,76 +1,183 @@
-const cloudinary = require("cloudinary")
-const shopModel = require("../models/shop.model")
-const getBuffer = require("../config/dataUri")
-const uploadCloudinary = require("../utils/cloudinary")
+const shopModel = require("../models/shop.model");
+const uploadCloudinary = require("../utils/cloudinary");
+const asyncHandler = require("../utils/asyncHandler");
+const { createShopSchema, updateShopSchema, updateShopStatusSchema } = require("../config/zod");
+const {
+  UNAUTHORIZED,
+  INTERNAL_SERVER_ERROR,
+  SHOP_ALREADY_EXISTS,
+  SHOP_NOT_FOUND,
+  INVALID_STATUS,
+  MISSING_REQUIRED_FIELDS,
+  MISSING_IMAGE,
+  IMAGE_UPLOAD_FAILED,
+  FILE_BUFFER_FAILED,
+  SHOP_UPDATED_SUCCESSFULLY,
+  SHOP_CREATED_SUCCESSFULLY,
+  SHOP_STATUS_UPDATED_SUCCESSFULLY,
+  SHOP_NOT_APPROVED,
+  PHONE_ALREADY_EXISTS,
+} = require("../constants/messages");
 
-const uploadToCloudinary = async (req, res) => {
-    try{
-        const {buffer} = req.body
+const sendError = (res, statusCode, message, details) => {
+  return res.status(statusCode).json({ success: false, message, ...(details ? { details } : {}) });
+};
 
-        const cloud = await cloudinary.v2.upload(buffer)
+const sendSuccess = (res, statusCode, message, data) => {
+  return res.status(statusCode).json({ success: true, message, data });
+};
 
-        res.json({
-            url: cloud.secure_url,
-        })
-    }catch(error){
-        res.status(500).json({ message: "Internal Server Error" });
+const CreateShop = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  if (!user) {
+    return sendError(res, 401, UNAUTHORIZED);
+  }
+
+  const existingShop = await shopModel.findOne({ ownerId: user._id });
+
+  if (existingShop) {
+    return sendError(res, 400, SHOP_ALREADY_EXISTS);
+  }
+
+  const validation = createShopSchema.safeParse(req.body);
+
+  if (!validation.success) {
+    return sendError(res, 400, MISSING_REQUIRED_FIELDS, validation.error.issues);
+  }
+
+  const { name, description, phone, latitude, longitude, formatted } = validation.data;
+  const file = req.file;
+
+  if (!file) {
+    return sendError(res, 400, MISSING_IMAGE);
+  }
+
+  const cloudinaryUrl = await uploadCloudinary(file.path);
+
+  if (!cloudinaryUrl) {
+    return sendError(res, 500, IMAGE_UPLOAD_FAILED);
+  }
+
+  const existingPhoneShop = await shopModel.findOne({ phone: Number(phone) });
+
+  if (existingPhoneShop) {
+    return sendError(res, 400, PHONE_ALREADY_EXISTS);
+  }
+
+  const newShop = await shopModel.create({
+    name,
+    description,
+    image: cloudinaryUrl,
+    ownerId: user._id,
+    phone: Number(phone),
+    status: "pending",
+    autoLocation: {
+      type: "Point",
+      coordinates: [Number(longitude), Number(latitude)],
+      formattedAddress: formatted,
+    },
+  });
+
+  return sendSuccess(res, 201, SHOP_CREATED_SUCCESSFULLY, newShop);
+});
+
+const updateStatusShop = asyncHandler(async (req, res) => {
+  const { shopId } = req.params;
+  const { status } = req.body;
+  const validation = updateShopStatusSchema.safeParse(req.body);
+
+  if (!validation.success) {
+    return sendError(res, 400, INVALID_STATUS, validation.error.issues);
+  }
+
+  const shop = await shopModel.findOne({ _id: shopId, ownerId: req.user._id });
+
+  if (!shop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  if (status === true && shop.status !== "approved") {
+    return sendError(res, 403, SHOP_NOT_APPROVED);
+  }
+
+  const updatedShop = await shopModel.findOneAndUpdate(
+    { _id: shopId, ownerId: req.user._id },
+    { isOpen: status },
+    { new: true },
+  );
+
+  return sendSuccess(res, 200, SHOP_STATUS_UPDATED_SUCCESSFULLY, updatedShop);
+});
+
+const updateShop = asyncHandler(async (req, res) => {
+  const { shopId } = req.params;
+  const validation = updateShopSchema.safeParse(req.body);
+
+  if (!validation.success) {
+    return sendError(res, 400, MISSING_REQUIRED_FIELDS, validation.error.issues);
+  }
+
+  const { name, description, phone, latitude, longitude, formatted } = validation.data;
+  const existingShop = await shopModel.findOne({ _id: shopId, ownerId: req.user._id });
+
+  if (!existingShop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  const updateData = {};
+
+  if (name !== undefined) {
+    updateData.name = name;
+  }
+
+  if (description !== undefined) {
+    updateData.description = description;
+  }
+
+  if (phone !== undefined) {
+    const existingPhoneShop = await shopModel.findOne({ phone: Number(phone), _id: { $ne: shopId } });
+
+    if (existingPhoneShop) {
+      return sendError(res, 400, PHONE_ALREADY_EXISTS);
     }
-}
 
-const CreateShop  = async (req, res) => {
-    try{
-        const user = req.user;
+    updateData.phone = Number(phone);
+  }
 
-    if(!user){
-        return res.status(401).json({ message: "Unauthorized" });
+  if (latitude !== undefined || longitude !== undefined || formatted !== undefined) {
+    const nextLatitude = latitude ?? existingShop.autoLocation?.coordinates?.[1];
+    const nextLongitude = longitude ?? existingShop.autoLocation?.coordinates?.[0];
+    const nextFormatted = formatted ?? existingShop.autoLocation?.formattedAddress;
+
+    updateData.autoLocation = {
+      type: "Point",
+      coordinates: [Number(nextLongitude), Number(nextLatitude)],
+      formattedAddress: nextFormatted,
+    };
+  }
+
+  if (req.file) {
+    const cloudinaryUrl = await uploadCloudinary(req.file.path);
+
+    if (!cloudinaryUrl) {
+      return sendError(res, 500, IMAGE_UPLOAD_FAILED);
     }
 
-    const existingShop = await shopModel.findOne({ ownerId: user._id });
+    updateData.image = cloudinaryUrl;
+  }
 
-    if(existingShop){
-        return res.status(400).json({ message: "Shop already exists" });
-    }
+  const updatedShop = await shopModel.findOneAndUpdate(
+    { _id: shopId, ownerId: req.user._id },
+    updateData,
+    { new: true },
+  );
 
-    const { name, description, image, phone, latitude, longitude, formatted } = req.body;
+  return sendSuccess(res, 200, SHOP_UPDATED_SUCCESSFULLY, updatedShop);
+});
 
-    if(!name || !latitude || !longitude) {
-        return res.status(400).json({ message: "Please give all details" });
-    }
-
-    const file = req.file
-
-    if(!file){
-        return res.status(400).json({message: "please give image"})
-    }
-
-    const fileBuffer = getBuffer(file)
-
-    if(!fileBuffer){
-        return res.status(500).json({message:"Filed to Create file Buffer"})
-    }
-
-    const cloudinaryUrl = await uploadCloudinary(fileBuffer)
-
-    if(!cloudinaryUrl){
-        return res.status(500).json({message:"Filed to upload image"})
-    }
-
-    const newShop = await shopModel.create({
-        name,
-        description,
-        image: cloudinaryUrl,
-        ownerId: user._id,
-        phone,
-        autoLocation: {
-            type: "Point",
-            coordinates: [longitude, latitude],
-            formattedAddress: formatted,
-        },
-    });
-    return res.status(201).json({ message: "Shop created successfully", shop: newShop });
-    }catch(error){
-        res.status(500).json({ message: "Internal Server Error" });
-    }
-}
-
-module.exports = {CreateShop, uploadToCloudinary}
+module.exports = {
+  CreateShop,
+  updateStatusShop,
+  updateShop,
+};

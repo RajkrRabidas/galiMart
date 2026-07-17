@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node tests/authorization.test.js",
+    "test": "node tests/authorization.test.js && node tests/shop.controller.test.js",
     "start": "node server.js",
     "dev": "nodemon server.js"
   },

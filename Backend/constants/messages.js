@@ -1,0 +1,16 @@
+module.exports = {
+  UNAUTHORIZED: "Unauthorized",
+  INTERNAL_SERVER_ERROR: "Internal Server Error",
+  SHOP_ALREADY_EXISTS: "Shop already exists",
+  SHOP_NOT_FOUND: "Shop not found",
+  INVALID_STATUS: "Please provide a valid status",
+  MISSING_REQUIRED_FIELDS: "Please give all details",
+  MISSING_IMAGE: "Please provide an image",
+  IMAGE_UPLOAD_FAILED: "Failed to upload image",
+  FILE_BUFFER_FAILED: "Failed to create file buffer",
+  SHOP_UPDATED_SUCCESSFULLY: "Shop updated successfully",
+  SHOP_CREATED_SUCCESSFULLY: "Shop created successfully",
+  SHOP_STATUS_UPDATED_SUCCESSFULLY: "Shop status updated successfully",
+  SHOP_NOT_APPROVED: "Shop is not approved",
+  PHONE_ALREADY_EXISTS: "Phone number is already registered",
+};

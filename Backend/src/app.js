@@ -6,6 +6,7 @@ const cookieParser = require("cookie-parser");
 const authRouter = require("../routes/user.routes");
 const shopRouter = require("../routes/shop.routes")
 const { connectRedis } = require("../services/redis");
+const menuRouter = require("../routes/menuItem.routes")
 
 const app = express();
 app.use(
@@ -21,7 +22,8 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 
 app.use("/api/auth", authRouter);
-app.use("/api/shop", shopRouter);
+app.use("/api/shops", shopRouter);
+app.use("/api/items", menuRouter)
 
 connectRedis().catch((error) => {
   console.error("Redis connection error:", error);

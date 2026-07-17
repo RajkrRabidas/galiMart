@@ -24,4 +24,33 @@ const completeProfileSchema = z.object({
     .default({ type: "Point", coordinates: [0, 0] }),
 });
 
-module.exports = { registerSchema, loginSchema, completeProfileSchema };
+const createShopSchema = z.object({
+  name: z.string().trim().min(1, "Shop name is required"),
+  description: z.string().trim().optional(),
+  phone: z.coerce.number().int().positive("Phone number is required"),
+  latitude: z.coerce.number(),
+  longitude: z.coerce.number(),
+  formatted: z.string().trim().optional(),
+});
+
+const updateShopSchema = z.object({
+  name: z.string().trim().min(1, "Shop name is required").optional(),
+  description: z.string().trim().optional(),
+  phone: z.coerce.number().int().positive("Phone number is required").optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
+  formatted: z.string().trim().optional(),
+});
+
+const updateShopStatusSchema = z.object({
+  status: z.boolean(),
+});
+
+module.exports = {
+  registerSchema,
+  loginSchema,
+  completeProfileSchema,
+  createShopSchema,
+  updateShopSchema,
+  updateShopStatusSchema,
+};
