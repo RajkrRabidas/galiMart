@@ -1,7 +1,13 @@
 const shopModel = require("../models/shop.model");
+const cartModel = require("../models/cart.model");
+const mongoose = require("mongoose");
 const uploadCloudinary = require("../utils/cloudinary");
 const asyncHandler = require("../utils/asyncHandler");
-const { createShopSchema, updateShopSchema, updateShopStatusSchema } = require("../config/zod");
+const {
+  createShopSchema,
+  updateShopSchema,
+  updateShopStatusSchema,
+} = require("../config/zod");
 const {
   UNAUTHORIZED,
   INTERNAL_SERVER_ERROR,
@@ -18,9 +24,13 @@ const {
   SHOP_NOT_APPROVED,
   PHONE_ALREADY_EXISTS,
 } = require("../constants/messages");
+const messages = require("../constants/messages");
+const { success } = require("zod");
 
 const sendError = (res, statusCode, message, details) => {
-  return res.status(statusCode).json({ success: false, message, ...(details ? { details } : {}) });
+  return res
+    .status(statusCode)
+    .json({ success: false, message, ...(details ? { details } : {}) });
 };
 
 const sendSuccess = (res, statusCode, message, data) => {
@@ -43,10 +53,16 @@ const CreateShop = asyncHandler(async (req, res) => {
   const validation = createShopSchema.safeParse(req.body);
 
   if (!validation.success) {
-    return sendError(res, 400, MISSING_REQUIRED_FIELDS, validation.error.issues);
+    return sendError(
+      res,
+      400,
+      MISSING_REQUIRED_FIELDS,
+      validation.error.issues,
+    );
   }
 
-  const { name, description, phone, latitude, longitude, formatted } = validation.data;
+  const { name, description, phone, latitude, longitude, formatted } =
+    validation.data;
   const file = req.file;
 
   if (!file) {
@@ -115,11 +131,20 @@ const updateShop = asyncHandler(async (req, res) => {
   const validation = updateShopSchema.safeParse(req.body);
 
   if (!validation.success) {
-    return sendError(res, 400, MISSING_REQUIRED_FIELDS, validation.error.issues);
+    return sendError(
+      res,
+      400,
+      MISSING_REQUIRED_FIELDS,
+      validation.error.issues,
+    );
   }
 
-  const { name, description, phone, latitude, longitude, formatted } = validation.data;
-  const existingShop = await shopModel.findOne({ _id: shopId, ownerId: req.user._id });
+  const { name, description, phone, latitude, longitude, formatted } =
+    validation.data;
+  const existingShop = await shopModel.findOne({
+    _id: shopId,
+    ownerId: req.user._id,
+  });
 
   if (!existingShop) {
     return sendError(res, 404, SHOP_NOT_FOUND);
@@ -136,7 +161,10 @@ const updateShop = asyncHandler(async (req, res) => {
   }
 
   if (phone !== undefined) {
-    const existingPhoneShop = await shopModel.findOne({ phone: Number(phone), _id: { $ne: shopId } });
+    const existingPhoneShop = await shopModel.findOne({
+      phone: Number(phone),
+      _id: { $ne: shopId },
+    });
 
     if (existingPhoneShop) {
       return sendError(res, 400, PHONE_ALREADY_EXISTS);
@@ -145,10 +173,17 @@ const updateShop = asyncHandler(async (req, res) => {
     updateData.phone = Number(phone);
   }
 
-  if (latitude !== undefined || longitude !== undefined || formatted !== undefined) {
-    const nextLatitude = latitude ?? existingShop.autoLocation?.coordinates?.[1];
-    const nextLongitude = longitude ?? existingShop.autoLocation?.coordinates?.[0];
-    const nextFormatted = formatted ?? existingShop.autoLocation?.formattedAddress;
+  if (
+    latitude !== undefined ||
+    longitude !== undefined ||
+    formatted !== undefined
+  ) {
+    const nextLatitude =
+      latitude ?? existingShop.autoLocation?.coordinates?.[1];
+    const nextLongitude =
+      longitude ?? existingShop.autoLocation?.coordinates?.[0];
+    const nextFormatted =
+      formatted ?? existingShop.autoLocation?.formattedAddress;
 
     updateData.autoLocation = {
       type: "Point",
@@ -176,8 +211,142 @@ const updateShop = asyncHandler(async (req, res) => {
   return sendSuccess(res, 200, SHOP_UPDATED_SUCCESSFULLY, updatedShop);
 });
 
+const getNearByShop = asyncHandler(async (req, res) => {
+  const { latitude, longitude, radius, search = "" } = req.query;
+
+  if (!latitude || !longitude) {
+    return res
+      .status(400)
+      .json({ message: "Latitude and Longitude are required" });
+  }
+
+  const query = {
+    isVarified: true,
+  };
+
+  if (search) {
+    query.name = { $regex: search, $options: "i" };
+  }
+
+  const shop = await shopModel.aggregate([
+    {
+      $geoNear: {
+        near: {
+          type: "Point",
+          coordinates: [Number(longitude), Number(latitude)],
+        },
+        distanceField: "distance",
+        maxDistance: Number(radius),
+        spherical: true,
+        query,
+      },
+    },
+    {
+      $sort: {
+        isOpen: -1,
+        distance: 1,
+      },
+    },
+    {
+      $addfields: {
+        distanceKm: {
+          $round: [{ $divide: ["$distance", 1000] }, 2],
+        },
+      },
+    },
+  ]);
+
+  res.json({ success: true, count: shop.length, shop });
+});
+
+const fetchSingleShop = asyncHandler(async (req, res) => {
+  const shop = await shopModel.findById(req.params.id);
+
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  res.json({ success: true, shop });
+});
+
+const addToCart = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(400).json({ message: "please login" });
+  }
+
+  const { shopId, itemId } = req.body;
+
+  if (
+    !mongoose.Types.ObjectId.isValid(shopId) ||
+    !mongoose.Types.ObjectId.isValid(itemId)
+  ) {
+    return res.status(400).json({ message: "Invalid shopId or itemId" });
+  }
+
+  const cartFromDifferentShop = await cartModel.findOne({
+    userId: req.user._id,
+    shopId: { $ne: shopId },
+  });
+
+  if (cartFromDifferentShop) {
+    return res.status(400).json({
+      message:
+        "You already have items from a different shop in your cart, please clear your cart first",
+    });
+  }
+
+  const cartItem = await cartModel.findOneAndUpdate(
+    {
+      userId: req.user._id,
+      shopId,
+      itemId,
+    },
+    {
+      $inc: { quantity: 1 },
+      $setOnInsert: { userId: req.user._id, shopId, itemId },
+    },
+    {
+      upsert: true,
+      new: true,
+      setDefaultsOnInsert: true,
+    },
+  );
+
+  res
+    .status(200)
+    .json({ success: true, message: "Item added to cart successfully", cartItem });
+});
+
+const fetchMyCart = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "please login" });
+  }
+
+  const userId = req.user._id;
+
+  const cartItems = await cartModel.find({ userId })
+    .populate("itemId")
+    .populate("shopId");
+
+  let subTotal = 0;
+  let cartLength = 0;
+
+  for (const cartItem of cartItems) {
+    const item = cartItem.itemId;
+
+    subTotal += item.price * cartItem.quantity;
+    cartLength += cartItem.quantity;
+  }
+
+  return res.json({ success: true, cartLength, subTotal, cart: cartItems });
+});
+
 module.exports = {
   CreateShop,
   updateStatusShop,
   updateShop,
+  getNearByShop,
+  fetchSingleShop,
+  addToCart,
+  fetchMyCart
 };

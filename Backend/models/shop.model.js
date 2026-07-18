@@ -11,7 +11,7 @@ const shopSchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        // require: true,
+        require: true,
     },
     ownerId: {
         type: mongoose.Schema.Types.ObjectId,
