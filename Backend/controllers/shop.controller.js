@@ -1,6 +1,4 @@
 const shopModel = require("../models/shop.model");
-const cartModel = require("../models/cart.model");
-const mongoose = require("mongoose");
 const uploadCloudinary = require("../utils/cloudinary");
 const asyncHandler = require("../utils/asyncHandler");
 const {
@@ -269,84 +267,12 @@ const fetchSingleShop = asyncHandler(async (req, res) => {
   res.json({ success: true, shop });
 });
 
-const addToCart = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    return res.status(400).json({ message: "please login" });
-  }
 
-  const { shopId, itemId } = req.body;
-
-  if (
-    !mongoose.Types.ObjectId.isValid(shopId) ||
-    !mongoose.Types.ObjectId.isValid(itemId)
-  ) {
-    return res.status(400).json({ message: "Invalid shopId or itemId" });
-  }
-
-  const cartFromDifferentShop = await cartModel.findOne({
-    userId: req.user._id,
-    shopId: { $ne: shopId },
-  });
-
-  if (cartFromDifferentShop) {
-    return res.status(400).json({
-      message:
-        "You already have items from a different shop in your cart, please clear your cart first",
-    });
-  }
-
-  const cartItem = await cartModel.findOneAndUpdate(
-    {
-      userId: req.user._id,
-      shopId,
-      itemId,
-    },
-    {
-      $inc: { quantity: 1 },
-      $setOnInsert: { userId: req.user._id, shopId, itemId },
-    },
-    {
-      upsert: true,
-      new: true,
-      setDefaultsOnInsert: true,
-    },
-  );
-
-  res
-    .status(200)
-    .json({ success: true, message: "Item added to cart successfully", cartItem });
-});
-
-const fetchMyCart = asyncHandler(async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "please login" });
-  }
-
-  const userId = req.user._id;
-
-  const cartItems = await cartModel.find({ userId })
-    .populate("itemId")
-    .populate("shopId");
-
-  let subTotal = 0;
-  let cartLength = 0;
-
-  for (const cartItem of cartItems) {
-    const item = cartItem.itemId;
-
-    subTotal += item.price * cartItem.quantity;
-    cartLength += cartItem.quantity;
-  }
-
-  return res.json({ success: true, cartLength, subTotal, cart: cartItems });
-});
 
 module.exports = {
   CreateShop,
   updateStatusShop,
   updateShop,
   getNearByShop,
-  fetchSingleShop,
-  addToCart,
-  fetchMyCart
+  fetchSingleShop
 };
