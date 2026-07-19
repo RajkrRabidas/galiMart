@@ -4,22 +4,27 @@ import { ImagePlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useShops } from "../../context/ShopContext";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
+import { addMenuItem } from "../../api/menuApi";
 
 const AddProduct = () => {
 
   const navigate = useNavigate();
 
-  const { addProduct, getMyShop } = useShops();
+  
+
+const { getMyShop } = useShops();
 
   const [product, setProduct] = useState({
-    name: "",
-    brand: "",
-    category: "",
-    price: "",
-    stock: "",
-    description: "",
-    image: "",
-  });
+  name: "",
+  category: "",
+  price: "",
+  description: "",
+});
+
+
+const [image,setImage]=useState(null);
+
+const [loading,setLoading]=useState(false);
 
   const handleChange = (e) => {
 
@@ -30,41 +35,47 @@ const AddProduct = () => {
 
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
 
-    if (
-      !product.name ||
-      !product.brand ||
-      !product.category ||
-      !product.price ||
-      !product.stock ||
-      !product.image
-    ) {
-      toast.error("Please fill all required fields");
-      return;
+    if (!image) {
+        toast.error("Please upload an image");
+        return;
     }
 
-    const myShop = getMyShop();
+    try {
 
-    if (!myShop) {
-      toast.error("Please create your shop first.");
-      navigate("/seller/create-shop");
-      return;
+        setLoading(true);
+
+        const formData = new FormData();
+
+        formData.append("name", product.name);
+        formData.append("description", product.description);
+        formData.append("price", product.price);
+        formData.append("category", product.category);
+        formData.append("image", image);
+
+        const response = await addMenuItem(formData);
+
+        toast.success(response.message);
+
+        navigate("/seller/products");
+
+    } catch (error) {
+
+        toast.error(
+            error.response?.data?.message ||
+            "Failed to add product"
+        );
+
+    } finally {
+
+        setLoading(false);
+
     }
 
-    addProduct(myShop.owner, {
-      ...product,
-      price: Number(product.price),
-      stock: Number(product.stock),
-    });
-
-    toast.success("Product Added Successfully");
-
-    navigate("/seller/products");
-
-  };
+};
 
   return (
 
@@ -96,20 +107,6 @@ const AddProduct = () => {
 
           </div>
 
-          <div>
-
-            <label className="font-semibold">
-              Brand
-            </label>
-
-            <input
-              name="brand"
-              value={product.brand}
-              onChange={handleChange}
-              className="w-full border rounded-xl p-3 mt-2"
-            />
-
-          </div>
 
           <div>
 
@@ -153,29 +150,17 @@ const AddProduct = () => {
 
             </div>
 
-            <div>
-
-              <label className="font-semibold">
-                Stock
-              </label>
-
-              <input
-                type="number"
-                name="stock"
-                value={product.stock}
-                onChange={handleChange}
-                className="w-full border rounded-xl p-3 mt-2"
-              />
-
-            </div>
 
           </div>
 
           <div>
 
-            <label className="font-semibold">
-              Product Image URL
-            </label>
+            <input
+type="file"
+accept="image/*"
+onChange={(e)=>setImage(e.target.files[0])}
+className="w-full border rounded-xl p-3 mt-2"
+/>
 
             <div className="relative">
 
@@ -184,12 +169,11 @@ const AddProduct = () => {
               />
 
               <input
-                name="image"
-                value={product.image}
-                onChange={handleChange}
-                className="w-full border rounded-xl pl-12 p-3 mt-2"
-                placeholder="https://..."
-              />
+    type="file"
+    accept="image/*"
+    onChange={(e)=>setImage(e.target.files[0])}
+    className="w-full border rounded-xl p-3 mt-2"
+/>
 
             </div>
 

@@ -33,7 +33,7 @@ const Register = () => {
   setLoading(true);
 
   localStorage.setItem("role", role);
-  if (role === "shopkeeper") {
+  if (role === "seller") {
   localStorage.setItem("shopOwner", "shop_" + phone);
 }
 
@@ -164,11 +164,11 @@ const Register = () => {
                 Customer
               </option>
 
-              <option value="shopkeeper">
+              <option value="seller">
                 Shopkeeper
               </option>
 
-              <option value="delivery">
+              <option value="delivery_partner">
                 Delivery Partner
               </option>
 

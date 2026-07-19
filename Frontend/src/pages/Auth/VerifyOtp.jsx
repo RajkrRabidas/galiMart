@@ -2,8 +2,12 @@ import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 
+
 import OTPInput from "../../components/OTPInput/OTPInput";
-import { verifyOtp } from "../../api/authApi";
+import {
+  verifyOtp,
+  verifyLoginOtp,
+} from "../../api/authApi";
 
 const VerifyOtp = () => {
   const location = useLocation();
@@ -34,7 +38,7 @@ const VerifyOtp = () => {
     return () => clearInterval(interval);
   }, [timer]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
   e.preventDefault();
 
   const otpValue = otp.join("");
@@ -44,81 +48,46 @@ const VerifyOtp = () => {
     return;
   }
 
-  setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-  // Development mode - skip backend verification
+    const isLogin = location.state?.isLogin;
 
-const role = localStorage.getItem("role");
+    let response;
 
-if (role === "shopkeeper") {
+    if (isLogin) {
+      response = await verifyLoginOtp({
+        phone,
+        otp: otpValue,
+      });
+    } else {
+      response = await verifyOtp({
+        phone,
+        otp: otpValue,
+      });
+    }
 
-  localStorage.setItem("shopOwner", phone);
+    const role = response.user.role;
 
-  const shops = JSON.parse(
-    localStorage.getItem("shops") || "[]"
-  );
-
-  const shopExists = shops.find(
-    (shop) => shop.owner === phone
-  );
-
-  if (shopExists) {
-
-    navigate("/seller/dashboard");
-
-  } else {
-
-    navigate("/seller/create-shop");
-
+    if (role === "seller") {
+      navigate("/seller/dashboard");
+    } else if (role === "service_provider") {
+      navigate("/service/dashboard");
+    } else if (role === "delivery_partner") {
+      navigate("/delivery/dashboard");
+    } else {
+      navigate("/home");
+    }
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+      "Invalid OTP"
+    );
+  } finally {
+    setLoading(false);
   }
-
-} else if (role === "service_provider") {
-
-  localStorage.setItem("serviceOwner", phone);
-
-  const providers = JSON.parse(
-    localStorage.getItem("serviceProviders") || "[]"
-  );
-
-  const businessExists = providers.find(
-    (provider) => provider.owner === phone
-  );
-
-  if (businessExists) {
-
-    navigate("/service/dashboard");
-
-  } else {
-
-    navigate("/service/create-business");
-
-  }
-
-} else if (role === "delivery_partner") {
-
-  localStorage.setItem("deliveryPartner", phone);
-
-  const profile = JSON.parse(
-    localStorage.getItem("deliveryProfile")
-  );
-
-  if (profile) {
-
-    navigate("/delivery/dashboard");
-
-  } else {
-
-    navigate("/delivery/create-profile");
-
-  }
-
-}else {
-
-  navigate("/home");
-
-}
 };
-
   const handleResend = () => {
     // We'll connect this to the backend later
     setTimer(30);

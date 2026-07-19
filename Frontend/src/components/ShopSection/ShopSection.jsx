@@ -46,7 +46,7 @@ const ShopSection = () => {
             {shops.map((shop) => (
 
               <ShopCard
-                key={shop.id}
+                key={shop._id}
                 shop={shop}
               />
 

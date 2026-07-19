@@ -11,22 +11,20 @@ const CreateShop = () => {
   const { createShop, getMyShop } = useShops();
 
   const [shop, setShop] = useState({
-    shopName: "",
-    image: "",
-    address: "",
-  });
+    name: "",
+    description: "",
+    phone: "",
+    formatted: "",
+});
 
-  useEffect(() => {
+const [image, setImage] = useState(null);
 
-    const existingShop = getMyShop();
+const [latitude, setLatitude] = useState(null);
 
-    if (existingShop) {
+const [longitude, setLongitude] = useState(null);
 
-      navigate("/seller/dashboard");
+const [loading, setLoading] = useState(false);
 
-    }
-
-  }, []);
 
   const handleChange = (e) => {
 
@@ -36,44 +34,101 @@ const CreateShop = () => {
     });
 
   };
+  const handleImageChange = (e) => {
 
-  const handleSubmit = (e) => {
+    setImage(e.target.files[0]);
+
+};
+const getCurrentLocation = () => {
+
+    navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+            setLatitude(position.coords.latitude);
+
+            setLongitude(position.coords.longitude);
+
+            toast.success("Location fetched");
+
+        },
+
+        () => {
+
+            toast.error("Please allow location access");
+
+        }
+
+    );
+
+};
+
+  const handleSubmit = async (e) => {
 
     e.preventDefault();
-
     if (
-      !shop.shopName ||
-      !shop.image ||
-      !shop.address
-    ) {
-      toast.error("Please fill all fields");
-      return;
-    }
+    !shop.name ||
+    !shop.phone ||
+    !shop.formatted
+) {
+    toast.error("Please fill all required fields");
+    return;
+}
 
-    const owner = localStorage.getItem("shopOwner");
+    if (!image) {
 
-    const success = createShop({
-      owner,
-      shopName: shop.shopName,
-      image: shop.image,
-      address: shop.address,
-    });
+        toast.error("Please upload a shop image");
 
-    if (!success) {
-
-      toast.error("Shop already exists");
-
-      navigate("/seller/dashboard");
-
-      return;
+        return;
 
     }
 
-    toast.success("Shop Created Successfully");
+    
 
-    navigate("/seller/dashboard");
+    
 
-  };
+    try {
+
+        setLoading(true);
+
+        const formData = new FormData();
+
+        formData.append("name", shop.name);
+
+        formData.append("description", shop.description);
+
+        formData.append("phone", shop.phone);
+
+        formData.append("formatted", shop.formatted);
+
+        formData.append("latitude", latitude);
+
+        formData.append("longitude", longitude);
+
+        formData.append("image", image);
+
+        await createShop(formData);
+
+        toast.success("Shop Created Successfully");
+
+        navigate("/seller/dashboard");
+
+    } catch (error) {
+
+        console.log(error);
+
+        toast.error(
+            error?.response?.data?.message ||
+            "Failed to create shop"
+        );
+
+    } finally {
+
+        setLoading(false);
+
+    }
+
+};
 
   return (
 
@@ -121,8 +176,8 @@ const CreateShop = () => {
 
             <input
               type="text"
-              name="shopName"
-              value={shop.shopName}
+              name="name"
+              value={shop.name}
               onChange={handleChange}
               placeholder="Fresh Mart"
               className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
@@ -132,22 +187,57 @@ const CreateShop = () => {
 
           <div>
 
-            <label className="font-semibold">
+<label className="font-semibold">
 
-              Shop Image URL
+Description
 
-            </label>
+</label>
 
-            <input
-              type="text"
-              name="image"
-              value={shop.image}
-              onChange={handleChange}
-              placeholder="https://..."
-              className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+<textarea
+rows={3}
+name="description"
+value={shop.description}
+onChange={handleChange}
+placeholder="Describe your shop..."
+className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+/>
 
-          </div>
+</div>
+<div>
+
+<label className="font-semibold">
+
+Phone Number
+
+</label>
+
+<input
+type="number"
+name="phone"
+value={shop.phone}
+onChange={handleChange}
+placeholder="9876543210"
+className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+/>
+
+</div>
+
+          <div>
+
+<label className="font-semibold">
+
+Shop Image
+
+</label>
+
+<input
+type="file"
+accept="image/*"
+onChange={handleImageChange}
+className="w-full mt-2"
+/>
+
+</div>
 
           <div>
 
@@ -159,21 +249,31 @@ const CreateShop = () => {
 
             <textarea
               rows={4}
-              name="address"
-              value={shop.address}
+              name="formatted"
+              value={shop.formatted}
               onChange={handleChange}
               placeholder="Enter your shop address"
               className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
             />
 
           </div>
+          <button
+type="button"
+onClick={getCurrentLocation}
+className="w-full bg-blue-500 text-white py-3 rounded-xl"
+>
+
+Use Current Location
+
+</button>
 
           <button
-            type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold"
-          >
+type="submit"
+disabled={loading}
+className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold disabled:opacity-60"
+>
 
-            Create Shop
+            {loading ? "Creating..." : "Create Shop"}
 
           </button>
 
