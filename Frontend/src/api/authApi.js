@@ -8,7 +8,7 @@ export const registerUser = async (data) => {
 
 // Verify Registration OTP
 export const verifyOtp = async (data) => {
-  const response = await api.post("/auth/verify-otp", data);
+  const response = await api.post("/auth/verify-register-otp", data);
   return response.data;
 };
 

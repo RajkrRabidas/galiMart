@@ -10,7 +10,7 @@ const Register = () => {
 
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState("");
-  const [role, setRole] = useState("customer");
+  const [role, setRole] = useState("user");
   const [error, setError] = useState("");
   
 

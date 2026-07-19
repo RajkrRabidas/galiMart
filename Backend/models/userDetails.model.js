@@ -6,6 +6,14 @@ const userDetailsSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    fullName: {
+      type: String,
+      required: true,
+    },
+    email: {
+      type: String,
+      required: false,
+    },
     mobile: {
       type: Number,
       required: true,
@@ -31,7 +39,10 @@ const userDetailsSchema = new mongoose.Schema(
 );
 
 userDetailsSchema.index({ location: "2dsphere" });
-
-
+// Make email uniqueness apply only when an email string exists
+userDetailsSchema.index(
+  { email: 1 },
+  { unique: true, partialFilterExpression: { email: { $type: "string" } } },
+);
 const userDetailsModel = mongoose.model("UserDetails", userDetailsSchema);
 module.exports = userDetailsModel;

@@ -75,7 +75,7 @@ const sendOtpSms = async (phone, otp) => {
 
   await twilioClient.messages.create({
     body: `Your OTP is: ${otp}`,
-    to: phone,
+    to: `+91${phone}`,
     from: twilioFromNumber,
   });
 
@@ -436,23 +436,25 @@ const completeProfile = async (req, res) => {
       return res.status(errorResponse.status).json(errorResponse.body);
     }
 
-    const { fullName, email, address, pinCode, location } = validation.data;
+    const { fullName, email, formattedAddress, latitude, longitude } = validation.data;
     const profilePayload = {
-      userId,
+      userId: userId,
       fullName,
       email: email || undefined,
-      address,
-      pinCode,
-      location: location || { type: "Point", coordinates: [0, 0] },
+      formattedAddress,
+      location: {
+        type: "Point",
+        coordinates: [longitude, latitude],
+      },
     };
 
     const updatedUser = await userDetailsModel.findOneAndUpdate(
-      { userId },
+      { userId: userId },
       { $set: profilePayload },
-      { upsert: true, returnDocument: "after", setDefaultsOnInsert: true },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
     );
 
-    return res.status(200).json({ message: "Profile updated successfully.", user: updatedUser });
+    return res.status(200).json({ message: "Profile completed successfully.", user: updatedUser });
   } catch (error) {
     console.error("Complete profile error:", error);
     return res.status(500).json({ message: "Internal server error" });
