@@ -3,24 +3,14 @@ const mongoose = require("mongoose");
 const userDetailsSchema = new mongoose.Schema(
   {
     userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
-    fullName: {
       type: String,
       required: true,
     },
-    email: {
-      type: String,
-      required: false,
-      unique: true,
-      sparse: true,
-    },
-    address: {
-      type: String,
+    mobile: {
+      type: Number,
       required: true,
     },
-    pinCode: {
+    formattedAddress: {
       type: String,
       required: true,
     },
@@ -28,16 +18,20 @@ const userDetailsSchema = new mongoose.Schema(
       type: {
         type: String,
         enum: ["Point"],
+        required: true,
         default: "Point",
       },
       coordinates: {
         type: [Number],
-        default: [0, 0],
+        required: true,
       },
     },
   },
   { timestamps: true },
 );
+
+userDetailsSchema.index({ location: "2dsphere" });
+
 
 const userDetailsModel = mongoose.model("UserDetails", userDetailsSchema);
 module.exports = userDetailsModel;
