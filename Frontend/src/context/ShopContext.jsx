@@ -1,69 +1,49 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
+import {
+  createShop as createShopApi,
+  getNearbyShops,
+  getShopById,
+} from "../api/shopApi";
 
 const ShopContext = createContext();
 
 export const ShopProvider = ({ children }) => {
 
-  const [shops, setShops] = useState(() => {
+  const [shops, setShops] = useState([]);
+const [loading, setLoading] = useState(false);
 
-    const saved = localStorage.getItem("shops");
-
-    return saved ? JSON.parse(saved) : [];
-
-  });
-
-  useEffect(() => {
-
-    localStorage.setItem(
-      "shops",
-      JSON.stringify(shops)
-    );
-
-  }, [shops]);
 
   // -----------------------------
   // CREATE SHOP
   // -----------------------------
 
-  const createShop = (shopData) => {
+  const createShop = async (formData) => {
+  try {
+    const data = await createShopApi(formData);
+    return data;
+  } catch (error) {
+    console.log("Create Shop Error:", error);
+    throw error;
+  }
+};
+const fetchNearbyShops = async (params) => {
+  try {
+    setLoading(true);
 
-    const exists = shops.find(
-      shop => shop.owner === shopData.owner
-    );
+    const data = await getNearbyShops(params);
 
-    if (exists) return false;
+    setShops(data.shop ?? []);
 
-    const newShop = {
+  } catch (error) {
 
-      id: Date.now().toString(),
+    console.log(error);
 
-      owner: shopData.owner,
+  } finally {
 
-      shopName: shopData.shopName,
+    setLoading(false);
 
-      image: shopData.image,
-
-      address: shopData.address,
-
-      rating: 4.8,
-
-      deliveryTime: "20 mins",
-
-      products: [],
-
-    };
-
-    setShops(prev => [
-
-      ...prev,
-
-      newShop,
-
-    ]);
-
-    return true;
-
-  };
+  }
+};
 
   // -----------------------------
   // ADD PRODUCT
@@ -185,37 +165,32 @@ export const ShopProvider = ({ children }) => {
   // GET SHOP OF LOGGED IN SELLER
   // -----------------------------
 
-  const getMyShop = () => {
+  const getMyShop = async (shopId) => {
+  if (!shopId) return null;
 
-    const owner = localStorage.getItem("shopOwner");
-
-    return shops.find(
-
-      shop => shop.owner === owner
-
-    );
-
-  };
+  try {
+    const data = await getShopById(shopId);
+    return data.shop;
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+};
 
   return (
 
     <ShopContext.Provider
 
       value={{
-
-        shops,
-
-        createShop,
-
-        addProduct,
-
-        deleteProduct,
-
-        updateProduct,
-
-        getMyShop,
-
-      }}
+    shops,
+    loading,
+    fetchNearbyShops,
+    createShop,
+    addProduct,
+    deleteProduct,
+    updateProduct,
+    getMyShop,
+}}
 
     >
 

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useShops } from "../../context/ShopContext";
 import ProductCard from "../../components/ProductSection/ProductCard";
@@ -7,9 +8,53 @@ const ShopDetails = () => {
 
   const { id } = useParams();
 
-  const { shops } = useShops();
+  const { getMyShop } = useShops();
 
-  const shop = shops.find((shop) => shop.id === id);
+const [shop, setShop] = useState(null);
+
+const [loading, setLoading] = useState(true);
+useEffect(() => {
+
+    const fetchShop = async () => {
+
+        try {
+
+            const data = await getMyShop(id);
+
+            setShop(data);
+
+        } catch (error) {
+
+            console.error(error);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    fetchShop();
+
+}, [id]);
+if (loading) {
+
+    return (
+
+        <div className="min-h-screen flex justify-center items-center">
+
+            <h1 className="text-2xl">
+
+                Loading Shop...
+
+            </h1>
+
+        </div>
+
+    );
+
+}
 
   if (!shop) {
 
@@ -42,13 +87,13 @@ const ShopDetails = () => {
 
         <h1 className="text-4xl font-bold mt-6">
 
-          {shop.shopName}
+          {shop.name}
 
         </h1>
 
         <p className="text-gray-500 mt-2">
 
-          {shop.address}
+          {shop.autoLocation?.formattedAddress}
 
         </p>
 
@@ -62,7 +107,7 @@ const ShopDetails = () => {
 
           {
 
-            shop.products.length === 0 ? (
+            true ? (
 
               <div className="bg-white rounded-3xl shadow-lg p-12 mt-6 text-center">
 
@@ -86,14 +131,7 @@ const ShopDetails = () => {
 
                 {
 
-                  shop.products.map(product => (
-
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                    />
-
-                  ))
+                  
 
                 }
 

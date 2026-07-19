@@ -8,14 +8,14 @@ const ShopCard = ({ shop }) => {
 
     <div
       onClick={() =>
-        navigate(`/shop/${shop.id}`)
+        navigate(`/shop/${shop._id}`)
       }
       className="min-w-[260px] bg-white rounded-3xl shadow-lg overflow-hidden cursor-pointer hover:scale-105 transition"
     >
 
       <img
         src={shop.image}
-        alt={shop.shopName}
+        alt={shop.name}
         className="w-full h-40 object-cover"
       />
 
@@ -23,13 +23,13 @@ const ShopCard = ({ shop }) => {
 
         <h2 className="text-xl font-bold">
 
-          {shop.shopName}
+          {shop.name}
 
         </h2>
 
         <p className="text-gray-500 mt-2">
 
-          {shop.address}
+          {shop.autoLocation?.formattedAddress}
 
         </p>
 
@@ -43,7 +43,7 @@ const ShopCard = ({ shop }) => {
 
           <span className="text-emerald-600">
 
-            {shop.deliveryTime}
+            {shop.isOpen ? "Open" : "Closed"}
 
           </span>
 

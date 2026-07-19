@@ -1,22 +1,57 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProductCard from "../../components/Shopkeeper/Products/ProductCard";
 import ProductHeader from "../../components/Shopkeeper/Products/ProductHeader";
 import { useShops } from "../../context/ShopContext";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
+import { getMenuItems } from "../../api/menuApi";
 
 const Products = () => {
 
-  const { getMyShop, deleteProduct } = useShops();
+  const { getMyShop } = useShops();
 
   const [search, setSearch] = useState("");
 
-  const myShop = getMyShop();
+  const [products, setProducts] = useState([]);
 
-  const owner = localStorage.getItem("shopOwner");
+const [loading, setLoading] = useState(true);
+useEffect(() => {
 
-  const products = myShop?.products || [];
+    const loadProducts = async () => {
 
-  const filteredProducts = useMemo(() => {
+        try {
+
+            const shopId = localStorage.getItem("shopId");
+
+            const shop = await getMyShop(shopId);
+
+if (!shop) {
+
+    setLoading(false);
+
+    return;
+
+}
+
+const data = await getMenuItems(shop._id);
+
+            setProducts(data.menuItems);
+
+        } catch (error) {
+
+            console.log(error);
+
+        } finally {
+
+            setLoading(false);
+
+        }
+
+    };
+
+    loadProducts();
+
+}, []);
+ const filteredProducts = useMemo(() => {
 
     return products.filter(product =>
       product.name
@@ -25,6 +60,26 @@ const Products = () => {
     );
 
   }, [products, search]);
+
+if (loading) {
+
+    return (
+
+        <div className="min-h-screen flex justify-center items-center">
+
+            <h1 className="text-2xl">
+
+                Loading...
+
+            </h1>
+
+        </div>
+
+    );
+
+}
+
+  
 
   return (
 
@@ -72,13 +127,11 @@ const Products = () => {
 
               <ProductCard
 
-                key={product.id}
+                key={product._id}
 
                 product={product}
 
-                onDelete={() =>
-                  deleteProduct(owner, product.id)
-                }
+                onDelete={() => {}}
 
               />
 

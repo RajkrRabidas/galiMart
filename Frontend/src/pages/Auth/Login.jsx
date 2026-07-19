@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { loginUser } from "../../api/authApi";
 
 const Login = () => {
 
@@ -9,39 +10,42 @@ const Login = () => {
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  
+  const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    e.preventDefault();
+  if (phone.trim() === "") {
+    setError("Phone number is required.");
+    return;
+  }
 
-    if (phone.trim() === "") {
+  if (phone.length < 10) {
+    setError("Phone number must be at least 10 digits.");
+    return;
+  }
 
-      setError("Phone number is required.");
+  try {
+    setError("");
 
-      return;
-
-    }
-
-    if (phone.length < 10) {
-
-      setError("Phone number must be at least 10 digits.");
-
-      return;
-
-    }
-
-    localStorage.setItem("role", role);
-
-    navigate("/verify-otp", {
-
-      state: {
-
-        phone,
-
-      },
-
+    await loginUser({
+      phone,
+      role,
     });
 
-  };
+    navigate("/verify-otp", {
+      state: {
+        phone,
+        isLogin: true,
+      },
+    });
+
+  } catch (error) {
+    setError(
+      error.response?.data?.message ||
+      "Failed to send OTP"
+    );
+  }
+};
 
   return (
 
@@ -152,7 +156,7 @@ const Login = () => {
 
               </option>
 
-              <option value="shopkeeper">
+              <option value="seller">
 
                 Shopkeeper
 

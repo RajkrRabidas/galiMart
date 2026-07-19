@@ -1,6 +1,5 @@
 const shopModel = require("../models/shop.model");
 const shopMenuModel = require("../models/shopMenu.model");
-const shopMenuModel = require("../models/shopMenu.model");
 const uploadCloudinary = require("../utils/cloudinary");
 
 const addMenuItem = async (req, res) => {
@@ -33,7 +32,7 @@ const addMenuItem = async (req, res) => {
     return res.status(500).json({ message: "Filed to upload image" });
   }
 
-  const meniItem = await shopMenuModel.create({
+  const menuItem = await shopMenuModel.create({
     name,
     description,
     image: cloudinaryUrl,
@@ -66,12 +65,12 @@ const deleteMenuItem = async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const { itemId } = req.params;
-  if (!itemId) {
+  const { id } = req.params;
+  if (!id) {
     return res.status(400).json({ message: "Item ID is required" });
   }
 
-  const item = await shopMenuModel.findById({ itemId });
+  const item = await shopMenuModel.findById({ _id: id });
 
   if (!item) {
     return res.status(404).json({ message: "no Item found" });
@@ -96,12 +95,12 @@ const toggleMenuItemAvailable = async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const { itemId } = req.params;
-  if (!itemId) {
+  const { id } = req.params;
+  if (!id) {
     return res.status(400).json({ message: "Item ID is required" });
   }
 
-  const item = await shopMenuModel.findById({ itemId });
+  const item = await shopMenuModel.findById({ _id: id });
 
   if (!item) {
     return res.status(404).json({ message: "no Item found" });

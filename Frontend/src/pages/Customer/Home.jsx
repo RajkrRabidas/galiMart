@@ -8,9 +8,40 @@ import ProductSection from "../../components/ProductSection/ProductSection";
 import ServiceSection from "../../components/ServiceSection/ServiceSection";
 import { motion } from "framer-motion";
 import { useShops } from "../../context/ShopContext";
+import { useEffect } from "react";
 
 const Home = () => {
-  const { shops } = useShops();
+  const {
+    shops,
+    fetchNearbyShops,
+} = useShops();
+useEffect(() => {
+
+    navigator.geolocation.getCurrentPosition(
+
+        (position) => {
+
+            fetchNearbyShops({
+
+                latitude: position.coords.latitude,
+
+                longitude: position.coords.longitude,
+
+                radius: 5000,
+
+            });
+
+        },
+
+        (error) => {
+
+            console.log(error);
+
+        }
+
+    );
+
+}, []);
   return (
     <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100">
 

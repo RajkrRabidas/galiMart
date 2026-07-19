@@ -21,11 +21,6 @@ const navigate = useNavigate();
 
       <div className="p-5">
 
-        <p className="text-sm text-gray-500">
-
-          {product.brand}
-
-        </p>
 
         <h2 className="font-bold text-xl mt-1">
 
@@ -38,25 +33,29 @@ const navigate = useNavigate();
           ₹{product.price}
 
         </p>
+        <p
+    className={`mt-2 font-semibold ${
+        product.isAvailable
+            ? "text-green-600"
+            : "text-red-600"
+    }`}
+>
+    {product.isAvailable ? "Available" : "Unavailable"}
+</p>
 
-        <p className="mt-2">
-
-          Stock :
-
-          <span className="font-semibold">
-
-            {" "}
-            {product.stock}
-
-          </span>
-
-        </p>
+        <p className="mt-2 text-gray-600">
+    Category:
+    <span className="font-semibold">
+        {" "}
+        {product.category}
+    </span>
+</p>
 
         <div className="flex gap-3 mt-6">
 
           <button
   onClick={() =>
-    navigate(`/seller/edit-product/${product.id}`)
+    navigate(`/seller/edit-product/${product._id}`)
   }
   className="flex-1 bg-blue-500 text-white py-3 rounded-xl flex justify-center gap-2"
 >
@@ -69,7 +68,7 @@ const navigate = useNavigate();
 
           <button
             onClick={() =>
-              onDelete(product.id)
+              onDelete(product._id)
             }
             className="flex-1 bg-red-500 text-white py-3 rounded-xl flex justify-center gap-2"
           >

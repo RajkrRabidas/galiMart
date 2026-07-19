@@ -137,6 +137,7 @@ const verifyOtpAgainstStoredValue = async ({ phone, otp, purpose }) => {
       },
     };
   }
+  
 
   const isValidOtp = await bcrypt.compare(otp, parsed.otp);
   if (!isValidOtp) {
@@ -413,8 +414,8 @@ const logoutUser = async (req, res) => {
       }
     }
 
-    res.clearCookie("access_token", { httpOnly: true, secure: true, sameSite: "none" });
-    res.clearCookie("refresh_token", { httpOnly: true, secure: true, sameSite: "none" });
+    res.clearCookie("access_token", { httpOnly: true, secure: false, sameSite: "none" });
+    res.clearCookie("refresh_token", { httpOnly: true, secure: false, sameSite: "none" });
     await logAuthEvent("logout", { userId });
 
     res.status(200).json({ message: "Logged out successfully." });
