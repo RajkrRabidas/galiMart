@@ -8,6 +8,7 @@ import { ShopProvider } from "./context/ShopContext";
 import { MarketplaceProvider } from "./context/MarketplaceContext";
 import { ServiceProvider } from "./context/ServiceContext";
 import { ServiceBookingProvider } from "./context/ServiceBookingContext";
+import "leaflet/dist/leaflet.css";
 
 import App from "./App";
 import "./index.css";

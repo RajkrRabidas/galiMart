@@ -1,109 +1,264 @@
-import { Plus } from "lucide-react";
-import { useState } from "react";
-import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
-import AddressCard from "../../components/Profile/AddressCard";
-import AddAddressModal from "../../components/Profile/AddAddressModal";
-
-const Addresses = () => {
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      title: "Home",
-      address:
-        "Salt Lake, Sector V, Kolkata, West Bengal - 700091",
-      phone: "+91 9876543210",
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap,
+} from "react-leaflet";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import toast from "react-hot-toast";
+import L from "leaflet";
+import {
+  LocateFixed,
+  LoaderCircle,
+  Plus,
+  Trash2,
+} from "lucide-react";
+// 🔧 Fix leaflet marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
+// 📍 Click-to-select location
+const LocationPicker = ({ setLocation }) => {
+  useMapEvents({
+    click(e) {
+      setLocation(e.latlng.lat, e.latlng.lng);
     },
-    {
-      id: 2,
-      title: "Office",
-      address:
-        "New Town, Action Area 1, Kolkata, West Bengal - 700156",
-      phone: "+91 9876543210",
-    },
-  ]);
-  const [openModal, setOpenModal] = useState(false);
-  const [editingAddress, setEditingAddress] = useState(null);
-
-const saveAddress = (address) => {
-
-  if (editingAddress) {
-
-    setAddresses((prev) =>
-      prev.map((item) =>
-        item.id === address.id ? address : item
-      )
+  });
+  return null;
+};
+// 🎯 Locate me button
+const LocateMeButton = ({ onLocate }) => {
+  const map = useMap();
+  const locateUser = () => {
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        map.flyTo([latitude, longitude], 16, { animate: true });
+        onLocate(latitude, longitude);
+      },
+      () => toast.error("Location permission denied"),
     );
-
-    setEditingAddress(null);
-
-  } else {
-
-    setAddresses((prev) => [...prev, address]);
-
-  }
-
-};
-const editAddress = (address) => {
-
-  setEditingAddress(address);
-
-  setOpenModal(true);
-
-};
-const deleteAddress = (id) => {
-  setAddresses((prev) =>
-    prev.filter((address) => address.id !== id)
+  };
+  return (
+    <button
+      onClick={locateUser}
+      className="absolute right-3 top-3 z-1000 flex items-center gap-2
+rounded-lg bg-white px-3 py-2 text-sm shadow hover:bg-gray-100"
+    >
+      <LocateFixed size={16} /> Use current location
+    </button>
   );
 };
+const AddAddressPage = () => {
+  const [addresses, setAddresses] = useState([]);
 
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
+  // 📋 Form state
+  const [mobile, setMobile] = useState("");
+  const [formattedAddress, setFormattedAddress] = useState("");
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  // 🌍 Reverse geocoding
+  const fetchFormattedAddress = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+      );
+      const data = await res.json();
+      setFormattedAddress(data.display_name || "");
+    } catch {
+      toast.error("Failed to fetch address");
+    }
+  };
+  const setLocation = (lat, lng) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    fetchFormattedAddress(lat, lng);
+  };
+  // 📡 Fetch addresses
+  const fetchAddresses = async () => {
+    try {
+      const { data } = await axios.get(`${restaurantService}/api/address/all`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      setAddresses(data || []);
+    } catch {
+      toast.error("Failed to load addresses");
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchAddresses();
+  }, []);
+  // ➕ Add address
+  const addAddress = async () => {
+    if (
+      !mobile ||
+      !formattedAddress ||
+      latitude === null ||
+      longitude === null
+    ) {
+      toast.error("Please select location on map");
+      return;
+    }
+    try {
+      setAdding(true);
+      await axios.post(
+        `${restaurantService}/api/address/new`,
+        {
+          formattedAddress,
+          mobile,
+          latitude,
+          longitude,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        },
+      );
+      toast.success("Address added");
+      setMobile("");
+      setFormattedAddress("");
+
+      setLatitude(null);
+      setLongitude(null);
+      fetchAddresses();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed");
+    } finally {
+      setAdding(false);
+    }
+  };
+  // 🗑 Delete address
+  const deleteAddress = async (id) => {
+    if (!window.confirm("Delete this address?")) return;
+    try {
+      setDeletingId(id);
+      await axios.delete(`${restaurantService}/api/address/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+      toast.success("Address deleted");
+      fetchAddresses();
+    } catch {
+      toast.error("Failed to delete address");
+    } finally {
+      setDeletingId(null);
+    }
+  };
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100">
-
-      <div className="max-w-5xl mx-auto p-6 pb-24">
-
-        <div className="flex justify-between items-center mb-8">
-
-          <h1 className="text-4xl font-bold">
-            Saved Addresses
-          </h1>
-
-          <button
-  onClick={() => {
-    setEditingAddress(null);
-    setOpenModal(true);
-}}
-  className="bg-emerald-600 text-white px-5 py-3 rounded-2xl flex items-center gap-2 hover:bg-emerald-700"
->
-  <Plus size={20} />
-  Add Address
-</button>
-
-        </div>
-
-        <div className="space-y-5">
-
-          {addresses.map((address) => (
-            <AddressCard
-              key={address.id}
-              address={address}
-              onDelete={deleteAddress}
-              onEdit={editAddress}
-            />
-          ))}
-
-        </div>
-
+    <div className="mx-auto max-w-4xl px-4 py-6 space-y-6">
+      <h1 className="text-2xl font-bold">Select Delivery Address</h1>
+      {/* 🗺 Map */}
+      <div
+        className="relative h-100 w-full overflow-hidden rounded-lg
+border"
+      >
+        <MapContainer
+          center={[latitude || 28.6139, longitude || 77.209]}
+          zoom={13}
+          className="h-full w-full"
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            attribution='&copy; <a
+href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+          />
+          <LocationPicker setLocation={setLocation} />
+          <LocateMeButton onLocate={setLocation} />
+          {latitude && longitude && <Marker position={[latitude, longitude]} />}
+        </MapContainer>
       </div>
-          <AddAddressModal
-  open={openModal}
-  onClose={() => setOpenModal(false)}
-  onSave={saveAddress}
-  editingAddress={editingAddress}
-/>
-      <BottomNavbar />
+      {/* 📍 Selected address */}
+      {formattedAddress && (
+        <div className="rounded-lg border bg-green-50 p-3 text-sm">
+          📍 {formattedAddress}
+        </div>
+      )}
+      {/* 📱 Mobile */}
+      <input
+        type="number"
+        placeholder="Mobile number"
+        value={mobile}
+        onChange={(e) => setMobile(e.target.value)}
+        className="w-full rounded-lg border px-4 py-2"
+      />
+      {/* ➕ Save */}
+      <button
+        disabled={adding}
+        onClick={addAddress}
+        className="flex items-center justify-center gap-2 rounded-lg
 
+bg-[#E23744] px-4 py-3 text-white hover:bg-[#d32f3a] disabled:opacity-
+50"
+      >
+        {adding ? <LoaderCircle className="animate-spin" /> : <Plus />}
+        Save Address
+      </button>
+
+      {/* 📋 Saved Addresses */}
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Saved Addresses</h2>
+        {loading ? (
+          <p className="text-sm text-gray-500">Loading...</p>
+        ) : addresses.length === 0 ? (
+          <p className="text-sm text-gray-500">No addresses saved</p>
+        ) : (
+          addresses.map((addr) => (
+            <div
+              key={addr._id}
+              className="flex items-center justify-between rounded-lg
+border bg-white p-3"
+            >
+              <div>
+                <p
+                  className="text-sm font-
+medium"
+                >
+                  {addr.formattedAddress}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                  📞
+                  {addr.mobile}
+                </p>
+              </div>
+              <button
+                onClick={() => deleteAddress(addr._id)}
+                disabled={deletingId === addr._id}
+                className="rounded-lg p-2 text-red-500 hover:bg-red-50
+disabled:opacity-50"
+              >
+                {deletingId === addr._id ? (
+                  <LoaderCircle size={16} className="animate-spin" />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+              </button>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };
 
-export default Addresses;
+export default AddAddressPage;
