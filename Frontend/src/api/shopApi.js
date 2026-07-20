@@ -14,6 +14,10 @@ export const createShop = async (formData) => {
 
   return response.data;
 };
+export const getMyShop = async () => {
+    const response = await api.get("/shops/my-shop");
+    return response.data;
+};
 
 // Nearby Shops
 export const getNearbyShops = async (params) => {

@@ -3,6 +3,7 @@ import {
   createShop as createShopApi,
   getNearbyShops,
   getShopById,
+  getMyShop as getMyShopApi,
 } from "../api/shopApi";
 
 const ShopContext = createContext();
@@ -165,15 +166,16 @@ const fetchNearbyShops = async (params) => {
   // GET SHOP OF LOGGED IN SELLER
   // -----------------------------
 
-  const getMyShop = async (shopId) => {
-  if (!shopId) return null;
-
+  const getMyShop = async () => {
   try {
-    const data = await getShopById(shopId);
+    const data = await getMyShopApi();
     return data.shop;
   } catch (error) {
-    console.log(error);
-    return null;
+    if (error.response?.status === 404) {
+      return null;
+    }
+
+    throw error;
   }
 };
 

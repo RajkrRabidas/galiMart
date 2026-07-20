@@ -1,8 +1,9 @@
+import { motion } from "framer-motion";
+import { ArrowRight, Wrench } from "lucide-react";
 import ServiceCard from "./ServiceCard";
 import { useServices } from "../../context/ServiceContext";
 
 const ServiceSection = () => {
-
   const { providers } = useServices();
 
   const services = providers.flatMap((provider) =>
@@ -14,75 +15,144 @@ const ServiceSection = () => {
   );
 
   return (
+    <section className="mt-12 mb-28">
 
-    <div className="mt-10 mb-28">
+      {/* Header */}
 
-      <div className="flex justify-between items-center">
+      <div className="flex items-end justify-between">
 
-        <h2 className="text-xl font-bold">
+        <div>
 
-          Nearby Services
+          <div className="flex items-center gap-2">
 
-        </h2>
+            <Wrench
+              size={24}
+              className="text-emerald-600"
+            />
 
-        <button className="text-emerald-600 font-semibold">
+            <h2 className="text-2xl font-black text-slate-900">
+              Nearby Services
+            </h2>
 
-          View All
+          </div>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Book trusted professionals near you
+          </p>
+
+        </div>
+
+        <button
+          className="
+            flex
+            items-center
+            gap-1
+            text-emerald-600
+            font-semibold
+            hover:text-emerald-700
+            transition
+          "
+        >
+          See All
+
+          <ArrowRight size={18} />
 
         </button>
 
       </div>
 
-      {
+      {services.length === 0 ? (
 
-        services.length === 0 ? (
-
-          <div className="bg-white rounded-3xl shadow-lg p-10 text-center mt-5">
-
-            <h2 className="text-xl font-bold">
-
-              No Services Available
-
-            </h2>
-
-            <p className="text-gray-500 mt-2">
-
-              Service providers haven't added any services yet.
-
-            </p>
-
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="
+            mt-6
+            bg-white
+            rounded-[30px]
+            shadow-lg
+            border
+            border-slate-100
+            p-10
+            text-center
+          "
+        >
+          <div
+            className="
+              w-20
+              h-20
+              mx-auto
+              rounded-full
+              bg-emerald-50
+              flex
+              items-center
+              justify-center
+            "
+          >
+            <Wrench
+              size={36}
+              className="text-emerald-600"
+            />
           </div>
 
-        ) : (
+          <h3 className="text-2xl font-bold mt-5 text-slate-800">
+            No Services Available
+          </h3>
 
-          <div className="flex gap-5 overflow-x-auto mt-5 pb-2">
+          <p className="text-slate-500 mt-2 max-w-sm mx-auto">
+            Once service providers start offering services,
+            they'll automatically appear here.
+          </p>
 
-            {
+        </motion.div>
 
-              services.map((service) => (
+      ) : (
 
-                <ServiceCard
+        <div
+          className="
+            mt-6
+            flex
+            gap-6
+            overflow-x-auto
+            scrollbar-hide
+            snap-x
+            snap-mandatory
+            pb-4
+          "
+        >
+          {services.map((service, index) => (
 
-                  key={service.id}
+            <motion.div
+              key={service.id}
+              initial={{
+                opacity: 0,
+                x: 30,
+              }}
+              whileInView={{
+                opacity: 1,
+                x: 0,
+              }}
+              viewport={{
+                once: true,
+              }}
+              transition={{
+                delay: index * 0.08,
+                duration: 0.35,
+              }}
+              className="snap-start"
+            >
+              <ServiceCard
+                service={service}
+              />
+            </motion.div>
 
-                  service={service}
+          ))}
+        </div>
 
-                />
+      )}
 
-              ))
-
-            }
-
-          </div>
-
-        )
-
-      }
-
-    </div>
-
+    </section>
   );
-
 };
 
 export default ServiceSection;
