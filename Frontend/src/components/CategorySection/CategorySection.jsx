@@ -1,52 +1,143 @@
+import { motion } from "framer-motion";
+import { ArrowRight } from "lucide-react";
 import { categories } from "./categoryData";
 
 const CategorySection = () => {
   return (
-    <div className="mt-8">
+    <section className="mt-10">
 
-      <div className="flex justify-between items-center">
+      {/* Header */}
 
-        <h2 className="text-xl font-bold">
-          Categories
-        </h2>
+      <div className="flex justify-between items-end">
 
-        <button className="text-emerald-600 font-semibold">
-          View All
+        <div>
+
+          <h2 className="text-2xl font-black text-slate-900">
+            Shop by Category
+          </h2>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Everything you need in one place
+          </p>
+
+        </div>
+
+        <button
+          className="
+            flex
+            items-center
+            gap-1
+            text-emerald-600
+            font-semibold
+            hover:text-emerald-700
+            transition
+          "
+        >
+          See All
+          <ArrowRight size={18} />
         </button>
 
       </div>
 
-      <div className="mt-5 flex gap-5 overflow-x-auto scrollbar-hide pb-2">
+      {/* Categories */}
 
-        {categories.map((category) => {
+      <div
+        className="
+          mt-6
+          flex
+          gap-5
+          overflow-x-auto
+          scrollbar-hide
+          pb-3
+        "
+      >
+
+        {categories.map((category, index) => {
           const Icon = category.icon;
 
           return (
-            <div
+            <motion.div
               key={category.id}
-              className="flex flex-col items-center min-w-[90px] cursor-pointer"
+              initial={{
+                opacity: 0,
+                y: 20,
+              }}
+              whileInView={{
+                opacity: 1,
+                y: 0,
+              }}
+              viewport={{
+                once: true,
+              }}
+              transition={{
+                delay: index * 0.05,
+                duration: 0.35,
+              }}
+              whileHover={{
+                y: -8,
+                scale: 1.05,
+              }}
+              whileTap={{
+                scale: 0.95,
+              }}
+              className="min-w-[105px] cursor-pointer"
             >
 
               <div
-                className={`${category.color} w-20 h-20 rounded-3xl flex items-center justify-center shadow hover:scale-110 hover:-translate-y-2duration-300 transition`}
+                className={`
+                  ${category.color}
+                  h-24
+                  rounded-[28px]
+                  shadow-lg
+                  flex
+                  items-center
+                  justify-center
+                  border
+                  border-white
+                  transition-all
+                `}
               >
-                <Icon
-                  size={32}
-                  className="text-emerald-600"
-                />
+
+                <div
+                  className="
+                    w-14
+                    h-14
+                    rounded-2xl
+                    bg-white/70
+                    backdrop-blur-md
+                    flex
+                    items-center
+                    justify-center
+                    shadow-md
+                  "
+                >
+                  <Icon
+                    size={30}
+                    className="text-emerald-600"
+                  />
+                </div>
+
               </div>
 
-              <p className="mt-3 text-sm font-medium text-center">
+              <p
+                className="
+                  mt-3
+                  text-sm
+                  font-semibold
+                  text-center
+                  text-slate-700
+                "
+              >
                 {category.title}
               </p>
 
-            </div>
+            </motion.div>
           );
         })}
 
       </div>
 
-    </div>
+    </section>
   );
 };
 

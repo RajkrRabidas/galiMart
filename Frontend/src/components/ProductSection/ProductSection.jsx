@@ -1,34 +1,90 @@
+import { motion } from "framer-motion";
+import { ArrowRight, Flame } from "lucide-react";
 import ProductCard from "./ProductCard";
 import { products } from "./productData";
 
 const ProductSection = () => {
   return (
-    <div className="mt-10">
+    <section className="mt-12">
 
-      <div className="flex justify-between items-center">
+      {/* Header */}
 
-        <h2 className="text-xl font-bold">
-          Popular Products
-        </h2>
+      <div className="flex items-end justify-between">
 
-        <button className="text-emerald-600 font-semibold">
-          View All
+        <div>
+
+          <div className="flex items-center gap-2">
+
+            <Flame
+              size={24}
+              className="text-orange-500"
+            />
+
+            <h2 className="text-2xl font-black text-slate-900">
+              Trending Products
+            </h2>
+
+          </div>
+
+          <p className="text-sm text-slate-500 mt-1">
+            Most loved products near you
+          </p>
+
+        </div>
+
+        <button
+          className="
+            flex
+            items-center
+            gap-1
+            text-emerald-600
+            font-semibold
+            hover:text-emerald-700
+            transition
+          "
+        >
+          See All
+
+          <ArrowRight size={18} />
+
         </button>
 
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
+      {/* Products */}
 
-        {products.map((product) => (
-          <ProductCard
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-7">
+
+        {products.map((product, index) => (
+
+          <motion.div
             key={product.id}
-            product={product}
-          />
+            initial={{
+              opacity: 0,
+              y: 20,
+            }}
+            whileInView={{
+              opacity: 1,
+              y: 0,
+            }}
+            viewport={{
+              once: true,
+            }}
+            transition={{
+              duration: 0.35,
+              delay: index * 0.06,
+            }}
+          >
+
+            <ProductCard product={product} />
+
+          </motion.div>
+
         ))}
 
       </div>
 
-    </div>
+    </section>
   );
 };
 

@@ -24,6 +24,33 @@ const {
 } = require("../constants/messages");
 const messages = require("../constants/messages");
 const { success } = require("zod");
+const getMyShop = async (req, res) => {
+  try {
+    const owner = req.user.id;
+
+    const shop = await shopModel.findOne({
+    ownerId: req.user._id,
+});
+    if (!shop) {
+      return res.status(404).json({
+        message: "No shop found",
+        shop: null,
+      });
+    }
+
+    return res.status(200).json({
+      message: "Shop fetched successfully",
+      shop,
+    });
+
+  } catch (error) {
+    console.error("Get My Shop Error:", error);
+
+    return res.status(500).json({
+      message: "Internal server error",
+    });
+  }
+};
 
 const sendError = (res, statusCode, message, details) => {
   return res
@@ -246,7 +273,7 @@ const getNearByShop = asyncHandler(async (req, res) => {
       },
     },
     {
-      $addfields: {
+      $addFields: {
         distanceKm: {
           $round: [{ $divide: ["$distance", 1000] }, 2],
         },
@@ -274,5 +301,6 @@ module.exports = {
   updateStatusShop,
   updateShop,
   getNearByShop,
+  getMyShop,
   fetchSingleShop
 };

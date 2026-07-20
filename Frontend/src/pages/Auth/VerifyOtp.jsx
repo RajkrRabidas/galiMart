@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useShops } from "../../context/ShopContext";
 
 
 import OTPInput from "../../components/OTPInput/OTPInput";
@@ -23,6 +24,7 @@ const VerifyOtp = () => {
     "",
   ]);
   const navigate = useNavigate();
+  const { getMyShop } = useShops();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -71,7 +73,16 @@ const VerifyOtp = () => {
     const role = response.user.role;
 
     if (role === "seller") {
-      navigate("/seller/dashboard");
+
+    const shop = await getMyShop();
+
+if (shop) {
+    navigate("/seller/dashboard");
+} else {
+    navigate("/seller/create-shop");
+}
+
+
     } else if (role === "service_provider") {
       navigate("/service/dashboard");
     } else if (role === "delivery_partner") {
@@ -80,11 +91,16 @@ const VerifyOtp = () => {
       navigate("/home");
     }
   } catch (error) {
+
+    console.log("FULL ERROR:", error);
+
     setError(
-      error.response?.data?.message ||
-      "Invalid OTP"
+        error.response?.data?.message ||
+        error.message ||
+        "Invalid OTP"
     );
-  } finally {
+
+} finally {
     setLoading(false);
   }
 };
