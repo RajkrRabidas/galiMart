@@ -6,6 +6,7 @@ const shopRouter = require("../routes/shop.routes")
 const { connectRedis } = require("../services/redis");
 const menuRouter = require("../routes/menuItem.routes")
 const cartRouter = require("../routes/cart.routes")
+const orderRouter = require("../routes/order.routes")
 
 const cors = require("cors");
 
@@ -27,6 +28,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/shops", shopRouter);
 app.use("/api/items", menuRouter)
 app.use("/api/cart", cartRouter);
+app.use("/api/orders", orderRouter);
 
 connectRedis().catch((error) => {
   console.error("Redis connection error:", error);
