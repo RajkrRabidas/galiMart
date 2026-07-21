@@ -67,7 +67,7 @@ const ServiceSection = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           className="
-            mt-6
+            mt-3
             bg-white
             rounded-[30px]
             shadow-lg
@@ -117,7 +117,7 @@ const ServiceSection = () => {
             scrollbar-hide
             snap-x
             snap-mandatory
-            pb-4
+            py-4
           "
         >
           {services.map((service, index) => (

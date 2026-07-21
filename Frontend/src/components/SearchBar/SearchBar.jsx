@@ -11,7 +11,7 @@ const SearchBar = () => {
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15, duration: 0.35 }}
-      className="mt-6"
+      className="relative z-10 -mt-16 px-1"
     >
       <div className="flex items-center gap-3">
 
@@ -29,12 +29,12 @@ const SearchBar = () => {
             placeholder="Search products, shops & services..."
             className="
               w-full
-              h-16
-              rounded-full
+              h-14
+              rounded-2xl
               bg-white
               border
               border-slate-200
-              shadow-lg
+              shadow-lg shadow-emerald-950/10
               pl-14
               pr-14
               text-[15px]
@@ -77,13 +77,11 @@ const SearchBar = () => {
 
         <button
           className="
-            w-16
-            h-16
-            rounded-3xl
-            bg-gradient-to-br
-            from-emerald-600
-            to-green-500
-            shadow-xl
+            w-14
+            h-14
+            rounded-2xl
+            bg-emerald-700
+            shadow-lg shadow-emerald-600/25
             hover:scale-105
             active:scale-95
             transition-all

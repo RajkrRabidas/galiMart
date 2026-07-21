@@ -7,7 +7,7 @@ const ShopSection = () => {
   const { shops } = useShops();
 
   return (
-    <section className="mt-12">
+    <section className="mt-9">
 
       {/* Header */}
 
@@ -16,11 +16,11 @@ const ShopSection = () => {
         <div>
 
           <h2 className="text-2xl font-black text-slate-900">
-            Nearby Stores
+            Top Grocery Stores Near You
           </h2>
 
           <p className="text-sm text-slate-500 mt-1">
-            Discover trusted shops around you
+            Quick delivery from your neighbourhood
           </p>
 
         </div>
@@ -30,13 +30,13 @@ const ShopSection = () => {
             flex
             items-center
             gap-1
-            text-emerald-600
+            text-[#e94b3c]
             font-semibold
-            hover:text-emerald-700
+            hover:text-[#c93d31]
             transition
           "
         >
-          See All
+          View All
 
           <ArrowRight size={18} />
 
@@ -96,12 +96,12 @@ const ShopSection = () => {
           className="
             mt-6
             flex
-            gap-6
+            gap-3
             overflow-x-auto
             scrollbar-hide
             snap-x
             snap-mandatory
-            pb-4
+            py-3
           "
         >
 
