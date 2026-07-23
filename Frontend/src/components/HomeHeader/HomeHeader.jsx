@@ -1,126 +1,17 @@
-import {
-  Bell,
-  ChevronDown,
-  MapPin,
-  ShoppingCart,
-} from "lucide-react";
+import { Bell, ChevronDown, MapPin, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 
-const HomeHeader = () => {
-  return (
-    <motion.div
-      initial={{ y: -30, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.45 }}
-      className="mb-8"
-    >
-      <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-green-500 rounded-[32px] p-6 shadow-2xl text-white overflow-hidden relative">
-
-        {/* Decorative circles */}
-        <div className="absolute -right-12 -top-12 w-40 h-40 rounded-full bg-white/10" />
-        <div className="absolute -left-16 -bottom-16 w-52 h-52 rounded-full bg-white/5" />
-
-        {/* Top Row */}
-        <div className="flex justify-between items-start relative z-10">
-
-          <div>
-
-            <p className="text-sm text-emerald-100">
-              Deliver to
-            </p>
-
-            <div className="flex items-center gap-2 mt-1">
-
-              <MapPin size={18} />
-
-              <h2 className="font-semibold text-lg">
-                Salt Lake, Kolkata
-              </h2>
-
-              <ChevronDown size={18} />
-            </div>
-
-          </div>
-
-          <div className="flex items-center gap-3">
-
-            {/* Notification */}
-
-            <button className="relative w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
-
-              <Bell size={20} />
-
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
-
-            </button>
-
-            {/* Cart */}
-
-            <button className="relative w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20">
-
-              <ShoppingCart size={20} />
-
-              <span className="absolute -top-1 -right-1 bg-red-500 text-[10px] px-1.5 rounded-full">
-                2
-              </span>
-
-            </button>
-
-          </div>
-
-        </div>
-
-        {/* Greeting */}
-
-        <div className="mt-7 relative z-10">
-
-          <p className="text-emerald-100 text-sm">
-            Welcome Back 👋
-          </p>
-
-          <h1 className="text-4xl font-black mt-1 tracking-tight">
-            Farhann
-          </h1>
-
-          <p className="text-emerald-100 mt-2 text-sm">
-            Shop everything around you in minutes.
-          </p>
-
-        </div>
-
-        {/* Delivery Card */}
-
-        <div className="mt-7 bg-white/15 backdrop-blur-md rounded-2xl px-5 py-4 flex justify-between items-center border border-white/10 relative z-10">
-
-          <div>
-
-            <p className="text-xs text-emerald-100">
-              Delivery Time
-            </p>
-
-            <h3 className="font-bold text-lg">
-              10–20 mins ⚡
-            </h3>
-
-          </div>
-
-          <div className="text-right">
-
-            <p className="text-xs text-emerald-100">
-              Free Delivery
-            </p>
-
-            <h3 className="font-bold">
-              Above ₹299
-            </h3>
-
-          </div>
-
-        </div>
-
-      </div>
-    </motion.div>
-  );
-};
+const HomeHeader = () => (
+  <motion.header initial={{ opacity: 0, y: -16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="relative -mx-4 overflow-hidden rounded-b-[34px] bg-gradient-to-br from-emerald-800 via-emerald-700 to-green-600 px-5 pb-24 pt-6 text-white shadow-lg sm:-mx-6 sm:px-8">
+    <div className="absolute -right-16 -top-20 h-56 w-56 rounded-full bg-lime-300/10" />
+    <div className="absolute -bottom-20 left-1/3 h-40 w-40 rounded-full bg-white/5" />
+    <div className="relative flex items-center justify-between">
+      <button className="flex items-center gap-1.5 text-left"><MapPin size={17} fill="currentColor" /><span><span className="block text-sm font-bold">Howrah, West Bengal <ChevronDown className="inline" size={14}/></span><span className="block text-[11px] text-emerald-100">Delivering near you</span></span></button>
+      <div className="flex items-center gap-3"><button aria-label="Notifications" className="relative transition-transform hover:scale-110"><Bell size={22}/><span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-lime-300" /></button><Link to="/cart" aria-label="Cart" className="relative transition-transform hover:scale-110"><ShoppingCart size={25}/><span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[9px] font-bold">2</span></Link></div>
+    </div>
+    <div className="relative mt-7 flex items-end justify-between"><div><h1 className="text-[34px] font-black tracking-tight">GaliMart</h1><p className="text-sm font-medium text-emerald-50">Shop nearby, instantly</p></div><div className="grid h-14 w-14 place-items-center rounded-full border border-white/20 bg-white/10 text-2xl shadow-inner">🛵</div></div>
+  </motion.header>
+);
 
 export default HomeHeader;

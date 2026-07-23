@@ -5,7 +5,7 @@ import { products } from "./productData";
 
 const ProductSection = () => {
   return (
-    <section className="mt-12">
+    <section className="mt-9">
 
       {/* Header */}
 
@@ -21,13 +21,13 @@ const ProductSection = () => {
             />
 
             <h2 className="text-2xl font-black text-slate-900">
-              Trending Products
+              Best Offers for You
             </h2>
 
           </div>
 
           <p className="text-sm text-slate-500 mt-1">
-            Most loved products near you
+            Daily favourites at better prices
           </p>
 
         </div>
@@ -43,7 +43,7 @@ const ProductSection = () => {
             transition
           "
         >
-          See All
+          View All
 
           <ArrowRight size={18} />
 
@@ -53,7 +53,7 @@ const ProductSection = () => {
 
       {/* Products */}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mt-7">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 mt-5">
 
         {products.map((product, index) => (
 

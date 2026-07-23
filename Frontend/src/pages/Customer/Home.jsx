@@ -43,13 +43,13 @@ useEffect(() => {
 
 }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100">
+    <div className="min-h-screen bg-[#f6f8f5] text-slate-900">
 
        <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="max-w-7xl mx-auto p-5 pb-24"
+        className="max-w-7xl mx-auto overflow-hidden px-4 pb-28 sm:px-6"
       >
 
         <HomeHeader />

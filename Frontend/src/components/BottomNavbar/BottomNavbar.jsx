@@ -47,12 +47,12 @@ const BottomNavbar = () => {
         className="
           bg-white/90
           backdrop-blur-2xl
-          rounded-[30px]
-          shadow-[0_20px_50px_rgba(0,0,0,0.12)]
+          rounded-2xl
+          shadow-[0_12px_30px_rgba(15,23,42,0.14)]
           border
           border-white/60
-          px-3
-          py-2
+          px-2
+          py-1.5
           flex
           justify-between
           items-center
@@ -68,50 +68,44 @@ const BottomNavbar = () => {
               className="flex-1"
             >
               {({ isActive }) => (
-                <motion.div
-                  whileTap={{ scale: 0.92 }}
-                  whileHover={{ y: -2 }}
-                  className={`
-                    relative
-                    flex
-                    flex-col
-                    items-center
-                    justify-center
-                    py-2
-                    rounded-2xl
-                    transition-all
-                    duration-300
-                    ${
-                      isActive
-                        ? "bg-emerald-600 text-white shadow-lg"
-                        : "text-slate-500 hover:text-emerald-600"
-                    }
-                  `}
-                >
-                  <motion.div
-                    animate={{
-                      scale: isActive ? 1.15 : 1,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 350,
-                    }}
-                  >
-                    <Icon size={22} />
-                  </motion.div>
+  <motion.div
+    className="relative flex flex-col items-center justify-center py-2"
+  >
+    {isActive && (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.88 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.88 }}
+        transition={{
+          duration: 0.16,
+          ease: "easeOut",
+        }}
+        className="
+          absolute
+          inset-0
+          rounded-xl
+          bg-emerald-600
+        "
+      />
+    )}
 
-                  <span className="text-[11px] font-medium mt-1">
-                    {item.name}
-                  </span>
-
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeDot"
-                      className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-white"
-                    />
-                  )}
-                </motion.div>
-              )}
+    <motion.div
+      className={`relative z-10 flex flex-col items-center ${
+        isActive
+          ? "text-white"
+          : "text-gray-500"
+      }`}
+      animate={{
+        scale: isActive ? 1.12 : 1,
+      }}
+    >
+      <Icon size={22}/>
+      <span className="text-xs mt-1">
+        {item.name}
+      </span>
+    </motion.div>
+  </motion.div>
+)}
             </NavLink>
           );
         })}
