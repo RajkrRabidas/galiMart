@@ -6,7 +6,7 @@ const router = express.Router();
 
 
 router.post("/create", isAuth, createOrder);
-router.get("/payment/:orderId", isAuth, fetchOrderForPayment);
+router.get("/payment/:id", isAuth, fetchOrderForPayment);
 
 
 module.exports = router;
