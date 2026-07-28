@@ -4,7 +4,12 @@ const orderModel = require("../models/order");
 const startPaymentConsumer = async () => {
   const channel = getChannel();
 
-  channel.consume(process.env.PAYMENT_QUEUE, async (msg) => {
+  if (!channel) {
+    console.warn("RabbitMQ channel not initialized; payment consumer skipped");
+    return;
+  }
+
+  await channel.consume(process.env.PAYMENT_QUEUE, async (msg) => {
     if (!msg) return;
 
     try {
@@ -23,16 +28,16 @@ const startPaymentConsumer = async () => {
           paymentStatus: { $ne: "paid" },
         },
         {
-            $set: {
-                paymentStatus: "paid",
-                status:"placed"
-            },
-            $unset:{
-                expiresAt: 1
-            }
+          $set: {
+            paymentStatus: "paid",
+            status: "placed",
+          },
+          $unset: {
+            expiresAt: 1,
+          },
         },
         {
-            new: true
+          new: true,
         }
       );
 
@@ -43,9 +48,7 @@ const startPaymentConsumer = async () => {
 
       console.log("✔ order placed successfully", order._id);
 
-      //socket work
-
-    channel.ack(msg);
+      channel.ack(msg);
     } catch (error) {
       console.error("❌ Payment consumer error ", error);
     }

@@ -1,17 +1,28 @@
-const app = require('./src/app');
+const app = require("./src/app");
 const PORT = process.env.PORT || 3000;
 const connectToDB = require("./config/db");
-const { connectRabbitMQ } = require('./config/rabbitmq');
-const { startPaymentConsumer } = require('./config/payment.consumer');
+const { connectRabbitMQ } = require("./config/rabbitmq");
+const { startPaymentConsumer } = require("./config/payment.consumer");
+const { initSocket } = require("./services/socket");
+const http = require("http")
 
+const server = http.createServer(app)
 
-const start = async () => {
+const bootstrap = async () => {
+  try {
     await connectRabbitMQ();
     await startPaymentConsumer();
-    connectToDB();
-    app.listen(PORT, () => {
-        console.log("server is running 3000...");
+    initSocket(server);
+    await connectToDB();
+
+    server.listen(PORT, () => {
+      console.log("server is running 3000...");
     });
+  } catch (error) {
+    console.error("❌ Startup failed", error);
+    process.exit(1);
+  }
 };
 
-start();
+bootstrap();
+
