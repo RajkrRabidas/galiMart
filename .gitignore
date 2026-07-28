@@ -7,3 +7,5 @@ dist
 build
 
 task.txt
+
+.vscode
