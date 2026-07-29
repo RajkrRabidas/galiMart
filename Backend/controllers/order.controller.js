@@ -81,14 +81,12 @@ const createOrder = asyncHandler(async (req, res) => {
   });
 
   await cartModel.deleteMany({ userId });
-  res
-    .status(201)
-    .json({
-      message: "Order created successfully",
-      orderId: order._id,
-      amount: order.totalAmount,
-      paymentMethod: order.paymentMethod,
-    });
+  res.status(201).json({
+    message: "Order created successfully",
+    orderId: order._id,
+    amount: order.totalAmount,
+    paymentMethod: order.paymentMethod,
+  });
 });
 
 const fetchOrderForPayment = asyncHandler(async (req, res) => {
@@ -109,4 +107,135 @@ const fetchOrderForPayment = asyncHandler(async (req, res) => {
   res.json({ orderId: order._id, amount: order.totalAmount, currency: "INR" });
 });
 
-module.exports = { createOrder, fetchOrderForPayment };
+const fetchShopOrders = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const { shopId } = req.params;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!shopId) {
+    return res.status(400).json({ message: "Shop ID is required" });
+  }
+
+  const limit = req.query.limit ? parseInt(req.query.limit) : 5;
+
+  const shop = await ShopModel.find({
+    shopId,
+    paymentStatus: "paid",
+  })
+    .sort({ createdAt: -1 })
+    .limit(limit);
+
+  return res.status(200).json({
+    message: "Orders fetched successfully",
+    count: shop.length,
+    orders: shop,
+  });
+});
+
+const ALLOWED_STATUSES = ["accepted", "preparing", "ready_for_delivery"];
+
+const updateOrderStatus = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const { orderId } = req.params;
+  const { status } = req.body;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  if (!ALLOWED_STATUSES.includes(status)) {
+    return res.status(400).json({ message: "Invalid status" });
+  }
+
+  const order = await orderModel.findById(orderId);
+
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  if (order.paymentStatus !== "paid") {
+    return res.status(400).json({ message: "Order not completed yet" });
+  }
+
+  const shop = await ShopModel.findById(order.shopId);
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  if (shop.ownerId.toString() !== user._id.toString()) {
+    return res
+      .status(403)
+      .json({ message: "you are not allowed to update this order" });
+  }
+
+  order.status = status;
+  await order.save();
+
+  axios.post(
+    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+    {
+      event: "order:updated",
+      room: `user:${order.userId}`,
+      paymentData: {
+        orderId: order._id,
+        status: order.status,
+      },
+    },
+    {
+      headers: {
+        "x-internal-key": process.env.INTERNAL_KEY,
+      },
+    },
+  );
+
+  // now assign riders
+
+  return res
+    .status(200)
+    .json({ message: "Order status updated successfully", order });
+});
+
+const getMyOrders = asyncHandler(async (req, res) => {
+  if(!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const order = await orderModel.find({
+    userId: req.user._id.toString(),
+    paymentStatus: "paid"
+  }).sort({ createdAt: -1 });
+
+  res.json({orders: order});
+})
+
+const fetchSingleOrder = asyncHandler(async (req, res) => {
+  if(!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const order = await orderModel.findById({ _id: req.params.id });
+  
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  if(order.userId !== req.user._id.toString()) {
+    return res.status(403).json({ message: "You are not authorized to view this order" });
+  }
+
+  res.json({ order });
+})
+
+
+module.exports = { 
+  createOrder, 
+  fetchOrderForPayment, 
+  fetchShopOrders, 
+  updateOrderStatus, 
+  getMyOrders, 
+  fetchSingleOrder 
+};

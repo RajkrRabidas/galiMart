@@ -48,6 +48,22 @@ const startPaymentConsumer = async () => {
 
       console.log("✔ order placed successfully", order._id);
 
+     axios.post(
+    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+    {
+      event: "order:new",
+      room: `shop:${order.shopId}`,
+      paymentData: {
+        orderId: order._id,
+      },
+    },
+    {
+      headers: {
+        "x-internal-key": process.env.INTERNAL_KEY,
+      },
+    },
+  );
+
       channel.ack(msg);
     } catch (error) {
       console.error("❌ Payment consumer error ", error);
