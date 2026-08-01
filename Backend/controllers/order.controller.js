@@ -194,48 +194,69 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   // now assign riders
 
+  if (status === "ready_for_delivery") {
+    console.log(
+      "Publishing Order ready for rider event for order",
+      order._id.toString(),
+    );
+
+    await publishOrderEvent("ORDER_READY_FOR_RIDER", {
+      orderId: order._id.toString(),
+      shopId: order.shopId.toString(),
+      shopName: order.shopName,
+      location: resturant.autoLocation,
+      riderDistance: order.riderDistance,
+      riderAmount: order.riderAmount,
+    });
+
+    console.log("event Published successfully");
+  }
+
   return res
     .status(200)
     .json({ message: "Order status updated successfully", order });
 });
 
 const getMyOrders = asyncHandler(async (req, res) => {
-  if(!req.user) {
+  if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const order = await orderModel.find({
-    userId: req.user._id.toString(),
-    paymentStatus: "paid"
-  }).sort({ createdAt: -1 });
+  const order = await orderModel
+    .find({
+      userId: req.user._id.toString(),
+      paymentStatus: "paid",
+    })
+    .sort({ createdAt: -1 });
 
-  res.json({orders: order});
-})
+  res.json({ orders: order });
+});
 
 const fetchSingleOrder = asyncHandler(async (req, res) => {
-  if(!req.user) {
+  if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   const order = await orderModel.findById({ _id: req.params.id });
-  
+
   if (!order) {
     return res.status(404).json({ message: "Order not found" });
   }
 
-  if(order.userId !== req.user._id.toString()) {
-    return res.status(403).json({ message: "You are not authorized to view this order" });
+  if (order.userId !== req.user._id.toString()) {
+    return res
+      .status(403)
+      .json({ message: "You are not authorized to view this order" });
   }
 
   res.json({ order });
-})
+});
 
-
-module.exports = { 
-  createOrder, 
-  fetchOrderForPayment, 
-  fetchShopOrders, 
-  updateOrderStatus, 
-  getMyOrders, 
-  fetchSingleOrder 
+module.exports = {
+  createOrder,
+  fetchOrderForPayment,
+  fetchShopOrders,
+  updateOrderStatus,
+  getMyOrders,
+  fetchSingleOrder,
 };
