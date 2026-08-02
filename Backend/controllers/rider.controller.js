@@ -1,4 +1,4 @@
-const Rider = require("../models/rider.model")
+const Rider = require("../models/rider.model");
 
 const addRidderProfile = async (req, res) => {
   const user = req.user;
@@ -127,52 +127,170 @@ const toggleRiderAvailability = async (req, res) => {
     });
   }
 
-    const {isAvailble, latitude, longitude} = req.body
+  const { isAvailble, latitude, longitude } = req.body;
 
-    if(typeof isAvailble !== "boolean"){
-        return res.status(400).json({
-            message: "isAvailble must be boolean"
-        })
-    }
-
-    if(latitude === undefined || longitude === undefined){
-        return res.status(400).json({
-            message: "loccation is required"
-        })
-    }
-
-    const rider = await Rider.findOne({
-        userId: user._id
+  if (typeof isAvailble !== "boolean") {
+    return res.status(400).json({
+      message: "isAvailble must be boolean",
     });
+  }
 
-    if(!rider){
-        return res.status(404).json({
-            message: "Rider profile not found"
-        })
+  if (latitude === undefined || longitude === undefined) {
+    return res.status(400).json({
+      message: "loccation is required",
+    });
+  }
+
+  const rider = await Rider.findOne({
+    userId: user._id,
+  });
+
+  if (!rider) {
+    return res.status(404).json({
+      message: "Rider profile not found",
+    });
+  }
+
+  if (isAvailble && !rider.isVerified) {
+    return res.status(403).json({
+      message: "Rider is not verified yet",
+    });
+  }
+
+  rider.isActive = isAvailble;
+  rider.location = {
+    type: "Point",
+    coordinates: [parseFloat(longitude), parseFloat(latitude)],
+  };
+
+  rider.lastActiveAt = new Date();
+
+  await rider.save();
+
+  return res.json({
+    message: isAvailble ? "Rider is now online" : "Rider is now offline",
+    rider,
+  });
+};
+
+const acceptOrder = async (req, res) => {
+  const riderUserId = req.user?._id;
+  const { orderId } = req.params;
+
+  if (!riderUserId) {
+    return res.status(404).json({
+      message: "Unauthorized",
+    });
+  }
+
+  const rider = await Rider.findOne({
+    userId: riderUserId,
+    isAvailable: true,
+  });
+
+  if (!rider) {
+    return res.status(404).json({
+      message: "Rider profile not found or not available",
+    });
+  }
+
+  try {
+    const { data } = await axios.put(
+      `${process.env.ORDER_SERVICE_URL}/api/orders/assign/rider`,
+      {
+        orderId,
+        riderId: rider._id.toString(),
+        riderUserId: rider.userId,
+        riderName: rider.name,
+        riderPhone: rider.phoneNumber,
+      },
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+
+    if (data?.success) {
+      const riderDetails = await Rider.findOneAndUpdate(
+        { userId: riderUserId, isAvailable: true },
+        { isAvailable: false },
+        { new: true },
+      );
     }
 
-    if(isAvailble && !rider.isVerified){
-      return res.status(403).json({
-        message: "Rider is not verified yet"
-      })
-    }
+    res.json({ message: "Order accepted successfully", data });
+  } catch (error) {
+    res.status(400).json({
+      message: "Error accepting order",
+      error: error.message,
+    });
+  }
+};
 
-    rider.isActive = isAvailble;
-    rider.location = {
-        type: "Point",
-        coordinates: [parseFloat(longitude), parseFloat(latitude)],
-      };
+const fetchMyCrrentOrder = async (req, res) => {
+  const riderUserId = req.user?._id;
 
-    rider.lastActiveAt = new Date();
+  if (!riderUserId) {
+    return res.status(404).json({ message: "Please login" });
+  }
 
-    await rider.save();
+  const rider = await Rider.findOne({ userId: riderUserId, isAvailable: true });
 
-    return res.json({
-      message: isAvailble ? "Rider is now online" : "Rider is now offline",
-      rider
-    })
+  if (!rider) {
+    return res.status(404).json({ message: "rider not found" });
+  }
 
-}
+  try {
+    const { data } = await axios.get(
+      `${process.env.ORDER_SERVICE_URL}/api/orders/rider/${rider._id}`,
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+    res.json({ message: "Current order fetched successfully", data });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error fetching current order", error: error.message });
+  }
+};
 
+const updateOrderStatus = async (req, res) => {
+  const userId = req.user?._id;
 
-module.exports = {addRidderProfile, fetchMyProfile, toggleRiderAvailability}
+  if (!userId) {
+    return res.status(404).json({ message: "Please login" });
+  }
+
+  const rider = await Rider.findOne({ userId: userId });
+
+  if (!rider) {
+    return res.status(404).json({ message: "rider not found" });
+  }
+
+  const { orderId } = req.params;
+  try {
+    const { data } = await axios.put(
+      `${process.env.ORDER_SERVICE_URL}/api/orders/update/rider/${orderId}`,
+      { headers: { "x-internal-key": process.env.INTERNAL_KEY } }
+    );
+    
+    res.json({message: "data.message"})
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Error updating order status", error: error.message });
+  }
+};
+
+module.exports = {
+  addRidderProfile,
+  fetchMyProfile,
+  toggleRiderAvailability,
+  acceptOrder,
+  fetchMyCrrentOrder,
+  updateOrderStatus,
+};

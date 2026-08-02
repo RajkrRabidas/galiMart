@@ -204,9 +204,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       orderId: order._id.toString(),
       shopId: order.shopId.toString(),
       shopName: order.shopName,
-      location: resturant.autoLocation,
-      riderDistance: order.riderDistance,
-      riderAmount: order.riderAmount,
+      location: order.deliveryAddress,
     });
 
     console.log("event Published successfully");
@@ -252,6 +250,177 @@ const fetchSingleOrder = asyncHandler(async (req, res) => {
   res.json({ order });
 });
 
+const assignRiderToOrder = asyncHandler(async (req, res) => {
+  if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const { orderId, riderId, riderName, riderPhone } = req.body;
+
+  const order = await orderModel.findById(orderId);
+
+  if (order?.riderId !== null) {
+    return res.status(400).json({ message: "order already taken" });
+  }
+
+  const orderUpdated = await order.findOneAndUpdate(
+    { _id: orderId, riderId: null },
+    {
+      riderId,
+      riderName,
+      riderPhone,
+      status: "rider_assigned",
+    },
+    { new: true },
+  );
+
+  axios.post(
+    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+    {
+      event: "order:rider_assigned",
+      room: `shop:${order.shopId}`,
+      paymentData: order,
+    },
+    {
+      headers: {
+        "x-internal-key": process.env.INTERNAL_KEY,
+      },
+    },
+  );
+
+  axios.post(
+    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+    {
+      event: "order:rider_assigned",
+      room: `user:${order.userId}`,
+      paymentData: order,
+    },
+    {
+      headers: {
+        "x-internal-key": process.env.INTERNAL_KEY,
+      },
+    },
+  );
+
+  res.json({
+    message: "Rider assigned Successfully",
+    success: true,
+    order: orderUpdated,
+  });
+});
+
+const getCurrentOrdersForRider = asyncHandler(async (req, res) => {
+  if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const { riderId } = req.query;
+
+  if (!riderId) {
+    return res.status(400).json({ message: "Rider ID is required" });
+  }
+
+  const orders = await orderModel
+    .find({
+      riderId: riderId,
+      status: { $ne: ["delivered"] },
+    })
+    .sort({ createdAt: -1 })
+    .populate("shopId");
+
+  if (!orders) {
+    return res.status(404).json({ message: "No orders found for this rider" });
+  }
+
+  res.json(orders);
+});
+
+const updateOrderStatusRider = asyncHandler(async (req, res) => {
+  if (req.hearders["x-internal-key"] !== process.env.INTERNAL_KEY) {
+    return res.status(403).json({ message: "Forbidden" });
+  }
+
+  const orderId = req.body;
+
+  const order = await orderModel.findById(orderId);
+
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  if (order.status === "rider_assigned") {
+    order.status = "picked_up";
+
+    await order.save();
+
+    axios.post(
+      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+      {
+        event: "order:rider_assigned",
+        room: `user:${order.userId}`,
+        paymentData: order,
+      },
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+
+    axios.post(
+      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+      {
+        event: "order:rider_assigned",
+        room: `shop:${order.shopId}`,
+        paymentData: order,
+      },
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+
+    res.json({ message: "Order status updated successfully", order });
+  }
+
+  if (order.status === "picked_up") {
+    order.status = "delivered";
+
+    await order.save();
+
+    axios.post(
+      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+      {
+        event: "order:rider_assigned",
+        room: `user:${order.userId}`,
+        paymentData: order,
+      },
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+
+    axios.post(
+      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
+      {
+        event: "order:rider_assigned",
+        room: `shop:${order.shopId}`,
+        paymentData: order,
+      },
+      {
+        headers: {
+          "x-internal-key": process.env.INTERNAL_KEY,
+        },
+      },
+    );
+
+    res.json({ message: "Order status updated successfully", order });
+  }
+});
+
 module.exports = {
   createOrder,
   fetchOrderForPayment,
@@ -259,4 +428,7 @@ module.exports = {
   updateOrderStatus,
   getMyOrders,
   fetchSingleOrder,
+  assignRiderToOrder,
+  getCurrentOrdersForRider,
+  updateOrderStatusRider,
 };
