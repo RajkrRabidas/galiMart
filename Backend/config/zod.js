@@ -13,15 +13,35 @@ const loginSchema = z.object({
 const completeProfileSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
   email: z.string().email("Invalid email address").optional().or(z.literal("")),
-  address: z.string().min(1, "Address is required"),
-  pinCode: z.string().min(1, "Pin code is required"),
+  formattedAddress: z.string().min(1, "Address is required").optional(),
+  address: z.string().min(1, "Address is required").optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
+  pinCode: z.string().optional(),
   location: z
     .object({
       type: z.string().default("Point"),
       coordinates: z.array(z.number()).length(2),
     })
-    .optional()
-    .default({ type: "Point", coordinates: [0, 0] }),
+    .optional(),
+}).superRefine((data, ctx) => {
+  const addressValue = data.formattedAddress || data.address;
+
+  if (!addressValue) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["formattedAddress"],
+      message: "Address is required",
+    });
+  }
+
+  if (data.latitude === undefined || data.longitude === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["latitude"],
+      message: "Latitude and longitude are required",
+    });
+  }
 });
 
 const createShopSchema = z.object({

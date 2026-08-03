@@ -235,7 +235,7 @@ const fetchMyCrrentOrder = async (req, res) => {
     return res.status(404).json({ message: "Please login" });
   }
 
-  const rider = await Rider.findOne({ userId: riderUserId, isAvailable: true });
+  const rider = await Rider.findOne({ userId: riderUserId, isVerified: true });
 
   if (!rider) {
     return res.status(404).json({ message: "rider not found" });

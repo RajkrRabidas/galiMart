@@ -257,6 +257,12 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
 
   const { orderId, riderId, riderName, riderPhone } = req.body;
 
+  const orderAvailable = await orderModel.findOne({ riderId, status: { $ne: "delivered" } });
+
+  if (orderAvailable) {
+    return res.status(400).json({ message: "you already have an order" });
+  }
+
   const order = await orderModel.findById(orderId);
 
   if (order?.riderId !== null) {
@@ -339,8 +345,8 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
   if (req.hearders["x-internal-key"] !== process.env.INTERNAL_KEY) {
     return res.status(403).json({ message: "Forbidden" });
   }
-
-  const orderId = req.body;
+ 
+  const {orderId} = req.body;
 
   const order = await orderModel.findById(orderId);
 
