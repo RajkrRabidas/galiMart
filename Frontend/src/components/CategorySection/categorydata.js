@@ -1,41 +1,45 @@
 import groceriesImage from "../../assets/groceries.png";
-import heroImage from "../../assets/hero.png";
+import restaurantImage from "../../assets/restaurant.jfif";
+import fashionImage from "../../assets/fashion.jfif";
+import medicineImage from "../../assets/medicine.jfif";
+import electronicsImage from "../../assets/electronics.jfif";
+import servicesImage from "../../assets/services.jfif";
 
 export const categories = [
   {
     id: 1,
     title: "Groceries",
     image: groceriesImage,
-    bg: "from-slate-100 via-slate-200 to-slate-50",
-    description: "Everyday essentials with premium freshness",
+    bg: "from-emerald-100 via-emerald-200 to-emerald-50",
   },
   {
     id: 2,
-    title: "Fruits",
-    image: heroImage,
-    bg: "from-slate-100 via-slate-200 to-slate-50",
-    description: "Handpicked seasonal fruits",
+    title: "Restaurants",
+    image: restaurantImage,
+    bg: "from-rose-100 via-rose-200 to-rose-50",
   },
   {
     id: 3,
-    title: "Meat",
-    image: heroImage,
-    bg: "from-orange-100 via-orange-200 to-orange-50",
-    description: "Premium cuts for every recipe",
+    title: "Fashion",
+    image: fashionImage,
+    bg: "from-fuchsia-100 via-fuchsia-200 to-fuchsia-50",
   },
   {
     id: 4,
     title: "Medicine",
-    image: heroImage,
-    bg: "from-sky-100 via-sky-200 to-sky-50",
-    description: "Trusted health essentials",
+    image: medicineImage,
+    bg: "from-yellow-100 via-yellow-200 to-yellow-50",
   },
   {
     id: 5,
-    title: "Services",
-    image: heroImage,
-    bg: "from-amber-100 via-amber-200 to-amber-50",
-    description: "Skilled local help on demand",
+    title: "Electronics",
+    image: electronicsImage,
+    bg: "from-indigo-100 via-indigo-200 to-indigo-50",
   },
-
+  {
+    id: 6,
+    title: "Services",
+    image: servicesImage,
+    bg: "from-cyan-100 via-cyan-200 to-cyan-50",
+  }
 ];

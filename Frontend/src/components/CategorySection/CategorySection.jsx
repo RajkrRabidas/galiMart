@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { categories } from "./categoryData";
 
 const CategorySection = () => (
-  <section className="mt-8 rounded-[32px] bg-white/90 p-5 shadow-[0_30px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 sm:p-6">
+  <section className="mt-8 rounded-[32px] bg-white/90 px-0 py-5 sm:p-5 md:p-6 shadow-[0_30px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70">
     <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h2 className="text-2xl font-black tracking-tight text-slate-900">Shop by Category</h2>
@@ -16,7 +16,7 @@ const CategorySection = () => (
       </button>
     </div>
 
-    <div className="mt-5 grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
       {categories.map((category, index) => (
         <motion.button
           key={category.id}
@@ -26,7 +26,7 @@ const CategorySection = () => (
           transition={{ delay: index * 0.05 }}
           whileHover={{ y: -4, scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="group rounded-[32px] border border-slate-200/70 bg-white/90 p-5 text-left shadow-[0_20px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_70px_rgba(15,23,42,0.12)]"
+          className="group rounded-[33px] border border-slate-200/70 bg-white/90 p-5 text-left shadow-[0_20px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_70px_rgba(15,23,42,0.12)]"
         >
           <span
             className={`inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-[26px] bg-gradient-to-br ${category.bg} shadow-[0_14px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70`}
