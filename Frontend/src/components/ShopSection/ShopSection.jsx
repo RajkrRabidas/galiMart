@@ -7,136 +7,49 @@ const ShopSection = () => {
   const { shops } = useShops();
 
   return (
-    <section className="mt-9">
-
-      {/* Header */}
-
-      <div className="flex items-end justify-between">
-
+    <section className="mt-9 rounded-4xl bg-white/90 p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)] sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-
-          <h2 className="text-2xl font-black text-slate-900">
-            Top Grocery Stores Near You
-          </h2>
-
-          <p className="text-sm text-slate-500 mt-1">
-            Quick delivery from your neighbourhood
-          </p>
-
+          <h2 className="text-2xl font-black text-slate-900">Nearby Stores</h2>
+          <p className="mt-1 text-sm text-slate-500">Free delivery from nearby shops.</p>
         </div>
 
-        <button
-          className="
-            flex
-            items-center
-            gap-1
-            text-[#e94b3c]
-            font-semibold
-            hover:text-[#c93d31]
-            transition
-          "
-        >
-          View All
-
+        <button className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+          View all
           <ArrowRight size={18} />
-
         </button>
-
       </div>
 
       {shops.length === 0 ? (
-
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="
-            mt-6
-            bg-white
-            rounded-[30px]
-            p-10
-            shadow-lg
-            border
-            border-slate-100
-            text-center
-          "
+          className="mt-6 rounded-[28px] border border-slate-200 bg-slate-50 p-8 text-center shadow-sm"
         >
-
-          <div
-            className="
-              w-20
-              h-20
-              rounded-full
-              bg-emerald-50
-              flex
-              items-center
-              justify-center
-              mx-auto
-            "
-          >
-            <Store
-              size={36}
-              className="text-emerald-600"
-            />
+          <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-emerald-100 text-emerald-700">
+            <Store size={34} />
           </div>
-
-          <h3 className="mt-5 text-2xl font-bold text-slate-800">
-            No Nearby Shops
-          </h3>
-
-          <p className="mt-2 text-slate-500 max-w-sm mx-auto">
-            Once shopkeepers in your area create stores,
-            they'll automatically appear here.
+          <h3 className="mt-5 text-2xl font-bold text-slate-900">No nearby shops</h3>
+          <p className="mt-2 text-sm leading-6 text-slate-500 max-w-md mx-auto">
+            Once local shopkeepers publish their storefronts, you&rsquo;ll see them here with fast delivery options.
           </p>
-
         </motion.div>
-
       ) : (
-
-        <div
-          className="
-            mt-6
-            flex
-            gap-3
-            overflow-x-auto
-            scrollbar-hide
-            snap-x
-            snap-mandatory
-            py-3
-          "
-        >
-
+        <div className="mt-6 flex gap-4 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory">
           {shops.map((shop, index) => (
-
             <motion.div
               key={shop._id}
-              initial={{
-                opacity: 0,
-                x: 30,
-              }}
-              whileInView={{
-                opacity: 1,
-                x: 0,
-              }}
-              viewport={{
-                once: true,
-              }}
-              transition={{
-                duration: 0.35,
-                delay: index * 0.08,
-              }}
+              initial={{ opacity: 0, x: 20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.35, delay: index * 0.07 }}
               className="snap-start"
             >
-
               <ShopCard shop={shop} />
-
             </motion.div>
-
           ))}
-
         </div>
-
       )}
-
     </section>
   );
 };

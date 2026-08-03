@@ -49,7 +49,7 @@ const Login = () => {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
 
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
 
@@ -162,7 +162,7 @@ const Login = () => {
 
               </option>
 
-              <option value="delivery_partner">
+              <option value="delivery">
 
                 Delivery Partner
 

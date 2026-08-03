@@ -11,27 +11,31 @@ import { ServiceBookingProvider } from "./context/ServiceBookingContext";
 import "leaflet/dist/leaflet.css";
 
 import App from "./App";
+import "./App.css";
 import "./index.css";
 
 import { CartProvider } from "./context/CartContext";
+import { AuthProvider } from "./context/AuthContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <CartProvider>
-      <OrderProvider>
-        <NotificationProvider>
-          <ShopProvider>
-            <MarketplaceProvider>
-              <ServiceProvider>
-                <ServiceBookingProvider>
-          <App />
-          <Toaster position="top-right" />
-                </ServiceBookingProvider>
-            </ServiceProvider>
-            </MarketplaceProvider>
-          </ShopProvider>
-        </NotificationProvider>
-      </OrderProvider>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <OrderProvider>
+          <NotificationProvider>
+            <ShopProvider>
+              <MarketplaceProvider>
+                <ServiceProvider>
+                  <ServiceBookingProvider>
+                    <App />
+                    <Toaster position="top-right" />
+                  </ServiceBookingProvider>
+                </ServiceProvider>
+              </MarketplaceProvider>
+            </ShopProvider>
+          </NotificationProvider>
+        </OrderProvider>
+      </CartProvider>
+    </AuthProvider>
   </BrowserRouter>
 );

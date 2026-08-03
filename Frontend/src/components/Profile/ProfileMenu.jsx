@@ -10,10 +10,12 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+import { useAuth } from "../../context/AuthContext";
 import MenuItem from "./MenuItem";
 
 const ProfileMenu = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
   return (
     <div className="bg-white rounded-3xl shadow-lg mt-8 p-3">
 
@@ -62,10 +64,14 @@ const ProfileMenu = () => {
   icon={<LogOut className="text-red-500" />}
   title="Logout"
   subtitle="Sign out from your account"
-  onClick={() => {
-    localStorage.clear();
-    toast.success("Logged Out");
-    navigate("/");
+  onClick={async () => {
+    try {
+      await logout();
+      toast.success("Logged out successfully");
+      navigate("/login");
+    } catch {
+      toast.error("Could not log out right now");
+    }
   }}
 />
 

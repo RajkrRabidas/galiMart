@@ -5,85 +5,37 @@ import { products } from "./productData";
 
 const ProductSection = () => {
   return (
-    <section className="mt-9">
-
-      {/* Header */}
-
-      <div className="flex items-end justify-between">
-
+    <section className="mt-9 rounded-4xl bg-white/90 p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)] sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-
-          <div className="flex items-center gap-2">
-
-            <Flame
-              size={24}
-              className="text-orange-500"
-            />
-
-            <h2 className="text-2xl font-black text-slate-900">
-              Best Offers for You
-            </h2>
-
+          <div className="flex items-center gap-3">
+            <Flame size={24} className="text-orange-500" />
+            <div>
+              <h2 className="text-2xl font-black text-slate-900">Best offers for you</h2>
+              <p className="text-sm text-slate-500 mt-1">Daily favourites at better prices.</p>
+            </div>
           </div>
-
-          <p className="text-sm text-slate-500 mt-1">
-            Daily favourites at better prices
-          </p>
-
         </div>
 
-        <button
-          className="
-            flex
-            items-center
-            gap-1
-            text-emerald-600
-            font-semibold
-            hover:text-emerald-700
-            transition
-          "
-        >
-          View All
-
+        <button className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+          View all
           <ArrowRight size={18} />
-
         </button>
-
       </div>
 
-      {/* Products */}
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 mt-5">
-
+      <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-4">
         {products.map((product, index) => (
-
           <motion.div
             key={product.id}
-            initial={{
-              opacity: 0,
-              y: 20,
-            }}
-            whileInView={{
-              opacity: 1,
-              y: 0,
-            }}
-            viewport={{
-              once: true,
-            }}
-            transition={{
-              duration: 0.35,
-              delay: index * 0.06,
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.35, delay: index * 0.06 }}
           >
-
             <ProductCard product={product} />
-
           </motion.div>
-
         ))}
-
       </div>
-
     </section>
   );
 };

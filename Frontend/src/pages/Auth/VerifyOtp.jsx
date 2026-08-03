@@ -6,9 +6,11 @@ import { useShops } from "../../context/ShopContext";
 
 import OTPInput from "../../components/OTPInput/OTPInput";
 import {
+  resendOtp,
   verifyOtp,
   verifyLoginOtp,
 } from "../../api/authApi";
+import { useAuth } from "../../context/AuthContext";
 
 const VerifyOtp = () => {
   const location = useLocation();
@@ -25,6 +27,7 @@ const VerifyOtp = () => {
   ]);
   const navigate = useNavigate();
   const { getMyShop } = useShops();
+  const { setUser } = useAuth();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -70,7 +73,11 @@ const VerifyOtp = () => {
       });
     }
 
-    const role = response.user.role;
+    if (response.user) {
+      setUser(response.user);
+    }
+
+    const role = response.user?.role;
 
     if (role === "seller") {
 
@@ -85,7 +92,7 @@ if (shop) {
 
     } else if (role === "service_provider") {
       navigate("/service/dashboard");
-    } else if (role === "delivery_partner") {
+    } else if (role === "delivery") {
       navigate("/delivery/dashboard");
     } else {
       navigate("/home");
@@ -104,13 +111,21 @@ if (shop) {
     setLoading(false);
   }
 };
-  const handleResend = () => {
-    // We'll connect this to the backend later
-    setTimer(30);
+  const handleResend = async () => {
+    try {
+      setError("");
+      await resendOtp({
+        phone,
+        purpose: location.state?.isLogin ? "login" : "register",
+      });
+      setTimer(30);
+    } catch (error) {
+      setError(error.response?.data?.message || "Unable to resend OTP right now.");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
 
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
 
