@@ -5,7 +5,6 @@ const {
   loginUser,
   verifyLoginOtp,
   resendOtp,
-  completeProfile,
   myProfile,
   refreshToken,
   logoutUser,
@@ -24,7 +23,6 @@ router.post("/resend-otp", resendOtp);
 router.post("/refresh-token", refreshToken);
 router.post("/logout", isAuth, logoutUser);
 router.get("/me", isAuth, myProfile);
-router.patch("/complete-profile", isAuth, completeProfile);
 
 router.get(
   "/admin-only",

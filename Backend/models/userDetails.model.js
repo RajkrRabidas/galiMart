@@ -39,7 +39,6 @@ const userDetailsSchema = new mongoose.Schema(
 );
 
 userDetailsSchema.index({ location: "2dsphere" });
-// Make email uniqueness apply only when an email string exists
 userDetailsSchema.index(
   { email: 1 },
   { unique: true, partialFilterExpression: { email: { $type: "string" } } },

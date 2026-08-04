@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const Rider = require("../models/rider.model");
 
 const addRidderProfile = async (req, res) => {
@@ -206,7 +207,7 @@ const acceptOrder = async (req, res) => {
       },
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );
@@ -246,7 +247,7 @@ const fetchMyCrrentOrder = async (req, res) => {
       `${process.env.ORDER_SERVICE_URL}/api/orders/rider/${rider._id}`,
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );
@@ -275,7 +276,7 @@ const updateOrderStatus = async (req, res) => {
   try {
     const { data } = await axios.put(
       `${process.env.ORDER_SERVICE_URL}/api/orders/update/rider/${orderId}`,
-      { headers: { "x-internal-key": process.env.INTERNAL_KEY } }
+      { headers: { Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}` } }
     );
     
     res.json({message: "data.message"})

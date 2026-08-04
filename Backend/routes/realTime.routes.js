@@ -1,16 +1,11 @@
 const express = require("express");
 
 const {getIO} = require("../services/socket");
+const { verifyInternalAuth } = require("../middlewares/internalAuth.middleware");
 
 const router = express.Router();
 
-router.post("/emit", (req, res) => {
-   if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
-    return res.status(403).json({
-      message: "Forbidden",
-    });
-  } 
-
+router.post("/emit", verifyInternalAuth, (req, res) => {
     const { event, paymentData, room } = req.body;
 
     if(!event || !paymentData || !room){

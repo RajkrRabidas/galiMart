@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const userDetailsModel = require("../models/userDetails.model");
 const cartModel = require("../models/cart.model");
@@ -5,36 +6,36 @@ const ShopModel = require("../models/shop.model");
 const orderModel = require("../models/order");
 
 const createOrder = asyncHandler(async (req, res) => {
-  const { paymentMethod, addressId, riderDistance = 0 } = req.body;
-  const userId = req.user._id.toString();
+  const user = req.user
+
+  if(!user){
+    return res.status(401).json({message: "Unauthorized"})
+  }
+
+  const { paymentMethod, addressId, riderDistance} = req.body;
+
 
   if (!addressId)
     return res.status(400).json({ message: "Address is required" });
-  if (!["cod", "razorpay", "stripe"].includes(paymentMethod))
-    return res
-      .status(400)
-      .json({ message: "A valid payment method is required" });
+  // if (!["cod", "razorpay", "stripe"].includes(paymentMethod))
+  //   return res
+  //     .status(400)
+  //     .json({ message: "A valid payment method is required" });
 
-  const address = await userDetailsModel.findOne({ _id: addressId, userId });
+  const address = await userDetailsModel.findOne({ _id: addressId, userId: user._id });
   if (!address) return res.status(404).json({ message: "Address not found" });
 
   const cartItems = await cartModel
-    .find({ userId })
+    .find({ userId: user._id })
     .populate("itemId")
     .populate("shopId");
-  if (!cartItems.length)
+  if (cartItems.length === 0)
     return res.status(400).json({ message: "Cart is empty" });
 
-  const shopId = cartItems[0].shopId?._id?.toString();
-  if (
-    !shopId ||
-    cartItems.some(
-      (cart) => !cart.itemId || cart.shopId?._id?.toString() !== shopId,
-    )
-  ) {
-    return res
-      .status(400)
-      .json({ message: "Cart items must belong to one valid shop" });
+  const firstCartItem = cartItems[0]
+
+  if(!firstCartItem || !firstCartItem.shopId){
+    return res.status(400).json({message: "Invaild cart Data"})
   }
 
   const shop = await ShopModel.findById(shopId);
@@ -42,8 +43,15 @@ const createOrder = asyncHandler(async (req, res) => {
   if (!shop.isOpen) return res.status(400).json({ message: "Shop is closed" });
 
   let subTotal = 0;
-  const items = cartItems.map((cart) => {
-    const total = cart.itemId.price * cart.quantity;
+
+  const orderItems = cartItems.map((cart) => {
+    const item = cart.itemId
+
+    if(!item){
+      throw new Error("Invalid cart item")
+    }
+
+    const itemTotal = cart.itemId.price * cart.quantity;
     subTotal += total;
     return {
       itemId: cart.itemId._id.toString(),
@@ -54,18 +62,25 @@ const createOrder = asyncHandler(async (req, res) => {
     };
   });
   const deliveryFee = subTotal < 250 ? 49 : 0;
-  const platformFee = Math.round(subTotal * 0.1 * 100) / 100;
+  const platformFee = Math.round(subTotal * 0.1 * 100) / 100; 
+  const totalAmount = subTotal + deliveryFee + platformFee
+
+  const expireAt = new Date(Date.now() + 15 * 60 * 1000)
+
   const [longitude, latitude] = address.location.coordinates;
 
+
+
   const order = await orderModel.create({
-    userId,
-    shopId,
+    userId: user._id.toString(),
+    shopId: shopId.toString(),
     shopName: shop.name,
+    riderId: null,
     items,
     subTotal,
     deliveryFee,
     platformFee,
-    totalAmount: subTotal + deliveryFee + platformFee,
+    totalAmount,
     addressId: address._id.toString(),
     deliveryAddress: {
       formattedAddress: address.formattedAddress,
@@ -74,7 +89,7 @@ const createOrder = asyncHandler(async (req, res) => {
       longitude,
     },
     riderDistance: Number(riderDistance) || 0,
-    riderAmount: Math.ceil(Number(riderDistance) || 0) * 15,
+    riderAmount: Math.ceil(Number(riderDistance) || 0) * 17,
     paymentMethod,
     paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
     expiresAt: new Date(Date.now() + 15 * 60 * 1000),
@@ -90,12 +105,6 @@ const createOrder = asyncHandler(async (req, res) => {
 });
 
 const fetchOrderForPayment = asyncHandler(async (req, res) => {
-  if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
-    return res.status(403).json({
-      message: "Forbidden",
-    });
-  }
-
   const order = await orderModel.findById(req.params.id);
   if (!order) return res.status(404).json({ message: "Order not found" });
   if (order.paymentStatus === "paid")
@@ -106,7 +115,6 @@ const fetchOrderForPayment = asyncHandler(async (req, res) => {
       .json({ message: "Cash on delivery does not require online payment" });
   res.json({ orderId: order._id, amount: order.totalAmount, currency: "INR" });
 });
-
 const fetchShopOrders = asyncHandler(async (req, res) => {
   const user = req.user;
 
@@ -187,7 +195,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     },
     {
       headers: {
-        "x-internal-key": process.env.INTERNAL_KEY,
+        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
       },
     },
   );
@@ -251,10 +259,6 @@ const fetchSingleOrder = asyncHandler(async (req, res) => {
 });
 
 const assignRiderToOrder = asyncHandler(async (req, res) => {
-  if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-
   const { orderId, riderId, riderName, riderPhone } = req.body;
 
   const orderAvailable = await orderModel.findOne({ riderId, status: { $ne: "delivered" } });
@@ -289,7 +293,7 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
     },
     {
       headers: {
-        "x-internal-key": process.env.INTERNAL_KEY,
+        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
       },
     },
   );
@@ -303,7 +307,7 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
     },
     {
       headers: {
-        "x-internal-key": process.env.INTERNAL_KEY,
+        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
       },
     },
   );
@@ -316,10 +320,6 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
 });
 
 const getCurrentOrdersForRider = asyncHandler(async (req, res) => {
-  if (req.headers["x-internal-key"] !== process.env.INTERNAL_KEY) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-
   const { riderId } = req.query;
 
   if (!riderId) {
@@ -342,10 +342,6 @@ const getCurrentOrdersForRider = asyncHandler(async (req, res) => {
 });
 
 const updateOrderStatusRider = asyncHandler(async (req, res) => {
-  if (req.hearders["x-internal-key"] !== process.env.INTERNAL_KEY) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
- 
   const {orderId} = req.body;
 
   const order = await orderModel.findById(orderId);
@@ -368,7 +364,7 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
       },
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );
@@ -382,7 +378,7 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
       },
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );
@@ -404,7 +400,7 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
       },
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );
@@ -418,7 +414,7 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
       },
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );

@@ -2,6 +2,7 @@ require("dotenv").config();
 const express = require("express");
 const cookieParser = require("cookie-parser");
 const authRouter = require("../routes/user.routes");
+const addressRoutes = require("../routes/address.routes")
 const shopRouter = require("../routes/shop.routes")
 const { connectRedis } = require("../services/redis");
 const menuRouter = require("../routes/menuItem.routes")
@@ -27,6 +28,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 
 app.use("/api/auth", authRouter);
+app.use("/api/address", addressRoutes)
 app.use("/api/shops", shopRouter);
 app.use("/api/items", menuRouter)
 app.use("/api/cart", cartRouter);

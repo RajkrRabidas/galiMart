@@ -425,49 +425,12 @@ const logoutUser = async (req, res) => {
   }
 };
 
-const completeProfile = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const sanitizedBody = sanitize(req.body);
-    const validation = completeProfileSchema.safeParse(sanitizedBody);
-
-    if (!validation.success) {
-      const errorResponse = createValidationErrorResponse(validation);
-      return res.status(errorResponse.status).json(errorResponse.body);
-    }
-
-    const { fullName, email, formattedAddress, latitude, longitude } = validation.data;
-    const profilePayload = {
-      userId: userId,
-      fullName,
-      email: email || undefined,
-      formattedAddress,
-      location: {
-        type: "Point",
-        coordinates: [longitude, latitude],
-      },
-    };
-
-    const updatedUser = await userDetailsModel.findOneAndUpdate(
-      { userId: userId },
-      { $set: profilePayload },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
-    );
-
-    return res.status(200).json({ message: "Profile completed successfully.", user: updatedUser });
-  } catch (error) {
-    console.error("Complete profile error:", error);
-    return res.status(500).json({ message: "Internal server error" });
-  }
-};
-
 module.exports = {
   registerUser,
   verifyOtp,
   loginUser,
   verifyLoginOtp,
   resendOtp,
-  completeProfile,
   myProfile,
   refreshToken,
   logoutUser,

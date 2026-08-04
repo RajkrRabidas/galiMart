@@ -6,7 +6,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../../api/axios";
 import toast from "react-hot-toast";
 import L from "leaflet";
 import {
@@ -67,6 +67,8 @@ const AddAddressPage = () => {
   const [deletingId, setDeletingId] = useState(null);
   // 📋 Form state
   const [mobile, setMobile] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [formattedAddress, setFormattedAddress] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
@@ -90,12 +92,8 @@ const AddAddressPage = () => {
   // 📡 Fetch addresses
   const fetchAddresses = async () => {
     try {
-      const { data } = await axios.get(`${restaurantService}/api/address/all`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setAddresses(data || []);
+      const { data } = await api.get(`/address/my-address`);
+      setAddresses(data.addresses || []);
     } catch {
       toast.error("Failed to load addresses");
     } finally {
@@ -107,33 +105,23 @@ const AddAddressPage = () => {
   }, []);
   // ➕ Add address
   const addAddress = async () => {
-    if (
-      !mobile ||
-      !formattedAddress ||
-      latitude === null ||
-      longitude === null
-    ) {
-      toast.error("Please select location on map");
+    if (!fullName || !formattedAddress || latitude === null || longitude === null) {
+      toast.error("Please provide your name and select location on map");
       return;
     }
     try {
       setAdding(true);
-      await axios.post(
-        `${restaurantService}/api/address/new`,
-        {
-          formattedAddress,
-          mobile,
-          latitude,
-          longitude,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
+      await api.post(`/address/new`, {
+        fullName,
+        email: email || "",
+        formattedAddress,
+        latitude,
+        longitude,
+      });
       toast.success("Address added");
       setMobile("");
+      setFullName("");
+      setEmail("");
       setFormattedAddress("");
 
       setLatitude(null);
@@ -150,11 +138,7 @@ const AddAddressPage = () => {
     if (!window.confirm("Delete this address?")) return;
     try {
       setDeletingId(id);
-      await axios.delete(`${restaurantService}/api/address/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await api.delete(`/address/delete/${id}`);
       toast.success("Address deleted");
       fetchAddresses();
     } catch {
@@ -193,14 +177,21 @@ href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           📍 {formattedAddress}
         </div>
       )}
-      {/* 📱 Mobile */}
       <input
-        type="number"
-        placeholder="Mobile number"
-        value={mobile}
-        onChange={(e) => setMobile(e.target.value)}
+        type="text"
+        placeholder="Full name"
+        value={fullName}
+        onChange={(e) => setFullName(e.target.value)}
         className="w-full rounded-lg border px-4 py-2"
       />
+      <input
+        type="email"
+        placeholder="Email (optional)"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        className="w-full rounded-lg border px-4 py-2 mt-2"
+      />
+      
       {/* ➕ Save */}
       <button
         disabled={adding}

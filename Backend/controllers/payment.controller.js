@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const verifyRezorpaySignature = require("../config/verifyPayment");
 const { publishPaymentSuccess } = require("../config/payment.producer");
 
@@ -9,7 +10,7 @@ const createRazorpayOrder = async (req, res) => {
       `${process.env.INTERNAL_PAYMENT_SERVICE_URL}/api/order/payment/${orderId}`,
       {
         headers: {
-          "x-internal-key": process.env.INTERNAL_KEY,
+          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
         },
       },
     );

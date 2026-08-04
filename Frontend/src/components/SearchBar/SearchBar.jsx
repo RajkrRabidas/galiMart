@@ -33,12 +33,12 @@ const SearchBar = () => {
             </button>
           </div>
 
-          <button
+          {/* <button
             className="inline-flex h-14 w-14 items-center justify-center rounded-[28px] bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 transition duration-300 hover:-translate-y-0.5 hover:bg-emerald-800"
             aria-label="Filter search"
           >
             <SlidersHorizontal size={22} />
-          </button>
+          </button> */}
         </div>
       </div>
     </motion.div>

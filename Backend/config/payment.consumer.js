@@ -1,3 +1,4 @@
+const jwt = require("jsonwebtoken");
 const { getChannel } = require("../config/rabbitmq");
 const orderModel = require("../models/order");
 
@@ -59,7 +60,7 @@ const startPaymentConsumer = async () => {
     },
     {
       headers: {
-        "x-internal-key": process.env.INTERNAL_KEY,
+        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
       },
     },
   );
@@ -137,7 +138,7 @@ const startOrderConsumer = async () => {
           },
           {
             headers: {
-              "x-internal-key": process.env.INTERNAL_KEY,
+              Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
             },
           }
         );
