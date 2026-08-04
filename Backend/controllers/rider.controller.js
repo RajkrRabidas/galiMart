@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
 const Rider = require("../models/rider.model");
+const orderModel = require("../models/order");
 
 const addRidderProfile = async (req, res) => {
   const user = req.user;
@@ -196,31 +196,32 @@ const acceptOrder = async (req, res) => {
   }
 
   try {
-    const { data } = await axios.put(
-      `${process.env.ORDER_SERVICE_URL}/api/orders/assign/rider`,
-      {
-        orderId,
-        riderId: rider._id.toString(),
-        riderUserId: rider.userId,
-        riderName: rider.name,
-        riderPhone: rider.phoneNumber,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
-
-    if (data?.success) {
-      const riderDetails = await Rider.findOneAndUpdate(
-        { userId: riderUserId, isAvailable: true },
-        { isAvailable: false },
-        { new: true },
-      );
+    const orderAvailable = await orderModel.findOne({ riderId: rider._id, status: { $ne: "delivered" } });
+    if (orderAvailable) {
+      return res.status(400).json({ message: "You already have an active order" });
     }
 
-    res.json({ message: "Order accepted successfully", data });
+    const order = await orderModel.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+    if (order.riderId) {
+      return res.status(400).json({ message: "Order already assigned" });
+    }
+
+    order.riderId = rider._id.toString();
+    order.riderName = rider.name;
+    order.riderPhone = rider.phoneNumber;
+    order.status = "rider_assigned";
+    await order.save();
+
+    await Rider.findOneAndUpdate(
+      { userId: riderUserId, isAvailable: true },
+      { isAvailable: false },
+      { new: true },
+    );
+
+    res.json({ message: "Order accepted successfully", success: true, order });
   } catch (error) {
     res.status(400).json({
       message: "Error accepting order",
@@ -243,15 +244,14 @@ const fetchMyCrrentOrder = async (req, res) => {
   }
 
   try {
-    const { data } = await axios.get(
-      `${process.env.ORDER_SERVICE_URL}/api/orders/rider/${rider._id}`,
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
-    res.json({ message: "Current order fetched successfully", data });
+    const orders = await orderModel
+      .find({
+        riderId: rider._id.toString(),
+        status: { $ne: "delivered" },
+      })
+      .sort({ createdAt: -1 });
+
+    res.json({ message: "Current order fetched successfully", orders });
   } catch (error) {
     res
       .status(500)
@@ -274,12 +274,24 @@ const updateOrderStatus = async (req, res) => {
 
   const { orderId } = req.params;
   try {
-    const { data } = await axios.put(
-      `${process.env.ORDER_SERVICE_URL}/api/orders/update/rider/${orderId}`,
-      { headers: { Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}` } }
-    );
-    
-    res.json({message: "data.message"})
+    const order = await orderModel.findById(orderId);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    if (order.status === "rider_assigned") {
+      order.status = "picked_up";
+      await order.save();
+      return res.json({ message: "Order status updated successfully", order });
+    }
+
+    if (order.status === "picked_up") {
+      order.status = "delivered";
+      await order.save();
+      return res.json({ message: "Order status updated successfully", order });
+    }
+
+    return res.status(400).json({ message: "Order cannot be updated in this state" });
   } catch (error) {
     res
       .status(500)

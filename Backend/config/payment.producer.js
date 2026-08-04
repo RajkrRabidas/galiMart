@@ -8,8 +8,8 @@ const publishPaymentSuccess = async (paymentData) => {
   }
 
   channel.sendToQueue(
-    process.env.PAYMENT_SUCCESS_QUEUE,
-    Buffer.from(JSON.stringify({ type: "PAYMENT_SUCCESS", data: paymentData })),
+    process.env.PAYMENT_QUEUE,
+    Buffer.from(JSON.stringify({ type: "payment.success", data: paymentData })),
     {
       persistent: true,
     },

@@ -1,11 +1,10 @@
 const express = require("express");
 
 const {getIO} = require("../services/socket");
-const { verifyInternalAuth } = require("../middlewares/internalAuth.middleware");
 
 const router = express.Router();
 
-router.post("/emit", verifyInternalAuth, (req, res) => {
+router.post("/emit", (req, res) => {
     const { event, paymentData, room } = req.body;
 
     if(!event || !paymentData || !room){

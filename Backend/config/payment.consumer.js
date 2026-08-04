@@ -1,6 +1,7 @@
-const jwt = require("jsonwebtoken");
 const { getChannel } = require("../config/rabbitmq");
 const orderModel = require("../models/order");
+const Rider = require("../models/rider.model");
+const { emitRealtimeEvent } = require("../services/realtime.service");
 
 const startPaymentConsumer = async () => {
   const channel = getChannel();
@@ -16,7 +17,7 @@ const startPaymentConsumer = async () => {
     try {
       const event = JSON.parse(msg.content.toString());
 
-      if (event.type !== "PAYMENT_SUCCESS") {
+      if (event.type !== "payment.success") {
         channel.ack(msg);
         return;
       }
@@ -39,7 +40,7 @@ const startPaymentConsumer = async () => {
         },
         {
           new: true,
-        }
+        },
       );
 
       if (!order) {
@@ -49,21 +50,13 @@ const startPaymentConsumer = async () => {
 
       console.log("✔ order placed successfully", order._id);
 
-     axios.post(
-    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-    {
-      event: "order:new",
-      room: `shop:${order.shopId}`,
-      paymentData: {
-        orderId: order._id,
-      },
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-      },
-    },
-  );
+      emitRealtimeEvent({
+        event: "order:new",
+        room: `shop:${order.shopId}`,
+        payload: {
+          orderId: order._id,
+        },
+      });
 
       channel.ack(msg);
     } catch (error) {
@@ -86,32 +79,41 @@ const startOrderConsumer = async () => {
     if (!msg) return;
 
     try {
-      console.log("Received message from RIDER_READY_QUEUE:", msg.content.toString());
+      console.log(
+        "Received message from RIDER_READY_QUEUE:",
+        msg.content.toString(),
+      );
 
       const event = JSON.parse(msg.content.toString());
 
       console.log("event type:", event.type);
 
-      if (event.type !== "ORDER_READY_FOR_RIDER") {
+      if (event.type !== "order.ready_for_rider") {
         console.log("Ignoring event type:", event.type);
         channel.ack(msg);
         return;
       }
 
-      const { orderId, shopId, shopName, location } = event.data; 
+      const { orderId, shopId, shopName, location } = event.data;
+      const order = await orderModel.findById(orderId);
 
-      console.log("Searching for rider nearby for order:", orderId, "at location:", location);
+      console.log(
+        "Searching for rider nearby for order:",
+        orderId,
+        "at location:",
+        location,
+      );
 
-      const rider = await Rider.find({
+      const riders = await Rider.find({
         isAvailable: true,
         isVerified: true,
         location: {
-          $near:{
+          $near: {
             $geometry: location,
-            $maxDistance: 7000 // 7 km
-          }
-        }
-      })
+            $maxDistance: 7000,
+          },
+        },
+      });
 
       console.log(`found ${riders.length} nearby riders for order ${orderId}`);
 
@@ -123,27 +125,22 @@ const startOrderConsumer = async () => {
 
       for (const rider of riders) {
         console.log(`Notifying rider ${rider._id} about order ${orderId}`);
-        try{
-          await axios.post(
-          `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-          {
+        try {
+          emitRealtimeEvent({
             event: "order:ready_for_rider",
             room: `rider:${rider._id}`,
-            paymentData: {
-              orderId: order._id,
-              shopId: order.shopId,
-              shopName: order.shopName,
-              location: order.location,
+            payload: {
+              orderId: order?._id || orderId,
+              shopId: order?.shopId || shopId,
+              shopName: order?.shopName || shopName,
+              location,
             },
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-            },
-          }
-        );
-        }catch(err){
-          console.error(`Error notifying rider ${rider._id} about order ${orderId}:`, err);
+          });
+        } catch (err) {
+          console.error(
+            `Error notifying rider ${rider._id} about order ${orderId}:`,
+            err,
+          );
         }
       }
 
@@ -153,7 +150,6 @@ const startOrderConsumer = async () => {
       console.error("❌ Order consumer error ", error);
     }
   });
-
-}
+};
 
 module.exports = { startPaymentConsumer, startOrderConsumer };

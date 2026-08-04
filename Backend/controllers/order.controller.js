@@ -1,9 +1,10 @@
-const jwt = require("jsonwebtoken");
 const asyncHandler = require("../utils/asyncHandler");
 const userDetailsModel = require("../models/userDetails.model");
 const cartModel = require("../models/cart.model");
 const ShopModel = require("../models/shop.model");
 const orderModel = require("../models/order");
+const { publishOrderEvent } = require("../config/payment.producer");
+const { emitRealtimeEvent } = require("../services/realtime.service");
 
 const createOrder = asyncHandler(async (req, res) => {
   const user = req.user
@@ -17,10 +18,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
   if (!addressId)
     return res.status(400).json({ message: "Address is required" });
-  // if (!["cod", "razorpay", "stripe"].includes(paymentMethod))
-  //   return res
-  //     .status(400)
-  //     .json({ message: "A valid payment method is required" });
+
 
   const address = await userDetailsModel.findOne({ _id: addressId, userId: user._id });
   if (!address) return res.status(404).json({ message: "Address not found" });
@@ -38,9 +36,11 @@ const createOrder = asyncHandler(async (req, res) => {
     return res.status(400).json({message: "Invaild cart Data"})
   }
 
-  const shop = await ShopModel.findById(shopId);
-  if (!shop) return res.status(404).json({ message: "Shop not found" });
-  if (!shop.isOpen) return res.status(400).json({ message: "Shop is closed" });
+  const shop = firstCartItem.shopId;
+  const shopId = shop._id.toString();
+  const shopRecord = await ShopModel.findById(shopId);
+  if (!shopRecord) return res.status(404).json({ message: "Shop not found" });
+  if (!shopRecord.isOpen) return res.status(400).json({ message: "Shop is closed" });
 
   let subTotal = 0;
 
@@ -51,32 +51,28 @@ const createOrder = asyncHandler(async (req, res) => {
       throw new Error("Invalid cart item")
     }
 
-    const itemTotal = cart.itemId.price * cart.quantity;
-    subTotal += total;
+    const itemTotal = item.price * cart.quantity;
+    subTotal += itemTotal;
     return {
-      itemId: cart.itemId._id.toString(),
-      name: cart.itemId.name,
-      price: cart.itemId.price,
+      itemId: item._id.toString(),
+      name: item.name,
+      price: item.price,
       quantity: cart.quantity,
-      total,
+      total: itemTotal,
     };
   });
   const deliveryFee = subTotal < 250 ? 49 : 0;
   const platformFee = Math.round(subTotal * 0.1 * 100) / 100; 
   const totalAmount = subTotal + deliveryFee + platformFee
 
-  const expireAt = new Date(Date.now() + 15 * 60 * 1000)
-
   const [longitude, latitude] = address.location.coordinates;
-
-
 
   const order = await orderModel.create({
     userId: user._id.toString(),
-    shopId: shopId.toString(),
-    shopName: shop.name,
+    shopId,
+    shopName: shopRecord.name,
     riderId: null,
-    items,
+    items: orderItems,
     subTotal,
     deliveryFee,
     platformFee,
@@ -95,7 +91,7 @@ const createOrder = asyncHandler(async (req, res) => {
     expiresAt: new Date(Date.now() + 15 * 60 * 1000),
   });
 
-  await cartModel.deleteMany({ userId });
+  await cartModel.deleteMany({ userId: user._id });
   res.status(201).json({
     message: "Order created successfully",
     orderId: order._id,
@@ -107,7 +103,7 @@ const createOrder = asyncHandler(async (req, res) => {
 const fetchOrderForPayment = asyncHandler(async (req, res) => {
   const order = await orderModel.findById(req.params.id);
   if (!order) return res.status(404).json({ message: "Order not found" });
-  if (order.paymentStatus === "paid")
+  if (order.paymentStatus !== "pending")
     return res.status(400).json({ message: "Order is already paid" });
   if (order.paymentMethod === "cod")
     return res
@@ -130,7 +126,7 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
 
   const limit = req.query.limit ? parseInt(req.query.limit) : 5;
 
-  const shop = await ShopModel.find({
+  const orders = await orderModel.find({
     shopId,
     paymentStatus: "paid",
   })
@@ -139,8 +135,8 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
 
   return res.status(200).json({
     message: "Orders fetched successfully",
-    count: shop.length,
-    orders: shop,
+    count: orders.length,
+    orders,
   });
 });
 
@@ -183,22 +179,14 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
   order.status = status;
   await order.save();
 
-  axios.post(
-    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-    {
-      event: "order:updated",
-      room: `user:${order.userId}`,
-      paymentData: {
-        orderId: order._id,
-        status: order.status,
-      },
+  emitRealtimeEvent({
+    event: "order:updated",
+    room: `user:${order.userId}`,
+    payload: {
+      orderId: order._id,
+      status: order.status,
     },
-    {
-      headers: {
-        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-      },
-    },
-  );
+  });
 
   // now assign riders
 
@@ -208,7 +196,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       order._id.toString(),
     );
 
-    await publishOrderEvent("ORDER_READY_FOR_RIDER", {
+    await publishOrderEvent("order.ready_for_rider", {
       orderId: order._id.toString(),
       shopId: order.shopId.toString(),
       shopName: order.shopName,
@@ -273,7 +261,7 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "order already taken" });
   }
 
-  const orderUpdated = await order.findOneAndUpdate(
+  const orderUpdated = await orderModel.findOneAndUpdate(
     { _id: orderId, riderId: null },
     {
       riderId,
@@ -284,33 +272,17 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
     { new: true },
   );
 
-  axios.post(
-    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-    {
-      event: "order:rider_assigned",
-      room: `shop:${order.shopId}`,
-      paymentData: order,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-      },
-    },
-  );
+  emitRealtimeEvent({
+    event: "order:rider_assigned",
+    room: `shop:${order.shopId}`,
+    payload: order,
+  });
 
-  axios.post(
-    `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-    {
-      event: "order:rider_assigned",
-      room: `user:${order.userId}`,
-      paymentData: order,
-    },
-    {
-      headers: {
-        Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-      },
-    },
-  );
+  emitRealtimeEvent({
+    event: "order:rider_assigned",
+    room: `user:${order.userId}`,
+    payload: order,
+  });
 
   res.json({
     message: "Rider assigned Successfully",
@@ -352,75 +324,43 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
 
   if (order.status === "rider_assigned") {
     order.status = "picked_up";
-
     await order.save();
 
-    axios.post(
-      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-      {
-        event: "order:rider_assigned",
-        room: `user:${order.userId}`,
-        paymentData: order,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
+    emitRealtimeEvent({
+      event: "order:rider_assigned",
+      room: `user:${order.userId}`,
+      payload: order,
+    });
 
-    axios.post(
-      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-      {
-        event: "order:rider_assigned",
-        room: `shop:${order.shopId}`,
-        paymentData: order,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
+    emitRealtimeEvent({
+      event: "order:rider_assigned",
+      room: `shop:${order.shopId}`,
+      payload: order,
+    });
 
-    res.json({ message: "Order status updated successfully", order });
+    return res.json({ message: "Order status updated successfully", order });
   }
 
   if (order.status === "picked_up") {
     order.status = "delivered";
-
     await order.save();
 
-    axios.post(
-      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-      {
-        event: "order:rider_assigned",
-        room: `user:${order.userId}`,
-        paymentData: order,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
+    emitRealtimeEvent({
+      event: "order:rider_assigned",
+      room: `user:${order.userId}`,
+      payload: order,
+    });
 
-    axios.post(
-      `${process.env.INTERNAL_API_URL}/api/realtime/emit`,
-      {
-        event: "order:rider_assigned",
-        room: `shop:${order.shopId}`,
-        paymentData: order,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${jwt.sign({ type: "internal", service: "backend" }, process.env.JWT_SECRET, { expiresIn: "5m" })}`,
-        },
-      },
-    );
+    emitRealtimeEvent({
+      event: "order:rider_assigned",
+      room: `shop:${order.shopId}`,
+      payload: order,
+    });
 
-    res.json({ message: "Order status updated successfully", order });
+    return res.json({ message: "Order status updated successfully", order });
   }
+
+  return res.status(400).json({ message: "Order cannot be updated in this state" });
 });
 
 module.exports = {

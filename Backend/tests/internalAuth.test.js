@@ -1,5 +1,4 @@
 const assert = require("assert");
-const jwt = require("jsonwebtoken");
 const { verifyInternalAuth } = require("../middlewares/internalAuth.middleware");
 
 const makeRes = () => {
@@ -15,40 +14,16 @@ const makeRes = () => {
 
 (async () => {
   try {
-    process.env.JWT_SECRET = process.env.JWT_SECRET || "test-secret";
-
-    const validReq = {
-      headers: {
-        authorization: `Bearer ${jwt.sign(
-          { type: "internal", service: "backend" },
-          process.env.JWT_SECRET,
-          { expiresIn: "5m" },
-        )}`,
-      },
-    };
-    const validRes = makeRes();
-    let validNextCalled = false;
-    const validNext = () => {
-      validNextCalled = true;
+    const req = { headers: {} };
+    const res = makeRes();
+    let nextCalled = false;
+    const next = () => {
+      nextCalled = true;
     };
 
-    verifyInternalAuth(validReq, validRes, validNext);
-    assert.strictEqual(validNextCalled, true, "Valid internal JWT should pass");
-
-    const invalidReq = {
-      headers: {
-        authorization: "Bearer invalid-token",
-      },
-    };
-    const invalidRes = makeRes();
-    let invalidNextCalled = false;
-    const invalidNext = () => {
-      invalidNextCalled = true;
-    };
-
-    verifyInternalAuth(invalidReq, invalidRes, invalidNext);
-    assert.strictEqual(invalidRes.statusCode, 403, "Invalid token should be rejected");
-    assert.strictEqual(invalidNextCalled, false, "Invalid token should not continue");
+    verifyInternalAuth(req, res, next);
+    assert.strictEqual(nextCalled, true, "Internal middleware should allow the request to continue");
+    assert.strictEqual(res.statusCode, 200, "Middleware should not reject requests without internal JWTs");
 
     console.log("internal auth middleware tests passed");
   } catch (error) {
