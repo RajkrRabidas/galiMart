@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const verifyRezorpaySignature = require("../config/verifyRezorpay");
 const { publishPaymentSuccess } = require("../config/payment.producer");
-const Order = require("../models/order.model");
+const Order = require("../models/order");
 const rezorpayInstance  = require("../config/rezorpay")
 
 const createRazorpayOrder = async (req, res) => {
@@ -73,7 +73,7 @@ const verifyRazorpayPayment = async (req, res) => {
   );
 
   if (!isValid) {
-    return res.status(400).json({ mesage: "payment verification failed" });
+    return res.status(400).json({ message: "payment verification failed" });
   }
 
   await publishPaymentSuccess({
@@ -82,9 +82,9 @@ const verifyRazorpayPayment = async (req, res) => {
     paymentMethod: "razorpay",
   });
 
-  res.josn({
+  res.json({
     message: "payment verified successfully",
-  })
+  });
 };
 
 

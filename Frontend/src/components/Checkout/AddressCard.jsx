@@ -1,23 +1,10 @@
-import { MapPin, User, Phone, Home } from "lucide-react";
-import { useState } from "react";
+import { useMemo } from "react";
 
-const AddressCard = () => {
-  const [address, setAddress] = useState({
-    fullName: "",
-    phone: "",
-    house: "",
-    area: "",
-    city: "",
-    state: "",
-    pinCode: "",
-  });
-
-  const handleChange = (e) => {
-    setAddress({
-      ...address,
-      [e.target.name]: e.target.value,
-    });
-  };
+const AddressCard = ({ addresses, selectedAddress, onSelectAddress, loading }) => {
+  const formattedAddress = useMemo(() => {
+    if (!selectedAddress) return null;
+    return selectedAddress.formattedAddress || "";
+  }, [selectedAddress]);
 
   return (
     <div className="bg-white rounded-3xl shadow-lg p-6">
@@ -26,96 +13,48 @@ const AddressCard = () => {
         Delivery Address
       </h2>
 
-      {/* Name + Phone */}
-      <div className="grid md:grid-cols-2 gap-4">
-
-        <div className="relative">
-          <User className="absolute left-4 top-4 text-gray-400" size={18} />
-          <input
-            type="text"
-            name="fullName"
-            placeholder="Full Name"
-            value={address.fullName}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-gray-300 pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
+      {loading ? (
+        <div className="rounded-3xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+          Loading saved addresses...
         </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid gap-3">
+            {addresses.length === 0 ? (
+              <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                No saved addresses found. Please add an address in your profile.
+              </div>
+            ) : (
+              addresses.map((addr) => (
+                <button
+                  key={addr._id}
+                  type="button"
+                  onClick={() => onSelectAddress(addr)}
+                  className={`w-full rounded-3xl border p-4 text-left transition ${
+                    selectedAddress?._id === addr._id
+                      ? "border-emerald-600 bg-emerald-50"
+                      : "border-gray-200 bg-white hover:border-emerald-300"
+                  }`}
+                >
+                  <div className="font-semibold text-gray-900">{addr.fullName || "Delivery address"}</div>
+                  <div className="text-sm text-gray-600">{addr.formattedAddress}</div>
+                  <div className="text-xs text-gray-500 mt-1">{addr.mobile}</div>
+                </button>
+              ))
+            )}
+          </div>
 
-        <div className="relative">
-          <Phone className="absolute left-4 top-4 text-gray-400" size={18} />
-          <input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={address.phone}
-            onChange={handleChange}
-            className="w-full rounded-xl border border-gray-300 pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
+          {formattedAddress && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-gray-700">
+              <div className="font-semibold text-emerald-900">Selected address</div>
+              <div>{formattedAddress}</div>
+            </div>
+          )}
+            </div>
+          )}
+
         </div>
+      );
+    };
 
-      </div>
-
-      {/* House */}
-      <div className="relative mt-5">
-        <Home className="absolute left-4 top-4 text-gray-400" size={18} />
-        <input
-          type="text"
-          name="house"
-          placeholder="Flat / House No. / Building"
-          value={address.house}
-          onChange={handleChange}
-          className="w-full rounded-xl border border-gray-300 pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-      </div>
-
-      {/* Area */}
-      <div className="relative mt-5">
-        <MapPin className="absolute left-4 top-4 text-gray-400" size={18} />
-        <input
-          type="text"
-          name="area"
-          placeholder="Area / Street / Landmark"
-          value={address.area}
-          onChange={handleChange}
-          className="w-full rounded-xl border border-gray-300 pl-12 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-      </div>
-
-      {/* City + State + PIN */}
-      <div className="grid md:grid-cols-3 gap-4 mt-5">
-
-        <input
-          type="text"
-          name="city"
-          placeholder="City"
-          value={address.city}
-          onChange={handleChange}
-          className="rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-
-        <input
-          type="text"
-          name="state"
-          placeholder="State"
-          value={address.state}
-          onChange={handleChange}
-          className="rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-
-        <input
-          type="text"
-          name="pinCode"
-          placeholder="PIN Code"
-          maxLength={6}
-          value={address.pinCode}
-          onChange={handleChange}
-          className="rounded-xl border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-        />
-
-      </div>
-
-    </div>
-  );
-};
-
-export default AddressCard;
+    export default AddressCard;

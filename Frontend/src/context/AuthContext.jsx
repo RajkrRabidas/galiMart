@@ -14,6 +14,10 @@ export const AuthProvider = ({ children }) => {
   });
   const [profile, setProfileState] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [location, setLocation] = useState(null);
+  const [city, setCity] = useState(null);
 
   const setUser = (value) => {
     setUserState(value);
@@ -55,6 +59,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+
   useEffect(() => {
     const bootstrap = async () => {
       try {
@@ -69,6 +75,27 @@ export const AuthProvider = ({ children }) => {
     bootstrap();
   }, []);
 
+  useEffect(() => {
+    if(!navigator.geolocation){
+      return alert("please allow location to continue")
+    }
+    setLoadingLocation(true)
+
+    navigator.geolocation.getCurrentPosition(async(position) => {
+      const { latitude, longitude } = position.coords;
+
+      try{
+        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+        const data = await response.json();
+        setLocation({ latitude, longitude, formattedAddress: data.display_name || "current location" });
+        setCity(data.address.city || data.address.town || data.address.village || null);
+      }catch(error){
+        setLocation({ latitude, longitude, formattedAddress: "current location" });
+        setCity("Failed to fetch location");
+      }
+    })
+  })
+
   const value = useMemo(
     () => ({
       user,
@@ -79,6 +106,12 @@ export const AuthProvider = ({ children }) => {
       fetchProfile,
       completeProfile,
       logout,
+      loadingLocation,
+      setLoadingLocation,
+      location,
+      setLocation,
+      city,
+      setCity,
     }),
     [user, profile, authLoading]
   );

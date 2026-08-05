@@ -5,7 +5,7 @@ import { useMarketplace } from "../../context/MarketplaceContext";
 import { useShops } from "../../context/ShopContext";
 import { useNotifications } from "../../context/NotificationContext";
 
-const OrderSummary = () => {
+const OrderSummary = ({ selectedAddress }) => {
     const { addNotification } = useNotifications();
     const navigate = useNavigate();
 
@@ -62,6 +62,11 @@ const {
 
   }
 
+  if (!selectedAddress) {
+    toast.error("Please select a delivery address");
+    return;
+  }
+
   // Assuming all items belong to one shop for now
   const firstProduct = cartItems[0];
 
@@ -91,7 +96,7 @@ const {
 
     total: totalPrice,
 
-    address: "Default Address",
+    address: selectedAddress.formattedAddress || "",
 
   });
 

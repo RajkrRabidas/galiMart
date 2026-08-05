@@ -1,9 +1,15 @@
 import { Bell, ChevronDown, MapPin, ShoppingCart } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../../context/AuthContext";
 
-const HomeHeader = () => (
-  <motion.header
+const HomeHeader = () => {
+
+  const {city} = useAuth();
+  const currLocation = useLocation();
+
+  return (
+    <motion.header
     initial={{ opacity: 0, y: -20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.35 }}
@@ -16,7 +22,7 @@ const HomeHeader = () => (
       <button className="flex items-center gap-2 text-left text-sm font-semibold text-emerald-100 transition hover:text-white">
         <MapPin size={18} fill="currentColor" />
         <span>
-          <span className="block font-bold">Howrah, West Bengal</span>
+          <span className="block font-bold">{city}</span>
           <span className="block text-[11px] text-emerald-100/90">Delivering near you</span>
         </span>
         <ChevronDown size={14} className="text-emerald-100/90" />
@@ -69,6 +75,7 @@ const HomeHeader = () => (
       <span className="rounded-full border border-white/20 bg-white/10 px-4 py-2">24/7 customer support</span>
     </div>
   </motion.header>
-);
+  )
+}
 
-export default HomeHeader;
+export default HomeHeader

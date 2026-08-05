@@ -8,6 +8,7 @@ const { connectRedis } = require("../services/redis");
 const menuRouter = require("../routes/menuItem.routes")
 const cartRouter = require("../routes/cart.routes")
 const orderRouter = require("../routes/order.routes")
+const paymentRouter = require("../routes/payment.routes")
 const realTimeRouter = require("../routes/realTime.routes")
 const riderRouter = require("../routes/rider.routes")
 
@@ -33,6 +34,7 @@ app.use("/api/shops", shopRouter);
 app.use("/api/items", menuRouter)
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/payment", paymentRouter)
 app.use("/api/realtime", realTimeRouter);
 app.use("/api/rider", riderRouter)
 
