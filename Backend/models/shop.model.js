@@ -21,6 +21,15 @@ const shopSchema = new mongoose.Schema({
         type: Number,
         require: true,
     },
+    aadharNumber: {
+        type: String,
+        trim: true,
+        required: true,
+    },
+    aadharImage: {
+        type: String,
+        required: true,
+    },
     status: {
         type: String,
         enum: ["pending", "approved", "rejected", "suspended"],
@@ -44,7 +53,7 @@ const shopSchema = new mongoose.Schema({
     },
     isOpen:{
         type: Boolean,
-        default: true
+        default: false
     }
 },{timestamps: true});
 

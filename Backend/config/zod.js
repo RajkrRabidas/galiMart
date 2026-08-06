@@ -44,13 +44,22 @@ const completeProfileSchema = z.object({
   }
 });
 
+const aadhaarNumberSchema = z.preprocess(
+  (value) => {
+    if (typeof value === "number") return value.toString();
+    return value;
+  },
+  z.string().trim().regex(/^[0-9]{12}$/, "Aadhaar number must be 12 digits"),
+);
+
 const createShopSchema = z.object({
   name: z.string().trim().min(1, "Shop name is required"),
   description: z.string().trim().optional(),
   phone: z.coerce.number().int().positive("Phone number is required"),
   latitude: z.coerce.number(),
   longitude: z.coerce.number(),
-  formatted: z.string().trim().optional(),
+  formattedAddress: z.string().trim().optional(),
+  aadharNumber: aadhaarNumberSchema,
 });
 
 const updateShopSchema = z.object({
@@ -59,7 +68,8 @@ const updateShopSchema = z.object({
   phone: z.coerce.number().int().positive("Phone number is required").optional(),
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
-  formatted: z.string().trim().optional(),
+  formattedAddress: z.string().trim().optional(),
+  aadharNumber: aadhaarNumberSchema.optional(),
 });
 
 const updateShopStatusSchema = z.object({

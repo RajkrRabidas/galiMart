@@ -76,25 +76,42 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if(!navigator.geolocation){
-      return alert("please allow location to continue")
+    if (!navigator.geolocation) {
+      alert("Browser does not support location services.");
+      setLoadingLocation(false);
+      return;
     }
-    setLoadingLocation(true)
 
-    navigator.geolocation.getCurrentPosition(async(position) => {
+    setLoadingLocation(true);
+
+    const handlePosition = async (position) => {
       const { latitude, longitude } = position.coords;
 
-      try{
-        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`
+        );
         const data = await response.json();
         setLocation({ latitude, longitude, formattedAddress: data.display_name || "current location" });
-        setCity(data.address.city || data.address.town || data.address.village || null);
-      }catch(error){
+        setCity(data.address?.city || data.address?.town || data.address?.village || "Unknown location");
+        console.log("Location fetched successfully:", data);
+      } catch (error) {
         setLocation({ latitude, longitude, formattedAddress: "current location" });
         setCity("Failed to fetch location");
+      } finally {
+        setLoadingLocation(false);
       }
-    })
-  })
+    };
+
+    const handleError = (error) => {
+      console.error("Geolocation error:", error);
+      setLocation(null);
+      setCity("Location unavailable");
+      setLoadingLocation(false);
+    };
+
+    navigator.geolocation.getCurrentPosition(handlePosition, handleError);
+  }, []);
 
   const value = useMemo(
     () => ({

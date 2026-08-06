@@ -14,13 +14,18 @@ const {
   INVALID_STATUS,
   MISSING_REQUIRED_FIELDS,
   MISSING_IMAGE,
+  MISSING_AADHAAR_IMAGE,
   IMAGE_UPLOAD_FAILED,
   FILE_BUFFER_FAILED,
   SHOP_UPDATED_SUCCESSFULLY,
   SHOP_CREATED_SUCCESSFULLY,
   SHOP_STATUS_UPDATED_SUCCESSFULLY,
+  SHOP_VERIFIED_SUCCESSFULLY,
+  SHOP_REJECTED_SUCCESSFULLY,
+  INVALID_VERIFICATION_ACTION,
   SHOP_NOT_APPROVED,
   PHONE_ALREADY_EXISTS,
+  AADHAAR_NUMBER_ALREADY_EXISTS,
 } = require("../constants/messages");
 const messages = require("../constants/messages");
 const { success } = require("zod");
@@ -86,24 +91,42 @@ const CreateShop = asyncHandler(async (req, res) => {
     );
   }
 
-  const { name, description, phone, latitude, longitude, formatted } =
-    validation.data;
-  const file = req.file;
+  const {
+    name,
+    description,
+    phone,
+    latitude,
+    longitude,
+    formattedAddress,
+    aadharNumber,
+  } = validation.data;
 
-  if (!file) {
+  const imageFile = req.files?.image?.[0];
+  const aadharFile = req.files?.aadharImage?.[0];
+
+  if (!imageFile) {
     return sendError(res, 400, MISSING_IMAGE);
   }
 
-  const cloudinaryUrl = await uploadCloudinary(file.path);
+  if (!aadharFile) {
+    return sendError(res, 400, MISSING_AADHAAR_IMAGE);
+  }
 
-  if (!cloudinaryUrl) {
+  const cloudinaryUrl = await uploadCloudinary(imageFile.path);
+  const aadharImageUrl = await uploadCloudinary(aadharFile.path);
+
+  if (!cloudinaryUrl || !aadharImageUrl) {
     return sendError(res, 500, IMAGE_UPLOAD_FAILED);
   }
 
   const existingPhoneShop = await shopModel.findOne({ phone: Number(phone) });
-
   if (existingPhoneShop) {
     return sendError(res, 400, PHONE_ALREADY_EXISTS);
+  }
+
+  const existingAadharShop = await shopModel.findOne({ aadharNumber });
+  if (existingAadharShop) {
+    return sendError(res, 400, AADHAAR_NUMBER_ALREADY_EXISTS);
   }
 
   const newShop = await shopModel.create({
@@ -112,11 +135,14 @@ const CreateShop = asyncHandler(async (req, res) => {
     image: cloudinaryUrl,
     ownerId: user._id,
     phone: Number(phone),
+    aadharNumber,
+    aadharImage: aadharImageUrl,
     status: "pending",
+    isVerified: false,
     autoLocation: {
       type: "Point",
       coordinates: [Number(longitude), Number(latitude)],
-      formattedAddress: formatted,
+      formattedAddress: formattedAddress,
     },
   });
 
@@ -164,8 +190,15 @@ const updateShop = asyncHandler(async (req, res) => {
     );
   }
 
-  const { name, description, phone, latitude, longitude, formatted } =
-    validation.data;
+  const {
+    name,
+    description,
+    phone,
+    latitude,
+    longitude,
+    formattedAddress,
+    aadharNumber,
+  } = validation.data;
   const existingShop = await shopModel.findOne({
     _id: shopId,
     ownerId: req.user._id,
@@ -198,17 +231,32 @@ const updateShop = asyncHandler(async (req, res) => {
     updateData.phone = Number(phone);
   }
 
+  if (aadharNumber !== undefined) {
+    const existingAadharShop = await shopModel.findOne({
+      aadharNumber,
+      _id: { $ne: shopId },
+    });
+
+    if (existingAadharShop) {
+      return sendError(res, 400, AADHAAR_NUMBER_ALREADY_EXISTS);
+    }
+
+    updateData.aadharNumber = aadharNumber;
+    updateData.status = "pending";
+    updateData.isVerified = false;
+  }
+
   if (
     latitude !== undefined ||
     longitude !== undefined ||
-    formatted !== undefined
+    formattedAddress !== undefined
   ) {
     const nextLatitude =
       latitude ?? existingShop.autoLocation?.coordinates?.[1];
     const nextLongitude =
       longitude ?? existingShop.autoLocation?.coordinates?.[0];
     const nextFormatted =
-      formatted ?? existingShop.autoLocation?.formattedAddress;
+      formattedAddress ?? existingShop.autoLocation?.formattedAddress;
 
     updateData.autoLocation = {
       type: "Point",
@@ -217,8 +265,20 @@ const updateShop = asyncHandler(async (req, res) => {
     };
   }
 
-  if (req.file) {
-    const cloudinaryUrl = await uploadCloudinary(req.file.path);
+  const aadharFile = req.files?.aadharImage?.[0];
+  if (aadharFile) {
+    const aadharImageUrl = await uploadCloudinary(aadharFile.path);
+    if (!aadharImageUrl) {
+      return sendError(res, 500, IMAGE_UPLOAD_FAILED);
+    }
+    updateData.aadharImage = aadharImageUrl;
+    updateData.status = "pending";
+    updateData.isVerified = false;
+  }
+
+  const imageFile = req.files?.image?.[0];
+  if (imageFile) {
+    const cloudinaryUrl = await uploadCloudinary(imageFile.path);
 
     if (!cloudinaryUrl) {
       return sendError(res, 500, IMAGE_UPLOAD_FAILED);
@@ -246,7 +306,7 @@ const getNearByShop = asyncHandler(async (req, res) => {
   }
 
   const query = {
-    isVarified: true,
+    isVerified: true,
   };
 
   if (search) {
@@ -284,6 +344,36 @@ const getNearByShop = asyncHandler(async (req, res) => {
   res.json({ success: true, count: shop.length, shop });
 });
 
+const verifyShop = asyncHandler(async (req, res) => {
+  const { shopId } = req.params;
+  const { action } = req.body;
+
+  if (!["approve", "reject"].includes(action)) {
+    return sendError(res, 400, INVALID_VERIFICATION_ACTION);
+  }
+
+  const shop = await shopModel.findById(shopId);
+  if (!shop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  const isVerified = action === "approve";
+  const status = isVerified ? "approved" : "rejected";
+
+  const updatedShop = await shopModel.findByIdAndUpdate(
+    shopId,
+    { status, isVerified },
+    { new: true },
+  );
+
+  return sendSuccess(
+    res,
+    200,
+    isVerified ? SHOP_VERIFIED_SUCCESSFULLY : SHOP_REJECTED_SUCCESSFULLY,
+    updatedShop,
+  );
+});
+
 const fetchSingleShop = asyncHandler(async (req, res) => {
   const shop = await shopModel.findById(req.params.id);
 
@@ -294,13 +384,12 @@ const fetchSingleShop = asyncHandler(async (req, res) => {
   res.json({ success: true, shop });
 });
 
-
-
 module.exports = {
   CreateShop,
   updateStatusShop,
   updateShop,
   getNearByShop,
   getMyShop,
-  fetchSingleShop
+  fetchSingleShop,
+  verifyShop,
 };
