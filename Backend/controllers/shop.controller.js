@@ -138,7 +138,7 @@ const CreateShop = asyncHandler(async (req, res) => {
     phone: Number(phone),
     aadharNumber,
     aadharImage: aadharImageUrl,
-    status: "pending",
+    isOpen: false,
     isVerified: false,
     autoLocation: {
       type: "Point",

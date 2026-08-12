@@ -56,6 +56,9 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       setProfileState(null);
+      // Clear token from localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
     }
   };
 
@@ -93,8 +96,8 @@ export const AuthProvider = ({ children }) => {
         );
         const data = await response.json();
         setLocation({ latitude, longitude, formattedAddress: data.display_name || "current location" });
-        setCity(data.address?.city || data.address?.town || data.address?.village || "Unknown location");
-        console.log("Location fetched successfully:", data);
+        setCity(data.address?.city || data.address?.town || data.address?.village || "your location");
+        setLoadingLocation(false);
       } catch (error) {
         setLocation({ latitude, longitude, formattedAddress: "current location" });
         setCity("Failed to fetch location");

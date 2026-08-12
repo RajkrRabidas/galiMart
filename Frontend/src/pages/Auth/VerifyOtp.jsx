@@ -77,6 +77,11 @@ const VerifyOtp = () => {
       setUser(response.user);
     }
 
+    // Store the access token in localStorage for subsequent API calls
+    if (response.tokens?.accessToken) {
+      localStorage.setItem("token", response.tokens.accessToken);
+    }
+
     const role = response.user?.role;
 
     if (role === "seller") {

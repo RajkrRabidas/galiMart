@@ -5,6 +5,7 @@ import Analytics from "./Analytics";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
 import CreateShop from "../Shopkeeper/CreateShop";
 import { useState, useEffect } from "react";
+import api from "../../api/axios";
 
 const Dashboard = () => {
 
@@ -14,21 +15,11 @@ const Dashboard = () => {
 
     const fetchMyShop = async () => {
         try {
-            const response = await fetch("http://localhost:3000/api/shops/my-shop", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
-                }
-            });
-            const {data} = await response.json();
-            setShop(data.shop);
-
-            if(data.token) {
-                localStorage.setItem("token", data.token);
-            }
-
+            const response = await api.get("/shops/my-shop");
+            setShop(response.data.shop);
         } catch (error) {
             console.error("Error fetching shop data:", error);
+            setShop(null);
         } finally {
             setLoading(false);
         }
@@ -49,7 +40,7 @@ const Dashboard = () => {
   return (
 
     <div>
-        
+       
     </div>
 
   );

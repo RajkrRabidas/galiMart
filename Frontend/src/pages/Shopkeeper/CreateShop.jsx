@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Upload } from "lucide-react";
 import { Store } from "lucide-react";
 import toast from "react-hot-toast";
 import { useShops } from "../../context/ShopContext";
@@ -40,13 +41,37 @@ const CreateShop = () => {
     setAadharImage(e.target.files[0]);
   };
   const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error("Browser does not support location services");
+      return;
+    }
+
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLatitude(position.coords.latitude);
+      async (position) => {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
 
-        setLongitude(position.coords.longitude);
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`,
+          );
+          const data = await response.json();
+          const formattedAddress = data.display_name || "Current location";
 
-        toast.success("Location fetched");
+          setLatitude(latitude);
+          setLongitude(longitude);
+          setShop((prev) => ({ ...prev, formattedAddress }));
+
+          toast.success("Location fetched");
+        } catch (error) {
+          setLatitude(latitude);
+          setLongitude(longitude);
+          setShop((prev) => ({
+            ...prev,
+            formattedAddress: "Current location",
+          }));
+          toast.success("Location fetched");
+        }
       },
 
       () => {
@@ -109,7 +134,18 @@ const CreateShop = () => {
 
       await createShop(formData);
 
+      setShop((prev) => ({
+        ...prev,
+        name: "",
+        description: "",
+        phone: "",
+        formattedAddress: "",
+        aadharNumber: "",
+      }));
+
       toast.success("Shop Created Successfully");
+
+      getMyShop();
 
       navigate("/seller/dashboard");
     } catch (error) {
@@ -176,25 +212,34 @@ const CreateShop = () => {
           </div>
 
           <div>
-            <label className="font-semibold">Shop Image</label>
+            <p className="font-semibold py-2">Upload Shop Image</p>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-sm text-gray-600 hover:bg-gray-50">
+              <Upload className="w-5 h-5 text-green-700" />
+              {image ? image.name : "Upload Shop image"}
 
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageChange}
-              className="w-full mt-2"
-            />
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={handleImageChange}
+                className="w-full mt-2"
+              />
+            </label>
           </div>
 
           <div>
-            <label className="font-semibold">Aadhaar Image</label>
-
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleAadharChange}
-              className="w-full mt-2"
-            />
+            <p className="font-semibold py-2">Upload Aadhaar Image</p>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-sm text-gray-600 hover:bg-gray-50">
+              <Upload className="w-5 h-5 text-green-400" />
+              {aadharImage ? aadharImage.name : "Upload Aadhaar image"}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAadharChange}
+                hidden
+                className="w-full mt-2"
+              />
+            </label>
           </div>
 
           <div>
@@ -214,14 +259,15 @@ const CreateShop = () => {
             <label className="font-semibold">Shop Address</label>
 
             <textarea
-              rows={4}
+              rows={3}
               name="formattedAddress"
               value={shop.formattedAddress}
-              onChange={handleChange}
-              placeholder="Enter your shop address"
-              className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+              readOnly
+              placeholder="Click the button to fetch your address"
+              className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
             />
           </div>
+
           <button
             type="button"
             onClick={getCurrentLocation}
