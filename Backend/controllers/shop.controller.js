@@ -1,6 +1,7 @@
 const shopModel = require("../models/shop.model");
 const uploadCloudinary = require("../utils/cloudinary");
 const asyncHandler = require("../utils/asyncHandler");
+const jwt = require("jsonwebtoken");
 const {
   createShopSchema,
   updateShopSchema,
@@ -112,8 +113,8 @@ const CreateShop = asyncHandler(async (req, res) => {
     return sendError(res, 400, MISSING_AADHAAR_IMAGE);
   }
 
-  const cloudinaryUrl = await uploadCloudinary(imageFile.path);
-  const aadharImageUrl = await uploadCloudinary(aadharFile.path);
+  const cloudinaryUrl = await uploadCloudinary(imageFile);
+  const aadharImageUrl = await uploadCloudinary(aadharFile);
 
   if (!cloudinaryUrl || !aadharImageUrl) {
     return sendError(res, 500, IMAGE_UPLOAD_FAILED);
@@ -147,6 +148,24 @@ const CreateShop = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, 201, SHOP_CREATED_SUCCESSFULLY, newShop);
+});
+
+const fetchMyShop = asyncHandler(async (req, res) => {
+  if(!req.user) {
+    return sendError(res, 401, UNAUTHORIZED);
+  }
+
+  const shop = await shopModel.findOne({ ownerId: req.user._id });
+
+  if (!shop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  if(!req.shopId){
+    const token = jwt.sign({ user: {...req.user, shopId: shop._id } }, process.env.JWT_SECRET, { expiresIn: '1h' });
+  }
+
+  return res.json(shop)
 });
 
 const updateStatusShop = asyncHandler(async (req, res) => {
@@ -267,7 +286,7 @@ const updateShop = asyncHandler(async (req, res) => {
 
   const aadharFile = req.files?.aadharImage?.[0];
   if (aadharFile) {
-    const aadharImageUrl = await uploadCloudinary(aadharFile.path);
+    const aadharImageUrl = await uploadCloudinary(aadharFile);
     if (!aadharImageUrl) {
       return sendError(res, 500, IMAGE_UPLOAD_FAILED);
     }
@@ -278,7 +297,7 @@ const updateShop = asyncHandler(async (req, res) => {
 
   const imageFile = req.files?.image?.[0];
   if (imageFile) {
-    const cloudinaryUrl = await uploadCloudinary(imageFile.path);
+    const cloudinaryUrl = await uploadCloudinary(imageFile);
 
     if (!cloudinaryUrl) {
       return sendError(res, 500, IMAGE_UPLOAD_FAILED);
@@ -386,6 +405,7 @@ const fetchSingleShop = asyncHandler(async (req, res) => {
 
 module.exports = {
   CreateShop,
+  fetchMyShop,
   updateStatusShop,
   updateShop,
   getNearByShop,

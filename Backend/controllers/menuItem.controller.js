@@ -26,7 +26,7 @@ const addMenuItem = async (req, res) => {
     return res.status(400).json({ message: "please give image" });
   }
 
-  const cloudinaryUrl = await uploadCloudinary(file.path);
+  const cloudinaryUrl = await uploadCloudinary(file);
 
   if (!cloudinaryUrl) {
     return res.status(500).json({ message: "Filed to upload image" });

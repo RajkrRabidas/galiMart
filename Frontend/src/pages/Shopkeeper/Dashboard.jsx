@@ -3,80 +3,53 @@ import RecentOrders from "../../components/Shopkeeper/Dashboard/RecentOrders";
 import QuickActions from "../../components/Shopkeeper/Dashboard/QuickActions";
 import Analytics from "./Analytics";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
+import CreateShop from "../Shopkeeper/CreateShop";
+import { useState, useEffect } from "react";
 
 const Dashboard = () => {
 
-  const hour = new Date().getHours();
+    const [shop, setShop] = useState(null);
+    
+    const [loading, setLoading] = useState(true);
 
-  let greeting = "Good Evening";
+    const fetchMyShop = async () => {
+        try {
+            const response = await fetch("http://localhost:3000/api/shops/my-shop", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            const {data} = await response.json();
+            setShop(data.shop);
 
-  if (hour < 12) {
+            if(data.token) {
+                localStorage.setItem("token", data.token);
+            }
 
-    greeting = "Good Morning";
+        } catch (error) {
+            console.error("Error fetching shop data:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  } else if (hour < 18) {
+    useEffect(() => {
+        fetchMyShop();
+    }, []);
 
-    greeting = "Good Afternoon";
+    if (loading) {
+        return <div className="flex min-h-screen items-center justify-center"><p className="text-gray-500">Loading your Shop...</p></div>;
+    }
 
-  }
+    if(!shop) {
+        return <CreateShop/>;
+    }
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100 pb-24">
-
-      <div className="max-w-7xl mx-auto p-6">
-
-        {/* Header */}
-
-        <div className="mb-10">
-
-          <h1 className="text-4xl font-bold">
-
-            {greeting} 👋
-
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-
-            Welcome back to your shop dashboard.
-
-          </p>
-
-        </div>
-
-        {/* Live Analytics */}
-
-        <div className="mb-10">
-
-          <Analytics />
-
-        </div>
-
-        {/* Charts + Quick Actions */}
-
-        <div className="grid xl:grid-cols-3 gap-8">
-
-          <div className="xl:col-span-2">
-
-            <SalesChart />
-
-          </div>
-
-          <QuickActions />
-
-        </div>
-
-        {/* Recent Orders */}
-
-        <div className="mt-10">
-
-          <RecentOrders />
-
-        </div>
-
-      </div>
-      <BottomNavbar />
-
+    <div>
+        
     </div>
 
   );

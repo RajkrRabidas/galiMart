@@ -4,7 +4,8 @@ const userModel = require("../models/user.model");
 
 const isAuth = async (req, res, next) => {
   try {
-    const token = req.cookies?.access_token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
+    const authHeader = req.headers.authorization;
+    const token = req.cookies?.access_token || (authHeader ? authHeader.split(" ")[1] || authHeader : null);
 
     if (!token) {
       return res.status(401).json({ message: "Please login - no token provided" });
@@ -34,6 +35,10 @@ const isAuth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    if (error.name === "JsonWebTokenError" || error.name === "TokenExpiredError" || error.name === "NotBeforeError") {
+      return res.status(401).json({ message: "Token expired or invalid" });
+    }
+
     console.error("auth middleware error:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
