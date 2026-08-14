@@ -100,6 +100,7 @@ const CreateShop = asyncHandler(async (req, res) => {
     longitude,
     formattedAddress,
     aadharNumber,
+    shopType,
   } = validation.data;
 
   const imageFile = req.files?.image?.[0];
@@ -138,6 +139,7 @@ const CreateShop = asyncHandler(async (req, res) => {
     phone: Number(phone),
     aadharNumber,
     aadharImage: aadharImageUrl,
+    shopType,
     isOpen: false,
     isVerified: false,
     autoLocation: {

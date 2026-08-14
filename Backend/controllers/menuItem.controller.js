@@ -43,7 +43,7 @@ const addMenuItem = async (req, res) => {
   });
   res
     .status(201)
-    .json({ message: "Menu item added successfully", menuItem: meniItem });
+    .json({ message: "Menu item added successfully", menuItem: menuItem });
 };
 
 const getAllMenuItems = async (req, res) => {

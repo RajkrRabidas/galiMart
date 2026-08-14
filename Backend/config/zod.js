@@ -60,6 +60,9 @@ const createShopSchema = z.object({
   longitude: z.coerce.number(),
   formattedAddress: z.string().trim().optional(),
   aadharNumber: aadhaarNumberSchema,
+  shopType: z.enum(["groceries", "restaurants", "fashion", "medicine", "electronics", "services"], {
+    errorMap: () => ({ message: "Invalid shop type" })
+  }),
 });
 
 const updateShopSchema = z.object({

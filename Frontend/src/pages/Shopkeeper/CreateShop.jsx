@@ -4,6 +4,7 @@ import { Upload } from "lucide-react";
 import { Store } from "lucide-react";
 import toast from "react-hot-toast";
 import { useShops } from "../../context/ShopContext";
+import { SHOP_CATEGORIES } from "../../constants/shopCategories";
 
 const CreateShop = () => {
   const navigate = useNavigate();
@@ -16,6 +17,7 @@ const CreateShop = () => {
     phone: "",
     formattedAddress: "",
     aadharNumber: "",
+    shopType: "",
   });
 
   const [image, setImage] = useState(null);
@@ -86,7 +88,8 @@ const CreateShop = () => {
       !shop.name ||
       !shop.phone ||
       !shop.formattedAddress ||
-      !shop.aadharNumber
+      !shop.aadharNumber ||
+      !shop.shopType
     ) {
       toast.error("Please fill all required fields");
       return;
@@ -124,6 +127,8 @@ const CreateShop = () => {
 
       formData.append("aadharNumber", shop.aadharNumber);
 
+      formData.append("shopType", shop.shopType);
+
       formData.append("latitude", latitude);
 
       formData.append("longitude", longitude);
@@ -141,7 +146,9 @@ const CreateShop = () => {
         phone: "",
         formattedAddress: "",
         aadharNumber: "",
+        shopType: "",
       }));
+      console.log("Shop Created Successfully", formData);
 
       toast.success("Shop Created Successfully");
 
@@ -183,7 +190,27 @@ const CreateShop = () => {
               onChange={handleChange}
               placeholder="Fresh Mart"
               className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+              required
             />
+          </div>
+
+          <div>
+            <label className="font-semibold">Shop Type</label>
+
+            <select
+              name="shopType"
+              value={shop.shopType}
+              onChange={handleChange}
+              className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
+              required
+            >
+              <option value="">Select Shop Type</option>
+              {Object.keys(SHOP_CATEGORIES).map((key) => (
+                <option key={key} value={key}>
+                  {SHOP_CATEGORIES[key].name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

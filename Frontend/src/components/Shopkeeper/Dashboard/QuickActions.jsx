@@ -1,68 +1,53 @@
-import { Package, Plus, ShoppingCart, BarChart3 } from "lucide-react";
+import { Package, Plus, ShoppingCart, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const QuickActions = () => {
-
   const navigate = useNavigate();
 
   const actions = [
     {
       title: "Add Product",
-      icon: <Plus size={28} />,
+      icon: <Plus size={24} />,
       path: "/seller/add-product",
+      color: "bg-green-50 text-green-600 hover:bg-green-100",
     },
     {
-      title: "Products",
-      icon: <Package size={28} />,
-      path: "/seller/products",
-    },
-    {
-      title: "Orders",
-      icon: <ShoppingCart size={28} />,
+      title: "View Orders",
+      icon: <ShoppingCart size={24} />,
       path: "/seller/orders",
+      color: "bg-blue-50 text-blue-600 hover:bg-blue-100",
     },
     {
-      title: "Analytics",
-      icon: <BarChart3 size={28} />,
-      path: "/seller/analytics",
+      title: "Manage Products",
+      icon: <Package size={24} />,
+      path: "/seller/products",
+      color: "bg-purple-50 text-purple-600 hover:bg-purple-100",
+    },
+    {
+      title: "Edit Shop",
+      icon: <Settings size={24} />,
+      path: "/seller/profile",
+      color: "bg-orange-50 text-orange-600 hover:bg-orange-100",
     },
   ];
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-6">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
+      <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
 
-      <h2 className="text-2xl font-bold mb-6">
-        Quick Actions
-      </h2>
-
-      <div className="grid grid-cols-2 gap-5">
-
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {actions.map((action) => (
-
           <button
             key={action.title}
             onClick={() => navigate(action.path)}
-            className="bg-emerald-50 rounded-2xl p-6 hover:bg-emerald-100 transition"
+            className={`rounded-lg p-4 transition flex flex-col items-center gap-2 cursor-pointer ${action.color}`}
+            title={action.title}
           >
-
-            <div className="text-emerald-600">
-
-              {action.icon}
-
-            </div>
-
-            <h3 className="font-semibold mt-3">
-
-              {action.title}
-
-            </h3>
-
+            <div>{action.icon}</div>
+            <span className="text-xs font-medium text-center">{action.title}</span>
           </button>
-
         ))}
-
       </div>
-
     </div>
   );
 };
