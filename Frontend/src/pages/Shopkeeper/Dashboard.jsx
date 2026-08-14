@@ -166,9 +166,9 @@ const Dashboard = () => {
 
         <div className="flex items-center justify-between pt-3 border-t">
           <span
-            className={`text-sm font-medium ${isOpen ? "text-green" : "text-red-500"}`}
+            className={`text-sm font-medium ${isOpen ? "text-green-500" : "text-red-500"}`}
           >
-            {isOpen ? "OPEN" : "CLOSED"}
+            {isOpen ? "Shop is Open" : "Shop is Close"}
           </span>
 
           <div>

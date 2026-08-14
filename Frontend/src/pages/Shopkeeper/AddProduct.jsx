@@ -1,30 +1,42 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ImagePlus } from "lucide-react";
+import { ImagePlus, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { useShops } from "../../context/ShopContext";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
 import { addMenuItem } from "../../api/menuApi";
+import { SHOP_CATEGORIES } from "../../constants/shopCategories";
 
 const AddProduct = () => {
 
   const navigate = useNavigate();
+  const { getMyShop } = useShops();
 
-  
-
-const { getMyShop } = useShops();
-
+  const [shopType, setShopType] = useState(null);
   const [product, setProduct] = useState({
-  name: "",
-  category: "",
-  price: "",
-  description: "",
-});
+    name: "",
+    category: "",
+    price: "",
+    description: "",
+  });
 
+  const [image, setImage] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-const [image,setImage]=useState(null);
+  useEffect(() => {
+    const fetchShopType = async () => {
+      try {
+        const shop = await getMyShop();
+        setShopType(shop?.shopType?.toLowerCase() || null);
+      } catch (error) {
+        console.error("Error fetching shop:", error);
+        toast.error("Failed to load shop details");
+      }
+    };
+    fetchShopType();
+  }, [getMyShop]);
 
-const [loading,setLoading]=useState(false);
+  const categories = shopType ? SHOP_CATEGORIES[shopType]?.categories || [] : [];
 
   const handleChange = (e) => {
 
@@ -39,8 +51,18 @@ const [loading,setLoading]=useState(false);
 
     e.preventDefault();
 
+    if (!product.name || !product.category || !product.price || !product.description) {
+        toast.error("Please fill all fields");
+        return;
+    }
+
     if (!image) {
         toast.error("Please upload an image");
+        return;
+    }
+
+    if (isNaN(product.price) || product.price <= 0) {
+        toast.error("Please enter a valid price");
         return;
     }
 
@@ -103,6 +125,7 @@ const [loading,setLoading]=useState(false);
               value={product.name}
               onChange={handleChange}
               className="w-full border rounded-xl p-3 mt-2"
+              required
             />
 
           </div>
@@ -119,16 +142,28 @@ const [loading,setLoading]=useState(false);
               value={product.category}
               onChange={handleChange}
               className="w-full border rounded-xl p-3 mt-2"
+              required
+              disabled={!shopType || categories.length === 0}
             >
-              <option value="">Select Category</option>
-              <option>Dairy</option>
-              <option>Bakery</option>
-              <option>Vegetables</option>
-              <option>Fruits</option>
-              <option>Beverages</option>
-              <option>Snacks</option>
-              <option>Grains</option>
+              <option value="">
+                {!shopType ? "Loading categories..." : "Select Category"}
+              </option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
+
+            {shopType === "medicine" && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex gap-2">
+                <AlertCircle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-800">
+                  <p className="font-semibold">Prescription Items Notice</p>
+                  <p>Prescription medicines require customer verification. Ensure compliance with healthcare regulations.</p>
+                </div>
+              </div>
+            )}
 
           </div>
 
@@ -146,6 +181,7 @@ const [loading,setLoading]=useState(false);
                 value={product.price}
                 onChange={handleChange}
                 className="w-full border rounded-xl p-3 mt-2"
+                required
               />
 
             </div>
@@ -155,27 +191,24 @@ const [loading,setLoading]=useState(false);
 
           <div>
 
+            <label className="font-semibold flex items-center gap-2">
+              <ImagePlus size={20} className="text-gray-400" />
+              Product Image
+            </label>
+
             <input
-type="file"
-accept="image/*"
-onChange={(e)=>setImage(e.target.files[0])}
-className="w-full border rounded-xl p-3 mt-2"
-/>
-
-            <div className="relative">
-
-              <ImagePlus
-                className="absolute left-4 top-6 text-gray-400"
-              />
-
-              <input
-    type="file"
-    accept="image/*"
-    onChange={(e)=>setImage(e.target.files[0])}
-    className="w-full border rounded-xl p-3 mt-2"
-/>
-
-            </div>
+              type="file"
+              accept="image/*"
+              onChange={(e) => setImage(e.target.files[0])}
+              className="w-full border rounded-xl p-3 mt-2"
+              required
+            />
+            
+            {image && (
+              <p className="text-sm text-gray-600 mt-2">
+                Selected: {image.name}
+              </p>
+            )}
 
           </div>
 
@@ -191,6 +224,7 @@ className="w-full border rounded-xl p-3 mt-2"
               value={product.description}
               onChange={handleChange}
               className="w-full border rounded-xl p-3 mt-2"
+              required
             />
 
           </div>

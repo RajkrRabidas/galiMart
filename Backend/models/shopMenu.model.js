@@ -26,7 +26,7 @@ const shopMenuSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ["veg", "non veg"],
+        required: true,
     },
     isAvailable: {
         type: Boolean,

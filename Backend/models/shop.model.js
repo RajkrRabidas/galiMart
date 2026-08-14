@@ -54,7 +54,12 @@ const shopSchema = new mongoose.Schema({
     isOpen:{
         type: Boolean,
         default: false
-    }
+    },
+    shopType: {
+        type: String,
+        enum: ["groceries", "restaurants", "fashion", "medicine", "electronics", "services"],
+        required: true,
+    },
 },{timestamps: true});
 
 shopSchema.index({ autoLocation: '2dsphere' });
