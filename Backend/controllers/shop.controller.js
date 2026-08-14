@@ -190,7 +190,7 @@ const updateStatusShop = asyncHandler(async (req, res) => {
   const updatedShop = await shopModel.findOneAndUpdate(
     { _id: shopId, ownerId: req.user._id },
     { isOpen: status },
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   return sendSuccess(res, 200, SHOP_STATUS_UPDATED_SUCCESSFULLY, updatedShop);
@@ -212,11 +212,9 @@ const updateShop = asyncHandler(async (req, res) => {
   const {
     name,
     description,
-    phone,
     latitude,
     longitude,
     formattedAddress,
-    aadharNumber,
   } = validation.data;
   const existingShop = await shopModel.findOne({
     _id: shopId,
@@ -237,79 +235,21 @@ const updateShop = asyncHandler(async (req, res) => {
     updateData.description = description;
   }
 
-  if (phone !== undefined) {
-    const existingPhoneShop = await shopModel.findOne({
-      phone: Number(phone),
-      _id: { $ne: shopId },
-    });
-
-    if (existingPhoneShop) {
-      return sendError(res, 400, PHONE_ALREADY_EXISTS);
-    }
-
-    updateData.phone = Number(phone);
-  }
-
-  if (aadharNumber !== undefined) {
-    const existingAadharShop = await shopModel.findOne({
-      aadharNumber,
-      _id: { $ne: shopId },
-    });
-
-    if (existingAadharShop) {
-      return sendError(res, 400, AADHAAR_NUMBER_ALREADY_EXISTS);
-    }
-
-    updateData.aadharNumber = aadharNumber;
-    updateData.status = "pending";
-    updateData.isVerified = false;
-  }
-
-  if (
-    latitude !== undefined ||
-    longitude !== undefined ||
-    formattedAddress !== undefined
-  ) {
-    const nextLatitude =
-      latitude ?? existingShop.autoLocation?.coordinates?.[1];
-    const nextLongitude =
-      longitude ?? existingShop.autoLocation?.coordinates?.[0];
-    const nextFormatted =
-      formattedAddress ?? existingShop.autoLocation?.formattedAddress;
-
+  // handle location update when latitude and longitude provided
+  if (latitude !== undefined && longitude !== undefined) {
     updateData.autoLocation = {
-      type: "Point",
-      coordinates: [Number(nextLongitude), Number(nextLatitude)],
-      formattedAddress: nextFormatted,
+      type: 'Point',
+      coordinates: [Number(longitude), Number(latitude)],
+      formattedAddress: formattedAddress || existingShop.autoLocation?.formattedAddress,
     };
-  }
-
-  const aadharFile = req.files?.aadharImage?.[0];
-  if (aadharFile) {
-    const aadharImageUrl = await uploadCloudinary(aadharFile);
-    if (!aadharImageUrl) {
-      return sendError(res, 500, IMAGE_UPLOAD_FAILED);
-    }
-    updateData.aadharImage = aadharImageUrl;
-    updateData.status = "pending";
-    updateData.isVerified = false;
-  }
-
-  const imageFile = req.files?.image?.[0];
-  if (imageFile) {
-    const cloudinaryUrl = await uploadCloudinary(imageFile);
-
-    if (!cloudinaryUrl) {
-      return sendError(res, 500, IMAGE_UPLOAD_FAILED);
-    }
-
-    updateData.image = cloudinaryUrl;
+  } else if (formattedAddress !== undefined) {
+    updateData['autoLocation.formattedAddress'] = formattedAddress;
   }
 
   const updatedShop = await shopModel.findOneAndUpdate(
     { _id: shopId, ownerId: req.user._id },
     updateData,
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   return sendSuccess(res, 200, SHOP_UPDATED_SUCCESSFULLY, updatedShop);
@@ -382,7 +322,7 @@ const verifyShop = asyncHandler(async (req, res) => {
   const updatedShop = await shopModel.findByIdAndUpdate(
     shopId,
     { status, isVerified },
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   return sendSuccess(

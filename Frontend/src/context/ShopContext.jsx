@@ -169,7 +169,7 @@ const fetchNearbyShops = async (params) => {
   const getMyShop = async () => {
   try {
     const data = await getMyShopApi();
-    return data.shop;
+    return data ?? null;
   } catch (error) {
     if (error.response?.status === 404) {
       return null;

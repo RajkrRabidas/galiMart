@@ -40,7 +40,7 @@ const addToCart = asyncHandler(async (req, res) => {
     },
     {
       upsert: true,
-      new: true,
+      returnDocument: 'after',
       setDefaultsOnInsert: true,
     },
   );
@@ -89,7 +89,7 @@ const incrementCartItem = asyncHandler(async (req, res) => {
   const cartItem = await cartModel.findOneAndUpdate(
     { userId, itemId },
     { $inc: { quauntity: 1 } },
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   if (!cartItem) {

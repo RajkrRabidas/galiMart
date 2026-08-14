@@ -20,11 +20,18 @@ useEffect(() => {
 
         try {
 
-            const shopId = localStorage.getItem("shopId");
+            let shop = await getMyShop();
+            const shopId = shop?._id ?? localStorage.getItem("shopId");
 
-            const shop = await getMyShop(shopId);
+            if (shopId) {
+                localStorage.setItem("shopId", shopId);
+            }
 
-if (!shop) {
+            if (!shop && shopId) {
+                shop = { _id: shopId };
+            }
+
+            if (!shop) {
 
     setLoading(false);
 

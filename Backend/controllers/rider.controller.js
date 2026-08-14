@@ -218,7 +218,7 @@ const acceptOrder = async (req, res) => {
     await Rider.findOneAndUpdate(
       { userId: riderUserId, isAvailable: true },
       { isAvailable: false },
-      { new: true },
+      { returnDocument: 'after' },
     );
 
     res.json({ message: "Order accepted successfully", success: true, order });

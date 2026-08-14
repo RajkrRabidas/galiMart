@@ -15,8 +15,8 @@ export const createShop = async (formData) => {
   return response.data;
 };
 export const getMyShop = async () => {
-    const response = await api.get("/api/shops/fetch");
-    return response.data;
+    const response = await api.get("/shops/my-shop");
+    return response.data?.shop ?? response.data ?? null;
 };
 
 // Nearby Shops

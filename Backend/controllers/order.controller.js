@@ -269,7 +269,7 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
       riderPhone,
       status: "rider_assigned",
     },
-    { new: true },
+    { returnDocument: 'after' },
   );
 
   emitRealtimeEvent({
