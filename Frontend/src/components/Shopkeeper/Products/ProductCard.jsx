@@ -1,11 +1,34 @@
-import { Pencil, Trash2, AlertCircle } from "lucide-react";
+import { Pencil, Trash2, AlertCircle, ToggleLeft, ToggleRight, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { toggleMenuStatus } from "../../../api/menuApi";
 
-const ProductCard = ({ product, onDelete }) => {
+const ProductCard = ({ product, onDelete, onToggleStatus }) => {
   const navigate = useNavigate();
+  const [isAvailable, setIsAvailable] = useState(product?.isAvailable ?? true);
+
+  useEffect(() => {
+    setIsAvailable(product?.isAvailable ?? true);
+  }, [product?.isAvailable]);
 
   const isLowStock = product.stock && product.stock < 5 && product.stock > 0;
-  const isOutOfStock = product.stock === 0 || !product.isAvailable;
+  const isOutOfStock = product.stock === 0 || !isAvailable;
+
+  const handleToggleAvailability = async () => {
+    try {
+      await toggleMenuStatus(product._id);
+      const nextValue = !isAvailable;
+      setIsAvailable(nextValue);
+      onToggleStatus?.(product._id);
+      toast.success(`Product marked as ${nextValue ? "available" : "unavailable"}`);
+    } catch (error) {
+      console.error("Error toggling product status:", error);
+      const message = error?.response?.data?.message || "Failed to update product status";
+      toast.error(message);
+    }
+  };
+
 
   return (
     <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-200 overflow-hidden group h-full flex flex-col">
@@ -55,13 +78,27 @@ const ProductCard = ({ product, onDelete }) => {
         </p>
 
         {/* Price Section */}
-        <div className="mb-3">
+        <div className="mb-3 flex justify-between items-center gap-2">
           <p className="text-2xl font-bold text-emerald-600">₹{product.price}</p>
           {product.originalPrice && (
             <p className="text-sm text-gray-400 line-through">
               ₹{product.originalPrice}
             </p>
           )}
+
+          {/* Availability Toggle */}
+
+          <button
+            onClick={handleToggleAvailability}
+            className="px-3 py-2.5 bg-emerald-50 text-emerald-700 font-semibold rounded-lg hover:bg-emerald-100 transition-colors duration-200 flex items-center justify-center gap-2 text-sm cursor-pointer"
+            aria-label={isAvailable ? "Mark product unavailable" : "Mark product available"}
+          >
+            {isAvailable ? <Eye size={16} /> : <EyeOff size={16} />}
+            {/* <span className="hidden sm:inline">
+              {isAvailable ? "Available" : "Unavailable"}
+            </span> */}
+          </button>
+          
         </div>
 
         {/* Stock Info */}

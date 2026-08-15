@@ -165,7 +165,7 @@ const CreateShop = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
+    <div className="min-h-screen from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-xl">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">

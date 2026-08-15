@@ -43,7 +43,7 @@ const Orders = () => {
 
   return (
 
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100 pb-24">
+    <div className="min-h-screen from-emerald-50 via-white to-slate-100 pb-24">
 
       <div className="max-w-6xl mx-auto p-6">
 

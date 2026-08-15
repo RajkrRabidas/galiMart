@@ -44,7 +44,7 @@ export const deleteMenuItem = async (
 export const toggleMenuStatus = async (
   id
 ) => {
-  const response = await api.delete(
+  const response = await api.put(
     `/items/status/${id}`
   );
 

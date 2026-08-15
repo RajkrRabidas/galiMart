@@ -18,7 +18,7 @@ const DashboardHeader = ({ isOpen, onToggleOpen, loading, shop }) => {
     <div className="mb-8">
       <div className="flex items-center justify-between mb-2">
         <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
             {greeting}, {shopName.split(" ")[0]} 👋
           </h1>
           <p className="text-gray-500 mt-1">Here's what's happening with your shop today.</p>
@@ -39,7 +39,7 @@ const DashboardHeader = ({ isOpen, onToggleOpen, loading, shop }) => {
         <button
           onClick={onToggleOpen}
           disabled={loading}
-          className={`px-4 py-2 rounded-lg font-medium text-sm transition ${
+          className={`px-4 py-2 rounded-lg font-medium text-sm transition cursor-pointer ${
             isOpen
               ? "bg-red-50 text-red-600 hover:bg-red-100"
               : "bg-green-50 text-green-600 hover:bg-green-100"

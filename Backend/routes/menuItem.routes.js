@@ -19,6 +19,6 @@ router.post(
 );
 router.get("/all/:id", isAuth, isSeller, getAllMenuItems);
 router.delete("/:id", isAuth, isSeller, deleteMenuItem);
-router.delete("/status/:id", isAuth, isSeller, toggleMenuItemAvailable);
+router.put("/status/:id", isAuth, isSeller, toggleMenuItemAvailable);
 
 module.exports = router;

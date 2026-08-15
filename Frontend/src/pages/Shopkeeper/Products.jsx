@@ -130,10 +130,20 @@ const Products = () => {
     setDeleteModal({ isOpen: false, productId: null, productName: "" });
   };
 
+  const handleToggleStatus = (productId) => {
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        product._id === productId
+          ? { ...product, isAvailable: !product.isAvailable }
+          : product
+      )
+    );
+  };
+
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100 pb-24">
+      <div className="min-h-screen from-emerald-50 via-white to-slate-100 pb-24">
         <div className="max-w-7xl mx-auto p-6">
           <div className="mb-8">
             <div className="h-10 bg-gray-200 rounded-lg w-1/3 mb-2 animate-pulse" />
@@ -148,7 +158,7 @@ const Products = () => {
   // Empty state - no products at all
   if (products.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100 pb-24">
+      <div className="min-h-screen from-emerald-50 via-white to-slate-100 pb-24">
         <div className="max-w-7xl mx-auto p-6">
           {/* Header */}
           <div className="mb-12">
@@ -299,6 +309,7 @@ const Products = () => {
                   key={product._id}
                   product={product}
                   onDelete={handleDeleteClick}
+                  onToggleStatus={handleToggleStatus}
                 />
               ))}
             </div>
