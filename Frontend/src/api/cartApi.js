@@ -1,12 +1,10 @@
 import api from "./axios";
 
 // Add To Cart
-export const addToCart = async (
-  data
-) => {
+export const addToCart = async (shopId, itemId) => {
   const response = await api.post(
-    "/api/cart/add-to-card",
-    data
+    "/cart/add-to-card",
+    { shopId, itemId }
   );
 
   return response.data;
@@ -15,31 +13,27 @@ export const addToCart = async (
 // Fetch Cart
 export const fetchCart = async () => {
   const response = await api.post(
-    "/api/cart/all-cart"
+    "/cart/all-cart"
   );
 
   return response.data;
 };
 
 // Increase Quantity
-export const incrementCart = async (
-  data
-) => {
+export const incrementCart = async (itemId) => {
   const response = await api.put(
-    "/api/cart/inc",
-    data
+    "/cart/inc",
+    { itemId }
   );
 
   return response.data;
 };
 
 // Decrease Quantity
-export const decrementCart = async (
-  data
-) => {
+export const decrementCart = async (itemId) => {
   const response = await api.put(
-    "/api/cart/dec",
-    data
+    "/cart/dec",
+    { itemId }
   );
 
   return response.data;
@@ -48,7 +42,7 @@ export const decrementCart = async (
 // Clear Cart
 export const clearCart = async () => {
   const response = await api.delete(
-    "/api/cart/clear-cart"
+    "/cart/clear-cart"
   );
 
   return response.data;

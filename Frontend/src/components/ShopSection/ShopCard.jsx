@@ -22,7 +22,7 @@ const ShopCard = ({ shop }) => {
           className="h-full w-full object-cover"
         />
         <span className="absolute left-3 top-3 rounded-2xl bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-sm">
-          15 mins
+          {shop.distance} km away
         </span>
       </div>
 

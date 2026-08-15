@@ -8,24 +8,66 @@ import ServiceSection from "../../components/ServiceSection/ServiceSection";
 import { motion } from "framer-motion";
 import { useShops } from "../../context/ShopContext";
 import { useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { useSearchParams } from "react-router";
 
 const Home = () => {
-  const { shops, fetchNearbyShops } = useShops();
+  const { shops, loading, fetchNearbyShops } = useShops();
+  const { location, loadingLocation } = useAuth();
+  const [searchParam] = useSearchParams();
+  const search = searchParam.get("search") || "";
 
+  // Fetch nearby shops when location or search changes
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        fetchNearbyShops({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          radius: 5000,
-        });
-      },
-      (error) => {
-        console.log(error);
-      }
+    if (!location?.latitude || !location?.longitude) {
+      return;
+    }
+
+    fetchNearbyShops({
+      latitude: location.latitude,
+      longitude: location.longitude,
+      radius: 5000,
+      search,
+    });
+  }, [location, search, fetchNearbyShops]);
+
+  // Request location access if denied
+  const requestLocationAccess = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          window.location.reload();
+        },
+        (error) => {
+          alert("Please enable location access in browser settings");
+        }
+      );
+    }
+  };
+
+  if (loadingLocation) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg font-semibold text-gray-700">Getting your location...</p>
+      </div>
     );
-  }, []);
+  }
+
+  if (!location) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-gray-700 mb-4">Location access required</p>
+          <button
+            onClick={requestLocationAccess}
+            className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+          >
+            Enable Location
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -45,7 +87,7 @@ const Home = () => {
           >
             <Banner />
             <CategorySection />
-            <ShopSection />
+            <ShopSection shops={shops} loading={loading} />
             <ServiceSection />
           </motion.main>
         </div>

@@ -7,7 +7,6 @@ import OrderSummary from "../../components/Checkout/OrderSummary";
 import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
-import { Currency } from "lucide-react/dist/cjs/lucide-react";
 
 const Checkout = () => {
   const { cartItems } = useCart();
@@ -42,12 +41,13 @@ const Checkout = () => {
 
   const selectedAddressId = selectedAddress?._id || selectedAddress?.id;
 
-  const subTotal = cartItems.reduce(
-    (total, item) => total + item.price * item.quantity,
-    0,
-  );
+  const subTotal = cartItems.reduce((total, item) => {
+    const itemPrice = item.itemId?.price || item.price || 0;
+    const quantity = item.quantity || 1;
+    return total + (itemPrice * quantity);
+  }, 0);
 
-  const deliveryFee = subTotal < 250 ? 4 : 0;
+  const deliveryFee = subTotal < 250 ? 30 : 0;
 
   const platFormFee = 7;
 
@@ -177,11 +177,15 @@ const Checkout = () => {
 
           {
             cartItems.map((cartItem) => {
-              const item = cartItem.itemId || cartItem.productId;
+              const item = cartItem.itemId || cartItem;
+              const itemName = item.name || "Item";
+              const itemPrice = item.price || 0;
+              const quantity = cartItem.quantity || 1;
+              
               return (
-                <div className="flex justify-between text-sm" key={cartItem._id}>
-                  <span>{cartItem.name} x {cartItem.quantity}</span>
-                  <span>₹{cartItem.price * cartItem.quantity}</span>
+                <div className="flex justify-between text-sm" key={cartItem._id || Math.random()}>
+                  <span>{itemName} x {quantity}</span>
+                  <span>₹{itemPrice * quantity}</span>
                 </div>
               );
             })
@@ -219,12 +223,18 @@ const Checkout = () => {
 
           <h3 className="font-semibold">Payment Method</h3>
 
-          <botton disabled={!selectedAddressId || loadingPayment || creatingOrder} onClick={paywithRazorpay} className="flex w-full item-center justify-center gap-2 rounded-lg bg-[#2d7ff9] px-4 py-2 text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50">
-            Pay with Razorpay
-          </botton>
+          <button 
+            disabled={!selectedAddressId || loadingPayment || creatingOrder} 
+            onClick={paywithRazorpay} 
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2d7ff9] px-4 py-3 text-white font-semibold transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {loadingPayment || creatingOrder ? "Processing..." : "Pay with Razorpay"}
+          </button>
 
         </div>
       </div>
+
+      {/* <BottomNavbar /> */}
     </>
   );
 };

@@ -30,19 +30,13 @@ const [loading, setLoading] = useState(false);
 const fetchNearbyShops = async (params) => {
   try {
     setLoading(true);
-
     const data = await getNearbyShops(params);
-
     setShops(data.shop ?? []);
-
   } catch (error) {
-
-    console.log(error);
-
+    console.error("Fetch Nearby Shops Error:", error);
+    setShops([]);
   } finally {
-
     setLoading(false);
-
   }
 };
 

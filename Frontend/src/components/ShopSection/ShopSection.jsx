@@ -3,8 +3,12 @@ import { ArrowRight, Store } from "lucide-react";
 import ShopCard from "./ShopCard";
 import { useShops } from "../../context/ShopContext";
 
-const ShopSection = () => {
-  const { shops } = useShops();
+const ShopSection = ({ shops: propShops, loading: propLoading }) => {
+  const { shops: contextShops, loading: contextLoading } = useShops();
+  
+  // Use props if provided, otherwise fall back to context
+  const shops = propShops !== undefined ? propShops : contextShops;
+  const loading = propLoading !== undefined ? propLoading : contextLoading;
 
   return (
     <section className="mt-9 rounded-4xl bg-white/90 p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)] sm:p-6">

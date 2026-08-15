@@ -17,7 +17,7 @@ router.post(
   uploadFile.single("image"),
   addMenuItem,
 );
-router.get("/all/:id", isAuth, isSeller, getAllMenuItems);
+router.get("/all/:id", getAllMenuItems);
 router.delete("/:id", isAuth, isSeller, deleteMenuItem);
 router.put("/status/:id", isAuth, isSeller, toggleMenuItemAvailable);
 

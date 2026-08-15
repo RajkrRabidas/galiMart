@@ -1,49 +1,48 @@
+import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 
 const CartSummary = () => {
   const navigate = useNavigate();
 
-  const {
-    subtotal,
-    delivery,
-    totalPrice,
-  } = useCart();
+  const { subtotal, delivery, totalPrice } = useCart();
 
   return (
-    <div className="bg-white rounded-3xl shadow-lg p-6">
-
-      <h2 className="text-xl font-bold">
-        Order Summary
-      </h2>
-
-      <div className="flex justify-between mt-6">
-        <span>Subtotal</span>
-        <span>₹{subtotal}</span>
+    <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)]">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-black text-slate-900">Order Summary</h2>
+        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-bold text-emerald-700">
+          {subtotal > 0 ? "Ready" : "Empty"}
+        </span>
       </div>
 
-      <div className="flex justify-between mt-3">
-        <span>Delivery</span>
-        <span>₹{delivery}</span>
+      <div className="mt-6 space-y-3 text-sm text-slate-600">
+        <div className="flex items-center justify-between">
+          <span>Subtotal</span>
+          <span className="font-semibold text-slate-900">₹{subtotal}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span>Delivery</span>
+          <span className="font-semibold text-slate-900">₹{delivery}</span>
+        </div>
       </div>
 
-      <div className="border-t mt-5 pt-5 flex justify-between">
-        <span className="font-bold">
-          Total
-        </span>
-
-        <span className="font-bold text-emerald-600">
-          ₹{totalPrice}
-        </span>
+      <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-500">Total</span>
+          <span className="text-xl font-black text-slate-900">₹{totalPrice}</span>
+        </div>
       </div>
 
       <button
+        type="button"
         onClick={() => navigate("/checkout")}
-        className="w-full mt-6 bg-emerald-600 text-white py-4 rounded-2xl hover:bg-emerald-700"
+        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-500"
       >
-        Proceed To Checkout
+        Proceed to checkout
+        <ArrowRight size={16} />
       </button>
-
     </div>
   );
 };

@@ -6,8 +6,12 @@ import {
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useCart } from "../../context/CartContext";
 
 const BottomNavbar = () => {
+  const { cartItems } = useCart();
+  const cartCount = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
   const navItems = [
     {
       name: "Home",
@@ -99,7 +103,14 @@ const BottomNavbar = () => {
         scale: isActive ? 1.12 : 1,
       }}
     >
-      <Icon size={22}/>
+      <div className="relative">
+        <Icon size={22} />
+        {item.name === "Cart" && cartCount > 0 && (
+          <span className="absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[10px] font-bold text-white shadow-sm">
+            {cartCount > 9 ? "9+" : cartCount}
+          </span>
+        )}
+      </div>
       <span className="text-xs mt-1">
         {item.name}
       </span>

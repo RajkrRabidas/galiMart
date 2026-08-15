@@ -88,7 +88,7 @@ const incrementCartItem = asyncHandler(async (req, res) => {
 
   const cartItem = await cartModel.findOneAndUpdate(
     { userId, itemId },
-    { $inc: { quauntity: 1 } },
+    { $inc: { quantity: 1 } },
     { returnDocument: 'after' },
   );
 

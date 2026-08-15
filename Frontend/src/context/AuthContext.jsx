@@ -86,34 +86,65 @@ export const AuthProvider = ({ children }) => {
     }
 
     setLoadingLocation(true);
+    let timeoutId;
+    let isCompleted = false;
 
     const handlePosition = async (position) => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timeoutId);
+
       const { latitude, longitude } = position.coords;
 
       try {
+        const controller = new AbortController();
+        const timeoutTimer = setTimeout(() => controller.abort(), 1000);
+
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`,
+          { signal: controller.signal }
         );
+        clearTimeout(timeoutTimer);
         const data = await response.json();
         setLocation({ latitude, longitude, formattedAddress: data.display_name || "current location" });
         setCity(data.address?.city || data.address?.town || data.address?.village || "your location");
         setLoadingLocation(false);
       } catch (error) {
+        // If reverse geocoding fails, still use the coordinates
         setLocation({ latitude, longitude, formattedAddress: "current location" });
-        setCity("Failed to fetch location");
-      } finally {
+        setCity("your location");
         setLoadingLocation(false);
       }
     };
 
     const handleError = (error) => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timeoutId);
       console.error("Geolocation error:", error);
       setLocation(null);
       setCity("Location unavailable");
       setLoadingLocation(false);
     };
 
-    navigator.geolocation.getCurrentPosition(handlePosition, handleError);
+    const handleTimeout = () => {
+      if (!isCompleted) {
+        isCompleted = true;
+        setLocation(null);
+        setLoadingLocation(false);
+      }
+    };
+
+    // Set timeout for geolocation (8 seconds)
+    timeoutId = setTimeout(handleTimeout, 8000);
+
+    navigator.geolocation.getCurrentPosition(handlePosition, handleError, {
+      enableHighAccuracy: false,
+      timeout: 7000,
+      maximumAge: 0
+    });
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const value = useMemo(
