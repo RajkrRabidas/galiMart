@@ -14,7 +14,7 @@ const ProductCard = ({ product, shopId }) => {
 
   const productId = product._id || product.id;
   const cartItem = cartItems.find((item) => {
-    const itemId = item?.itemId?._id || item?.itemId?.id || item?._id || item?.id;
+    const itemId = item?.itemId?._id || item?.itemId?.id || item?.itemId || item?._id || item?.id;
     return itemId === productId;
   });
   const quantity = cartItem?.quantity || 0;
@@ -41,14 +41,14 @@ const ProductCard = ({ product, shopId }) => {
 
     if (!cartItem) return;
 
-    const cartEntryId = cartItem._id || cartItem.id || productId;
+    const itemId = cartItem?.itemId?._id || cartItem?.itemId?.id || cartItem?.itemId || productId;
 
     if (action === "decrease") {
-      decreaseQuantity(cartEntryId);
+      decreaseQuantity(itemId);
       return;
     }
 
-    increaseQuantity(cartEntryId);
+    increaseQuantity(itemId);
   };
 
   return (
@@ -65,6 +65,14 @@ const ProductCard = ({ product, shopId }) => {
           alt={product.name}
           className="h-52 w-full object-cover p-3 transition duration-500 group-hover:scale-105"
         />
+
+        {product.isAvailable === false && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="rounded-2xl bg-black/80 px-3 py-1 text-sm font-semibold text-white">
+              Out of Stock
+            </span>
+          </div>
+        )}
 
         {discount > 0 && (
           <div className="absolute left-3 top-3 rounded-2xl bg-emerald-600 px-3 py-1 text-[11px] font-bold text-white shadow-sm">

@@ -19,8 +19,19 @@ const ShopCard = ({ shop }) => {
           transition={{ duration: 0.45 }}
           src={shop.image}
           alt={shop.name}
-          className="h-full w-full object-cover"
+          className={`h-full w-full object-cover ${shop?.isOpen ? "" : "grayscale-100"}`}
         />
+
+          {
+            !shop.isOpen && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                <span className="rounded-2xl bg-black/80 px-3 py-1 text-sm font-semibold text-white">
+                  Closed
+                </span>
+              </div>
+            )
+          }
+
         <span className="absolute left-3 top-3 rounded-2xl bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-sm">
           {shop.distance} km away
         </span>

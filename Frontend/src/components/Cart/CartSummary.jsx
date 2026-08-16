@@ -1,11 +1,14 @@
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { useShops } from "../../context/ShopContext";
 
 const CartSummary = () => {
   const navigate = useNavigate();
 
   const { subtotal, delivery, totalPrice } = useCart();
+  const { shop } = useShops();
+  const isShopOpen = shop?.isOpen ?? true;
 
   return (
     <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)]">
@@ -38,9 +41,10 @@ const CartSummary = () => {
       <button
         type="button"
         onClick={() => navigate("/checkout")}
-        className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-500"
+        className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition hover:bg-emerald-500 ${isShopOpen ? "opacity-50" : ""}`}
+        disabled={isShopOpen}
       >
-        Proceed to checkout
+        {isShopOpen ? "Shop is closed" : "Proceed to Checkout"}
         <ArrowRight size={16} />
       </button>
     </div>

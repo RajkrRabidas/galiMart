@@ -8,8 +8,15 @@ import { useCart } from "../../context/CartContext";
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { cartItems } = useCart();
+  const { cartItems, clearCart, loading } = useCart();
   const totalItems = cartItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+
+  const handleClearCart = () => {
+    const confirmed = window.confirm("Are you sure you want to clear your cart");
+    if (confirmed) {
+      clearCart();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -30,6 +37,17 @@ const Cart = () => {
             </p>
             <h1 className="text-2xl font-black text-slate-900">Cart</h1>
           </div>
+
+          {cartItems.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearCart}
+              disabled={loading}
+              className="rounded-full border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+            >
+              Clear cart
+            </button>
+          )}
         </div>
 
         {cartItems.length === 0 ? (

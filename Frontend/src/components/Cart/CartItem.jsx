@@ -11,7 +11,7 @@ const CartItem = ({ item }) => {
 
   // Handle both old local state structure and new backend structure
   const itemData = item.itemId || item;
-  const itemId = item._id || item.id;
+  const itemId = item?.itemId?._id || item?.itemId?.id || item?.itemId || item?._id || item?.id;
   const quantity = item.quantity || 1;
 
   return (

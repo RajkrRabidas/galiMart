@@ -183,6 +183,7 @@ const ShopDetails = () => {
                   key={product._id || product.id}
                   product={product}
                   shopId={id}
+                  isAvailable={product.isAvailable !== undefined ? product.isAvailable : true}
                 />
               ))}
             </div>
