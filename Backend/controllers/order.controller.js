@@ -37,10 +37,10 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   const shop = firstCartItem.shopId;
-  const shopId = shop._id.toString();
-  const shopRecord = await ShopModel.findById(shopId);
-  if (!shopRecord) return res.status(404).json({ message: "Shop not found" });
-  if (!shopRecord.isOpen) return res.status(400).json({ message: "Shop is closed" });
+  // const shopId = shop._id.toString();
+  const shopId = await ShopModel.findById(shopId);
+  if (!shop) return res.status(404).json({ message: "Shop not found" });
+  if (!shop.isOpen) return res.status(400).json({ message: "Shop is closed" });
 
   let subTotal = 0;
 
@@ -62,15 +62,17 @@ const createOrder = asyncHandler(async (req, res) => {
     };
   });
   const deliveryFee = subTotal < 250 ? 49 : 0;
-  const platformFee = Math.round(subTotal * 0.1 * 100) / 100; 
+  const platformFee = 7 
   const totalAmount = subTotal + deliveryFee + platformFee
+
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
   const [longitude, latitude] = address.location.coordinates;
 
   const order = await orderModel.create({
     userId: user._id.toString(),
     shopId,
-    shopName: shopRecord.name,
+    shopName: shop.name,
     riderId: null,
     items: orderItems,
     subTotal,
@@ -81,20 +83,21 @@ const createOrder = asyncHandler(async (req, res) => {
     deliveryAddress: {
       formattedAddress: address.formattedAddress,
       mobile: address.mobile,
-      latitude,
+      latitude, 
       longitude,
     },
     riderDistance: Number(riderDistance) || 0,
     riderAmount: Math.ceil(Number(riderDistance) || 0) * 17,
     paymentMethod,
-    paymentStatus: paymentMethod === "cod" ? "pending" : "pending",
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+    paymentStatus: "pending",
+    status: "placed",
+    expiresAt,
   });
 
   await cartModel.deleteMany({ userId: user._id });
   res.status(201).json({
     message: "Order created successfully",
-    orderId: order._id,
+    orderId: order._id.toString(),
     amount: order.totalAmount,
     paymentMethod: order.paymentMethod,
   });
@@ -109,8 +112,10 @@ const fetchOrderForPayment = asyncHandler(async (req, res) => {
     return res
       .status(400)
       .json({ message: "Cash on delivery does not require online payment" });
-  res.json({ orderId: order._id, amount: order.totalAmount, currency: "INR" });
+  res.json({ orderId: order._id.toString(), amount: order.totalAmount, currency: "INR" });
 });
+
+
 const fetchShopOrders = asyncHandler(async (req, res) => {
   const user = req.user;
 

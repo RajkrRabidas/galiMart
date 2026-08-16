@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema(
     shopName: { type: String, required: true },
     riderId: { type: String, default: null },
     riderName: { type: String, default: null },
-    riderPhone: { type: String, default: null },
+    riderPhone: { type: Number, default: null },
     riderAmount: { type: Number, required: true },
     riderDistance: { type: Number, required: true },
     items: [
