@@ -1,6 +1,9 @@
 const sanitize = require("mongo-sanitize");
 const { completeProfileSchema } = require("../config/zod");
 const userDetailsModel = require("../models/userDetails.model");
+const { getJson, setJson, clearPattern } = require("../services/redis");
+
+const getUserAddressCacheKey = (userId) => `user-addresses:${String(userId)}`;
 
 const addAddress = async (req, res) => {
   try {
@@ -36,6 +39,8 @@ const addAddress = async (req, res) => {
         coordinates: [Number(longitude), Number(latitude)],
       },
     });
+
+    await clearPattern(getUserAddressCacheKey(user._id.toString()));
 
     res.status(201).json({ message: "Address added successfully", address: newAddress });
 
@@ -75,6 +80,8 @@ const deleteAddress = async (req, res) => {
       return res.status(404).json({ message: "address not found or not owned by user" });
     }
 
+    await clearPattern(getUserAddressCacheKey(user._id.toString()));
+
     res.json({ message: "Address deleted successfully" });
   }catch (error) {
     console.error("Error deleting address:", error);
@@ -90,7 +97,15 @@ const getMyAddress = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
+    const cacheKey = getUserAddressCacheKey(user._id.toString());
+    const cachedAddresses = await getJson(cacheKey);
+
+    if (cachedAddresses) {
+      return res.json({ addresses: cachedAddresses });
+    }
+
     const addresses = await userDetailsModel.find({ userId: user._id.toString() }).sort({ createdAt: -1 });
+    await setJson(cacheKey, addresses, 600);
 
     res.json({ addresses });
 

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const verifyRezorpaySignature = require("../config/verifyRezorpay");
+const { verifyRezorpaySignature } = require("../config/verifyRezorpay");
 const { publishPaymentSuccess } = require("../config/payment.producer");
 const Order = require("../models/order");
 const rezorpayInstance  = require("../config/rezorpay")

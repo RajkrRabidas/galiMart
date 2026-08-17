@@ -3,6 +3,23 @@ import { completeProfile as completeProfileApi, getMyProfile, logoutUser } from 
 
 const AuthContext = createContext(null);
 
+const readCachedLocation = () => {
+  try {
+    const storedLocation = localStorage.getItem("cachedLocation");
+    return storedLocation ? JSON.parse(storedLocation) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedLocation = (locationData) => {
+  try {
+    localStorage.setItem("cachedLocation", JSON.stringify(locationData));
+  } catch (error) {
+    console.error("Unable to cache location:", error);
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUserState] = useState(() => {
     try {
@@ -16,8 +33,8 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [location, setLocation] = useState(null);
-  const [city, setCity] = useState(null);
+  const [location, setLocation] = useState(() => readCachedLocation());
+  const [city, setCity] = useState(() => readCachedLocation()?.city || null);
 
   const setUser = (value) => {
     setUserState(value);
@@ -94,25 +111,45 @@ export const AuthProvider = ({ children }) => {
       isCompleted = true;
       clearTimeout(timeoutId);
 
-      const { latitude, longitude } = position.coords;
+      const { latitude, longitude, formattedAddress } = position.coords;
+      const fallbackLocation = {
+        latitude,
+        longitude,
+        formattedAddress: formattedAddress || "Current location",
+      };
 
       try {
         const controller = new AbortController();
-        const timeoutTimer = setTimeout(() => controller.abort(), 1000);
+        const timeoutTimer = setTimeout(() => controller.abort(), 3000);
 
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`,
+          `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${latitude}&longitude=${longitude}`,
           { signal: controller.signal }
         );
+
         clearTimeout(timeoutTimer);
+
         const data = await response.json();
-        setLocation({ latitude, longitude, formattedAddress: data.display_name || "current location" });
-        setCity(data.address?.city || data.address?.town || data.address?.village || "your location");
+
+        if (!response.ok || !data?.success || !data?.location) {
+          throw new Error(data?.message || "Unable to resolve location");
+        }
+
+        const resolvedLocation = {
+          latitude,
+          longitude,
+          formattedAddress: data.location.formattedAddress || "current location",
+        };
+        const resolvedCity = data.location.city || "your location";
+
+        setLocation(resolvedLocation);
+        setCity(resolvedCity);
+        writeCachedLocation({ ...resolvedLocation, city: resolvedCity });
         setLoadingLocation(false);
       } catch (error) {
-        // If reverse geocoding fails, still use the coordinates
-        setLocation({ latitude, longitude, formattedAddress: "current location" });
+        setLocation(fallbackLocation);
         setCity("your location");
+        writeCachedLocation({ ...fallbackLocation, city: "your location" });
         setLoadingLocation(false);
       }
     };
@@ -163,8 +200,9 @@ export const AuthProvider = ({ children }) => {
       setLocation,
       city,
       setCity,
+      writeCachedLocation,
     }),
-    [user, profile, authLoading]
+    [user, profile, authLoading, loadingLocation, location, city]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

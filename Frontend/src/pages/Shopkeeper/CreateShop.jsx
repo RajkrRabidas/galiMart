@@ -53,12 +53,21 @@ const CreateShop = () => {
         const latitude = position.coords.latitude;
         const longitude = position.coords.longitude;
 
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 3000);
+
         try {
           const response = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&accept-language=en`,
+            `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${latitude}&longitude=${longitude}`,
+            { signal: controller.signal }
           );
           const data = await response.json();
-          const formattedAddress = data.display_name || "Current location";
+
+          if (!response.ok || !data?.success || !data?.location) {
+            throw new Error(data?.message || "Unable to resolve location");
+          }
+
+          const formattedAddress = data.location?.formattedAddress;
 
           setLatitude(latitude);
           setLongitude(longitude);
@@ -73,6 +82,8 @@ const CreateShop = () => {
             formattedAddress: "Current location",
           }));
           toast.success("Location fetched");
+        } finally {
+          clearTimeout(timeout);
         }
       },
 

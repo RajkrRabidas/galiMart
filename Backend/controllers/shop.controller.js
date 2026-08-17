@@ -2,6 +2,7 @@ const shopModel = require("../models/shop.model");
 const uploadCloudinary = require("../utils/cloudinary");
 const asyncHandler = require("../utils/asyncHandler");
 const jwt = require("jsonwebtoken");
+const { getJson, setJson, clearPattern } = require("../services/redis");
 const {
   createShopSchema,
   updateShopSchema,
@@ -66,6 +67,10 @@ const sendError = (res, statusCode, message, details) => {
 
 const sendSuccess = (res, statusCode, message, data) => {
   return res.status(statusCode).json({ success: true, message, data });
+};
+
+const getNearbyShopCacheKey = ({ latitude, longitude, radius = 5000, search = "" }) => {
+  return `shops:nearby:${Number(latitude)}:${Number(longitude)}:${Number(radius)}:${String(search).trim().toLowerCase()}`;
 };
 
 const CreateShop = asyncHandler(async (req, res) => {
@@ -149,6 +154,9 @@ const CreateShop = asyncHandler(async (req, res) => {
     },
   });
 
+  await clearPattern("shops:nearby:*");
+  await clearPattern(`shop:owner:${String(user._id)}`);
+
   return sendSuccess(res, 201, SHOP_CREATED_SUCCESSFULLY, newShop);
 });
 
@@ -157,11 +165,20 @@ const fetchMyShop = asyncHandler(async (req, res) => {
     return sendError(res, 401, UNAUTHORIZED);
   }
 
+  const ownerKey = `shop:owner:${String(req.user._id)}`;
+  const cachedShop = await getJson(ownerKey);
+
+  if (cachedShop) {
+    return res.json(cachedShop);
+  }
+
   const shop = await shopModel.findOne({ ownerId: req.user._id });
 
   if (!shop) {
     return sendError(res, 404, SHOP_NOT_FOUND);
   }
+
+  await setJson(ownerKey, shop, 600);
 
   if(!req.shopId){
     const token = jwt.sign({ user: {...req.user, shopId: shop._id } }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -194,6 +211,9 @@ const updateStatusShop = asyncHandler(async (req, res) => {
     { isOpen: status },
     { returnDocument: 'after' },
   );
+
+  await clearPattern("shops:nearby:*");
+  await clearPattern(`shop:owner:${String(req.user._id)}`);
 
   return sendSuccess(res, 200, SHOP_STATUS_UPDATED_SUCCESSFULLY, updatedShop);
 });
@@ -254,6 +274,9 @@ const updateShop = asyncHandler(async (req, res) => {
     { returnDocument: 'after' },
   );
 
+  await clearPattern("shops:nearby:*");
+  await clearPattern(`shop:owner:${String(req.user._id)}`);
+
   return sendSuccess(res, 200, SHOP_UPDATED_SUCCESSFULLY, updatedShop);
 });
 
@@ -264,6 +287,14 @@ const getNearByShop = asyncHandler(async (req, res) => {
     return res
       .status(400)
       .json({ message: "Latitude and Longitude are required" });
+  }
+
+  const normalizedRadius = Number(radius) || 5000;
+  const cacheKey = getNearbyShopCacheKey({ latitude, longitude, radius: normalizedRadius, search });
+  const cachedShop = await getJson(cacheKey);
+
+  if (cachedShop) {
+    return res.json({ success: true, count: cachedShop.length, shop: cachedShop });
   }
 
   const query = {
@@ -301,6 +332,8 @@ const getNearByShop = asyncHandler(async (req, res) => {
       },
     },
   ]);
+
+  await setJson(cacheKey, shop, 180);
 
   res.json({ success: true, count: shop.length, shop });
 });

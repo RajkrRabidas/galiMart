@@ -72,16 +72,28 @@ const AddAddressPage = () => {
   const [formattedAddress, setFormattedAddress] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
-  // 🌍 Reverse geocoding
+  // 🌍 Reverse geocoding on the backend via Google Maps
   const fetchFormattedAddress = async (lat, lng) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+
     try {
       const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${lat}&longitude=${lng}`,
+        { signal: controller.signal }
       );
       const data = await res.json();
-      setFormattedAddress(data.display_name || "");
+
+      if (!res.ok || !data?.success || !data?.location) {
+        throw new Error(data?.message || "Unable to resolve location");
+      }
+
+      setFormattedAddress(data.location.formattedAddress || "Current location");
     } catch {
+      setFormattedAddress("Current location");
       toast.error("Failed to fetch address");
+    } finally {
+      clearTimeout(timeout);
     }
   };
   const setLocation = (lat, lng) => {

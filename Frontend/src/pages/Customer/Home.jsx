@@ -78,7 +78,6 @@ const Home = () => {
           <div className="-mt-12">
             <SearchBar />
           </div>
-
           <motion.main
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

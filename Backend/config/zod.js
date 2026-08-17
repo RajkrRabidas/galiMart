@@ -68,6 +68,9 @@ const createShopSchema = z.object({
 const updateShopSchema = z.object({
   name: z.string().trim().min(1, "Shop name is required").optional(),
   description: z.string().trim().optional(),
+  latitude: z.coerce.number().optional(),
+  longitude: z.coerce.number().optional(),
+  formattedAddress: z.string().trim().optional(),
 });
 
 const updateShopStatusSchema = z.object({

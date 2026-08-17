@@ -37,8 +37,7 @@ const createOrder = asyncHandler(async (req, res) => {
   }
 
   const shop = firstCartItem.shopId;
-  // const shopId = shop._id.toString();
-  const shopId = await ShopModel.findById(shopId);
+  const shopId = shop._id.toString();
   if (!shop) return res.status(404).json({ message: "Shop not found" });
   if (!shop.isOpen) return res.status(400).json({ message: "Shop is closed" });
 
