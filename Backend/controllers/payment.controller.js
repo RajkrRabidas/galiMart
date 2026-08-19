@@ -60,9 +60,13 @@ const createRazorpayOrder = async (req, res) => {
 
 const verifyRazorpayPayment = async (req, res) => {
   const {
-    rezorpay_order_id,
-    rezorpay_payment_id,
-    rezorpay_signature,
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    // Keep accepting the old misspelled keys for existing clients.
+    rezorpay_order_id = razorpay_order_id,
+    rezorpay_payment_id = razorpay_payment_id,
+    rezorpay_signature = razorpay_signature,
     orderId,
   } = req.body;
 
@@ -83,7 +87,10 @@ const verifyRazorpayPayment = async (req, res) => {
   });
 
   res.json({
+    success: true,
     message: "payment verified successfully",
+    paymentId: rezorpay_payment_id,
+    orderId,
   });
 };
 

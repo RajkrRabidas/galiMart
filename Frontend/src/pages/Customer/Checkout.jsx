@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "../../api/axios";
 import { useCart } from "../../context/CartContext";
-import AddressCard from "../../components/Checkout/AddressCard";
-import PaymentMethod from "../../components/Checkout/PaymentMethod";
-import OrderSummary from "../../components/Checkout/OrderSummary";
-import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 
@@ -70,7 +66,7 @@ const Checkout = () => {
       });
 
       return data;
-    } catch (error) {
+    } catch {
       toast.error("Failed to create order.");
     } finally {
       setCreatingOrder(false);
@@ -101,17 +97,24 @@ const Checkout = () => {
 
         handler: async function (response) {
           try {
+            const paymentId = response.razorpay_payment_id;
+            const verifiedOrderId = response.razorpay_order_id;
+
+            if (!paymentId || !verifiedOrderId || !response.razorpay_signature) {
+              throw new Error("Incomplete Razorpay payment response");
+            }
+
             await axios.post("/payment/verify-payment", {
-              rezorpay_order_id:
-                response.razorpay_order_id || response.rezorpay_order_id,
-              rezorpay_payment_id: response.razorpay_payment_id,
-              rezorpay_signature: response.razorpay_signature,
+              razorpay_order_id: verifiedOrderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: response.razorpay_signature,
               orderId,
             });
 
             toast.success("Payment successful 🎉");
-            navigate(`/payment-success/${response.rezorpay_payment_id}`);
+            navigate(`/payment-success/${paymentId}?orderId=${orderId}`);
           } catch (error) {
+            console.error("Payment verification failed:", error);
             toast.error("Payment verification failed");
           }
         },
@@ -176,14 +179,14 @@ const Checkout = () => {
         <h3 className="font-semibold">Order Summary</h3>
 
           {
-            cartItems.map((cartItem) => {
+            cartItems.map((cartItem, index) => {
               const item = cartItem.itemId || cartItem;
               const itemName = item.name || "Item";
               const itemPrice = item.price || 0;
               const quantity = cartItem.quantity || 1;
               
               return (
-                <div className="flex justify-between text-sm" key={cartItem._id || Math.random()}>
+                <div className="flex justify-between text-sm" key={cartItem._id || `${item.name || "item"}-${index}`}>
                   <span>{itemName} x {quantity}</span>
                   <span>₹{itemPrice * quantity}</span>
                 </div>

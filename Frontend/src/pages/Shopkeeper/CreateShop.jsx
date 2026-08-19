@@ -1,15 +1,20 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Upload } from "lucide-react";
-import { Store } from "lucide-react";
+import { Upload, Store, LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
 import { useShops } from "../../context/ShopContext";
 import { SHOP_CATEGORIES } from "../../constants/shopCategories";
 
+const DEFAULT_LOCATION = {
+  lat: 22.5958,
+  lng: 88.2636,
+};
+
 const CreateShop = () => {
   const navigate = useNavigate();
-
   const { createShop, getMyShop } = useShops();
+  const mapRef = useRef(null);
 
   const [shop, setShop] = useState({
     name: "",
@@ -22,12 +27,16 @@ const CreateShop = () => {
 
   const [image, setImage] = useState(null);
   const [aadharImage, setAadharImage] = useState(null);
-
   const [latitude, setLatitude] = useState(null);
-
   const [longitude, setLongitude] = useState(null);
-
   const [loading, setLoading] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationMessage, setLocationMessage] = useState("");
+
+  const selectedLocation =
+    latitude !== null && longitude !== null
+      ? { lat: latitude, lng: longitude }
+      : DEFAULT_LOCATION;
 
   const handleChange = (e) => {
     setShop({
@@ -35,6 +44,7 @@ const CreateShop = () => {
       [e.target.name]: e.target.value,
     });
   };
+
   const handleImageChange = (e) => {
     setImage(e.target.files[0]);
   };
@@ -42,59 +52,123 @@ const CreateShop = () => {
   const handleAadharChange = (e) => {
     setAadharImage(e.target.files[0]);
   };
+
+  const formatFallbackAddress = (lat, lng) => {
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
+      return "";
+    }
+
+    return `Lat ${Number(lat).toFixed(5)}, Lng ${Number(lng).toFixed(5)}`;
+  };
+
+  const setLocation = async (lat, lng, useCurrentLocation = false) => {
+    const validLat = Number(lat);
+    const validLng = Number(lng);
+
+    if (!Number.isFinite(validLat) || !Number.isFinite(validLng)) {
+      return;
+    }
+
+    setLatitude(validLat);
+    setLongitude(validLng);
+
+    if (mapRef.current) {
+      mapRef.current.panTo({ lat: validLat, lng: validLng });
+      mapRef.current.setZoom(16);
+    }
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${validLat}&longitude=${validLng}`
+      );
+      const data = await response.json();
+
+      if (!response.ok || !data?.success || !data?.location) {
+        const fallbackAddress = formatFallbackAddress(validLat, validLng);
+        setShop((prev) => ({
+          ...prev,
+          formattedAddress: fallbackAddress,
+        }));
+
+        if (useCurrentLocation) {
+          setLocationMessage("Location selected");
+          toast.success("Location selected");
+        }
+        return;
+      }
+
+      setShop((prev) => ({
+        ...prev,
+        formattedAddress: data.location.formattedAddress || formatFallbackAddress(validLat, validLng),
+      }));
+
+      if (useCurrentLocation) {
+        setLocationMessage("Location fetched");
+        toast.success("Location fetched");
+      }
+    } catch (error) {
+      console.warn("Reverse geocoding failed:", error);
+      const fallbackAddress = formatFallbackAddress(validLat, validLng);
+      setShop((prev) => ({
+        ...prev,
+        formattedAddress: fallbackAddress,
+      }));
+
+      if (useCurrentLocation) {
+        setLocationMessage("Location selected");
+        toast.success("Location selected");
+      }
+    } finally {
+      if (useCurrentLocation) {
+        setLocationLoading(false);
+      }
+    }
+  };
+
+  const handleMapClick = async (event) => {
+    const lat = event?.detail?.latLng?.lat;
+    const lng = event?.detail?.latLng?.lng;
+
+    if (typeof lat !== "number" || typeof lng !== "number") {
+      return;
+    }
+
+    await setLocation(lat, lng, false);
+  };
+
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast.error("Browser does not support location services");
       return;
     }
 
+    setLocationLoading(true);
+    setLocationMessage("");
+
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const latitude = position.coords.latitude;
-        const longitude = position.coords.longitude;
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
 
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 3000);
-
-        try {
-          const response = await fetch(
-            `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${latitude}&longitude=${longitude}`,
-            { signal: controller.signal }
-          );
-          const data = await response.json();
-
-          if (!response.ok || !data?.success || !data?.location) {
-            throw new Error(data?.message || "Unable to resolve location");
-          }
-
-          const formattedAddress = data.location?.formattedAddress;
-
-          setLatitude(latitude);
-          setLongitude(longitude);
-          setShop((prev) => ({ ...prev, formattedAddress }));
-
-          toast.success("Location fetched");
-        } catch (error) {
-          setLatitude(latitude);
-          setLongitude(longitude);
-          setShop((prev) => ({
-            ...prev,
-            formattedAddress: "Current location",
-          }));
-          toast.success("Location fetched");
-        } finally {
-          clearTimeout(timeout);
-        }
+        await setLocation(lat, lng, true);
       },
-
-      () => {
-        toast.error("Please allow location access");
+      (error) => {
+        setLocationLoading(false);
+        setLocationMessage("");
+        console.error("Geolocation failed:", error);
+        toast.error("Unable to access your location. Please allow location access and try again.");
       },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
     );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (
       !shop.name ||
       !shop.phone ||
@@ -106,20 +180,23 @@ const CreateShop = () => {
       return;
     }
 
-    if (!latitude || !longitude) {
-      toast.error("Please fetch your current location");
+    if (latitude === null || longitude === null) {
+      toast.error("Please select your shop location");
+      return;
+    }
+
+    if (!shop.formattedAddress) {
+      toast.error("Please select your shop location");
       return;
     }
 
     if (!image) {
       toast.error("Please upload a shop image");
-
       return;
     }
 
     if (!aadharImage) {
       toast.error("Please upload your Aadhaar image");
-
       return;
     }
 
@@ -127,25 +204,15 @@ const CreateShop = () => {
       setLoading(true);
 
       const formData = new FormData();
-
       formData.append("name", shop.name);
-
       formData.append("description", shop.description);
-
       formData.append("phone", shop.phone);
-
       formData.append("formattedAddress", shop.formattedAddress);
-
       formData.append("aadharNumber", shop.aadharNumber);
-
       formData.append("shopType", shop.shopType);
-
       formData.append("latitude", latitude);
-
       formData.append("longitude", longitude);
-
       formData.append("image", image);
-
       formData.append("aadharImage", aadharImage);
 
       await createShop(formData);
@@ -159,16 +226,15 @@ const CreateShop = () => {
         aadharNumber: "",
         shopType: "",
       }));
-      console.log("Shop Created Successfully", formData);
+      setLatitude(null);
+      setLongitude(null);
+      setLocationMessage("");
 
       toast.success("Shop Created Successfully");
-
       getMyShop();
-
       navigate("/seller/dashboard");
     } catch (error) {
       console.log(error);
-
       toast.error(error?.response?.data?.message || "Failed to create shop");
     } finally {
       setLoading(false);
@@ -176,7 +242,7 @@ const CreateShop = () => {
   };
 
   return (
-    <div className="min-h-screen from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-xl">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
@@ -184,7 +250,6 @@ const CreateShop = () => {
           </div>
 
           <h1 className="text-4xl font-bold mt-5">Create Your Shop</h1>
-
           <p className="text-gray-500 mt-2">
             Complete your shop profile to start selling.
           </p>
@@ -193,7 +258,6 @@ const CreateShop = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="font-semibold">Shop Name</label>
-
             <input
               type="text"
               name="name"
@@ -207,7 +271,6 @@ const CreateShop = () => {
 
           <div>
             <label className="font-semibold">Shop Type</label>
-
             <select
               name="shopType"
               value={shop.shopType}
@@ -226,7 +289,6 @@ const CreateShop = () => {
 
           <div>
             <label className="font-semibold">Description</label>
-
             <textarea
               rows={3}
               name="description"
@@ -236,9 +298,9 @@ const CreateShop = () => {
               className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500"
             />
           </div>
+
           <div>
             <label className="font-semibold">Phone Number</label>
-
             <input
               type="number"
               name="phone"
@@ -254,7 +316,6 @@ const CreateShop = () => {
             <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-sm text-gray-600 hover:bg-gray-50">
               <Upload className="w-5 h-5 text-green-700" />
               {image ? image.name : "Upload Shop image"}
-
               <input
                 type="file"
                 accept="image/*"
@@ -282,7 +343,6 @@ const CreateShop = () => {
 
           <div>
             <label className="font-semibold">Aadhaar Number</label>
-
             <input
               type="text"
               name="aadharNumber"
@@ -296,23 +356,63 @@ const CreateShop = () => {
           <div>
             <label className="font-semibold">Shop Address</label>
 
-            <textarea
-              rows={3}
-              name="formattedAddress"
-              value={shop.formattedAddress}
-              readOnly
-              placeholder="Click the button to fetch your address"
-              className="w-full mt-2 border rounded-xl p-3 outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50"
-            />
-          </div>
+            <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
+                <Map
+                  mapId="gali-mart-shop-map"
+                  center={selectedLocation}
+                  defaultZoom={13}
+                  onClick={handleMapClick}
+                  onLoad={(map) => {
+                    mapRef.current = map;
+                  }}
+                  style={{ width: "100%", height: "260px" }}
+                >
+                  {latitude !== null && longitude !== null && (
+                    <AdvancedMarker position={{ lat: latitude, lng: longitude }} />
+                  )}
+                </Map>
+              </APIProvider>
+            </div>
 
-          <button
-            type="button"
-            onClick={getCurrentLocation}
-            className="w-full bg-blue-500 text-white py-3 rounded-xl"
-          >
-            Use Current Location
-          </button>
+            <button
+              type="button"
+              onClick={getCurrentLocation}
+              disabled={locationLoading}
+              className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {locationLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  Fetching Location...
+                </span>
+              ) : locationMessage ? (
+                "Location fetched"
+              ) : (
+                "Use Current Location"
+              )}
+            </button>
+
+            <div className="mt-4">
+              {shop.formattedAddress ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <div className="flex gap-3">
+                    <div className="text-xl">📍</div>
+                    <div>
+                      <p className="font-semibold text-gray-900">Selected Shop Location</p>
+                      <p className="mt-1 text-sm leading-6 text-gray-600">
+                        {shop.formattedAddress}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-gray-500">
+                  Click "Use Current Location" or select a location on the map.
+                </div>
+              )}
+            </div>
+          </div>
 
           <button
             type="submit"

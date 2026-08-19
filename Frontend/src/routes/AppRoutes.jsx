@@ -35,6 +35,7 @@ import DeliveryDashboard from "../pages/Delivery/Dashboard";
 import DeliveryOrders from "../pages/Delivery/Orders";
 import DeliveryProfile from "../pages/Delivery/Profile";
 import CreateDeliveryProfile from "../pages/Delivery/CreateProfile";
+import PaymentSuccess from "../pages/Customer/paymentSuccess";
 import NotFound from "../pages/404";
 
 const AppRoutes = () => {
@@ -48,6 +49,7 @@ const AppRoutes = () => {
       <Route path="/product/:id" element={<ProtectedRoute allowedRoles={["user"]}><ProductDetails /></ProtectedRoute>} />
       <Route path="/cart" element={<ProtectedRoute allowedRoles={["user"]}><Cart /></ProtectedRoute>} />
       <Route path="/checkout" element={<ProtectedRoute allowedRoles={["user"]}><Checkout /></ProtectedRoute>} />
+      <Route path="/payment-success/:paymentId" element={<ProtectedRoute allowedRoles={["user"]}><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute allowedRoles={["user"]}><CustomerOrders /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
       <Route path="/addresses" element={<ProtectedRoute allowedRoles={["user"]}><Addresses /></ProtectedRoute>} />

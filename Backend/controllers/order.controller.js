@@ -7,21 +7,37 @@ const { publishOrderEvent } = require("../config/payment.producer");
 const { emitRealtimeEvent } = require("../services/realtime.service");
 
 const createOrder = asyncHandler(async (req, res) => {
-  const user = req.user
+  const user = req.user;
 
-  if(!user){
-    return res.status(401).json({message: "Unauthorized"})
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const { paymentMethod, addressId, riderDistance} = req.body;
-
+  const { paymentMethod, addressId } = req.body;
 
   if (!addressId)
     return res.status(400).json({ message: "Address is required" });
 
-
-  const address = await userDetailsModel.findOne({ _id: addressId, userId: user._id });
+  const address = await userDetailsModel.findOne({
+    _id: addressId,
+    userId: user._id,
+  });
   if (!address) return res.status(404).json({ message: "Address not found" });
+
+  const getDistanceKM = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the earth in km
+    const deg2rad = (degrees) => (degrees * Math.PI) / 180;
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) *
+        Math.cos(deg2rad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return +(R * c).toFixed(2); // Distance in km
+  };
 
   const cartItems = await cartModel
     .find({ userId: user._id })
@@ -30,24 +46,44 @@ const createOrder = asyncHandler(async (req, res) => {
   if (cartItems.length === 0)
     return res.status(400).json({ message: "Cart is empty" });
 
-  const firstCartItem = cartItems[0]
+  const firstCartItem = cartItems[0];
 
-  if(!firstCartItem || !firstCartItem.shopId){
-    return res.status(400).json({message: "Invaild cart Data"})
+  if (!firstCartItem || !firstCartItem.shopId) {
+    return res.status(400).json({ message: "Invaild cart Data" });
   }
 
   const shop = firstCartItem.shopId;
-  const shopId = shop._id.toString();
   if (!shop) return res.status(404).json({ message: "Shop not found" });
+  const shopId = shop._id.toString();
   if (!shop.isOpen) return res.status(400).json({ message: "Shop is closed" });
+
+  const addressCoordinates = address.location?.coordinates;
+  const shopCoordinates = shop.autoLocation?.coordinates;
+  if (
+    !Array.isArray(addressCoordinates) ||
+    addressCoordinates.length < 2 ||
+    !Array.isArray(shopCoordinates) ||
+    shopCoordinates.length < 2 ||
+    !addressCoordinates.slice(0, 2).every(Number.isFinite) ||
+    !shopCoordinates.slice(0, 2).every(Number.isFinite)
+  ) {
+    return res.status(400).json({ message: "Invalid address or shop location" });
+  }
+
+  const distance = getDistanceKM(
+    addressCoordinates[1],
+    addressCoordinates[0],
+    shopCoordinates[1],
+    shopCoordinates[0]
+  );
 
   let subTotal = 0;
 
   const orderItems = cartItems.map((cart) => {
-    const item = cart.itemId
+    const item = cart.itemId;
 
-    if(!item){
-      throw new Error("Invalid cart item")
+    if (!item) {
+      throw new Error("Invalid cart item");
     }
 
     const itemTotal = item.price * cart.quantity;
@@ -61,12 +97,12 @@ const createOrder = asyncHandler(async (req, res) => {
     };
   });
   const deliveryFee = subTotal < 250 ? 49 : 0;
-  const platformFee = 7 
-  const totalAmount = subTotal + deliveryFee + platformFee
+  const platformFee = 7;
+  const totalAmount = subTotal + deliveryFee + platformFee;
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-  const [longitude, latitude] = address.location.coordinates;
+  const [longitude, latitude] = addressCoordinates;
 
   const order = await orderModel.create({
     userId: user._id.toString(),
@@ -82,18 +118,17 @@ const createOrder = asyncHandler(async (req, res) => {
     deliveryAddress: {
       formattedAddress: address.formattedAddress,
       mobile: address.mobile,
-      latitude, 
+      latitude,
       longitude,
     },
-    riderDistance: Number(riderDistance) || 0,
-    riderAmount: Math.ceil(Number(riderDistance) || 0) * 17,
+    riderDistance: distance,
+    riderAmount: Math.ceil(distance || 0) * 17,
     paymentMethod,
     paymentStatus: "pending",
     status: "placed",
     expiresAt,
   });
 
-  await cartModel.deleteMany({ userId: user._id });
   res.status(201).json({
     message: "Order created successfully",
     orderId: order._id.toString(),
@@ -111,9 +146,12 @@ const fetchOrderForPayment = asyncHandler(async (req, res) => {
     return res
       .status(400)
       .json({ message: "Cash on delivery does not require online payment" });
-  res.json({ orderId: order._id.toString(), amount: order.totalAmount, currency: "INR" });
+  res.json({
+    orderId: order._id.toString(),
+    amount: order.totalAmount,
+    currency: "INR",
+  });
 });
-
 
 const fetchShopOrders = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -130,10 +168,11 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
 
   const limit = req.query.limit ? parseInt(req.query.limit) : 5;
 
-  const orders = await orderModel.find({
-    shopId,
-    paymentStatus: "paid",
-  })
+  const orders = await orderModel
+    .find({
+      shopId,
+      paymentStatus: "paid",
+    })
     .sort({ createdAt: -1 })
     .limit(limit);
 
@@ -253,7 +292,10 @@ const fetchSingleOrder = asyncHandler(async (req, res) => {
 const assignRiderToOrder = asyncHandler(async (req, res) => {
   const { orderId, riderId, riderName, riderPhone } = req.body;
 
-  const orderAvailable = await orderModel.findOne({ riderId, status: { $ne: "delivered" } });
+  const orderAvailable = await orderModel.findOne({
+    riderId,
+    status: { $ne: "delivered" },
+  });
 
   if (orderAvailable) {
     return res.status(400).json({ message: "you already have an order" });
@@ -273,7 +315,7 @@ const assignRiderToOrder = asyncHandler(async (req, res) => {
       riderPhone,
       status: "rider_assigned",
     },
-    { returnDocument: 'after' },
+    { returnDocument: "after" },
   );
 
   emitRealtimeEvent({
@@ -318,7 +360,7 @@ const getCurrentOrdersForRider = asyncHandler(async (req, res) => {
 });
 
 const updateOrderStatusRider = asyncHandler(async (req, res) => {
-  const {orderId} = req.body;
+  const { orderId } = req.body;
 
   const order = await orderModel.findById(orderId);
 
@@ -364,7 +406,9 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
     return res.json({ message: "Order status updated successfully", order });
   }
 
-  return res.status(400).json({ message: "Order cannot be updated in this state" });
+  return res
+    .status(400)
+    .json({ message: "Order cannot be updated in this state" });
 });
 
 module.exports = {

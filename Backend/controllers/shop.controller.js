@@ -298,7 +298,10 @@ const getNearByShop = asyncHandler(async (req, res) => {
   }
 
   const query = {
-    isVerified: true,
+    $or: [
+      { isVerified: true },
+      { status: "approved" },
+    ],
   };
 
   if (search) {
@@ -313,7 +316,7 @@ const getNearByShop = asyncHandler(async (req, res) => {
           coordinates: [Number(longitude), Number(latitude)],
         },
         distanceField: "distance",
-        maxDistance: Number(radius),
+        maxDistance: normalizedRadius,
         spherical: true,
         query,
       },
@@ -359,6 +362,8 @@ const verifyShop = asyncHandler(async (req, res) => {
     { status, isVerified },
     { returnDocument: 'after' },
   );
+
+  await clearPattern("shops:nearby:*");
 
   return sendSuccess(
     res,

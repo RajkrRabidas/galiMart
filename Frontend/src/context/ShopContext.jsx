@@ -1,8 +1,7 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useState } from "react";
 import {
   createShop as createShopApi,
   getNearbyShops,
-  getShopById,
   getMyShop as getMyShopApi,
 } from "../api/shopApi";
 
@@ -27,7 +26,7 @@ const [loading, setLoading] = useState(false);
     throw error;
   }
 };
-const fetchNearbyShops = async (params) => {
+const fetchNearbyShops = useCallback(async (params) => {
   try {
     setLoading(true);
     const data = await getNearbyShops(params);
@@ -38,7 +37,7 @@ const fetchNearbyShops = async (params) => {
   } finally {
     setLoading(false);
   }
-};
+}, []);
 
   // -----------------------------
   // ADD PRODUCT

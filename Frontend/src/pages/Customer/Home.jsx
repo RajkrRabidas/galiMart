@@ -12,6 +12,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useSearchParams } from "react-router";
 
 const Home = () => {
+  const nearbyRadius = 20000;
   const { shops, loading, fetchNearbyShops } = useShops();
   const { location, loadingLocation } = useAuth();
   const [searchParam] = useSearchParams();
@@ -26,19 +27,19 @@ const Home = () => {
     fetchNearbyShops({
       latitude: location.latitude,
       longitude: location.longitude,
-      radius: 5000,
+      radius: nearbyRadius,
       search,
     });
-  }, [location, search, fetchNearbyShops]);
+  }, [location?.latitude, location?.longitude, search, fetchNearbyShops]);
 
   // Request location access if denied
   const requestLocationAccess = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        () => {
           window.location.reload();
         },
-        (error) => {
+        () => {
           alert("Please enable location access in browser settings");
         }
       );

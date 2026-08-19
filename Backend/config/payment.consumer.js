@@ -1,5 +1,6 @@
 const { getChannel } = require("../config/rabbitmq");
 const orderModel = require("../models/order");
+const cartModel = require("../models/cart.model");
 const Rider = require("../models/rider.model");
 const { emitRealtimeEvent } = require("../services/realtime.service");
 
@@ -49,6 +50,8 @@ const startPaymentConsumer = async () => {
       }
 
       console.log("✔ order placed successfully", order._id);
+
+      await cartModel.deleteMany({ userId: order.userId });
 
       emitRealtimeEvent({
         event: "order:new",

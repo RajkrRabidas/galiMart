@@ -24,8 +24,15 @@ const extractCityFromGoogleResponse = (googleResult = {}) => {
     }
   }
 
-  return match;
+  return undefined;
 };
+
+const buildFallbackLocation = (latitude, longitude) => ({
+  latitude,
+  longitude,
+  formattedAddress: `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`,
+  city: undefined,
+});
 
 const reverseGeocodeLocation = async (req, res) => {
   const rawLatitude = req.query.latitude;
@@ -49,10 +56,11 @@ const reverseGeocodeLocation = async (req, res) => {
   }
 
   if (!process.env.GOOGLE_MAPS_API_KEY) {
-    console.error("Google Maps API key is missing.");
-    return res.status(500).json({
-      success: false,
-      message: "Unable to resolve location",
+    console.warn("Google Maps API key is missing. Falling back to raw coordinates.");
+    return res.json({
+      success: true,
+      location: buildFallbackLocation(latitude, longitude),
+      fallback: true,
     });
   }
 
@@ -69,9 +77,10 @@ const reverseGeocodeLocation = async (req, res) => {
     const googleResults = googleResponse?.data?.results || [];
 
     if (googleStatus !== "OK" || googleResults.length === 0) {
-      return res.status(200).json({
-        success: false,
-        message: "Unable to resolve location",
+      return res.json({
+        success: true,
+        location: buildFallbackLocation(latitude, longitude),
+        fallback: true,
       });
     }
 
@@ -83,15 +92,16 @@ const reverseGeocodeLocation = async (req, res) => {
       location: {
         latitude,
         longitude,
-        formattedAddress: primaryResult?.formatted_address,
+        formattedAddress: primaryResult?.formatted_address || `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`,
         city,
       },
     });
   } catch (error) {
-    console.error("Google reverse geocoding failed:", error?.response?.status || error.message);
-    return res.status(200).json({
-      success: false,
-      message: "Unable to resolve location",
+    console.warn("Google reverse geocoding failed, using raw coordinates instead:", error?.response?.status || error.message);
+    return res.json({
+      success: true,
+      location: buildFallbackLocation(latitude, longitude),
+      fallback: true,
     });
   }
 };
