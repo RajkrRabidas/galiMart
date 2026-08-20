@@ -1,18 +1,33 @@
-const {Server} = require("socket.io")
-const jwt = require("jsonwebtoken")
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 
-let io = Server ;
+let io = null;
+
+const getCookie = (cookieHeader, name) => {
+    if (!cookieHeader) {
+        return null;
+    }
+
+    const cookie = cookieHeader
+        .split(";")
+        .map((part) => part.trim())
+        .find((part) => part.startsWith(`${name}=`));
+
+    return cookie ? decodeURIComponent(cookie.slice(name.length + 1)) : null;
+};
+
 const initSocket = (server) => {
     io = new Server(server, {
         cors: {
-            origin: "*",
-
+            origin: process.env.FRONTEND_URL || "http://localhost:5173",
+            credentials: true,
         }
     })
 
     io.use((socket, next)=> {
         try{
-            const token = socket.handshake.auth?.token;
+            const token = socket.handshake.auth?.token ||
+                getCookie(socket.handshake.headers.cookie, "access_token");
 
             if(!token){
                 return next(new Error("Authentication error"))
@@ -20,14 +35,14 @@ const initSocket = (server) => {
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            if(!decoded || !decoded.user){
+            if (!decoded || (!decoded.user && !decoded.id)) {
                 return next(new Error("Authentication error"))
             }
 
-            socket.data.user = decoded.user;
+            socket.data.user = decoded.user || { _id: decoded.id };
             next();
         }catch(err){
-            console.log(err)
+            console.log("Socket connection failed",err)
             next(new Error("Authentication error"))
         }
     })
@@ -54,7 +69,6 @@ const initSocket = (server) => {
         socket.on("disconnect", () => {
             console.log(`User disconnected ${userId}`);
         });
-
     });
 
     return io;

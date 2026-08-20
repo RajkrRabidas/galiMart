@@ -16,19 +16,22 @@ import "./index.css";
 
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
+import { SocketProvider } from "./context/SocketContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
     <AuthProvider>
       <CartProvider>
-        <OrderProvider>
+        <OrderProvider> 
           <NotificationProvider>
             <ShopProvider>
               <MarketplaceProvider>
                 <ServiceProvider>
                   <ServiceBookingProvider>
+                    <SocketProvider>
                     <App />
                     <Toaster position="top-right" />
+                    </SocketProvider>
                   </ServiceBookingProvider>
                 </ServiceProvider>
               </MarketplaceProvider>

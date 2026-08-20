@@ -166,7 +166,7 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Shop ID is required" });
   }
 
-  const limit = req.query.limit ? parseInt(req.query.limit) : 5;
+  const limit = req.query.limit ? parseInt(req.query.limit) : 0;
 
   const orders = await orderModel
     .find({
