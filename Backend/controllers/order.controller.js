@@ -2,6 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const userDetailsModel = require("../models/userDetails.model");
 const cartModel = require("../models/cart.model");
 const ShopModel = require("../models/shop.model");
+const shopMenuModel = require("../models/shopMenu.model");
 const orderModel = require("../models/order");
 const { publishOrderEvent } = require("../config/payment.producer");
 const { emitRealtimeEvent } = require("../services/realtime.service");
@@ -91,6 +92,7 @@ const createOrder = asyncHandler(async (req, res) => {
     return {
       itemId: item._id.toString(),
       name: item.name,
+      image: item.image,
       price: item.price,
       quantity: cart.quantity,
       total: itemTotal,
@@ -259,14 +261,34 @@ const getMyOrders = asyncHandler(async (req, res) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
-  const order = await orderModel
+  const orders = await orderModel
     .find({
       userId: req.user._id.toString(),
       paymentStatus: "paid",
     })
     .sort({ createdAt: -1 });
 
-  res.json({ orders: order });
+  const itemIds = orders.flatMap((order) =>
+    order.items.map((item) => item.itemId).filter(Boolean),
+  );
+  const menuItems = await shopMenuModel
+    .find({ _id: { $in: itemIds } })
+    .select("image")
+    .lean();
+  const imageByItemId = new Map(
+    menuItems.map((item) => [item._id.toString(), item.image]),
+  );
+
+  const ordersWithImages = orders.map((order) => {
+    const orderData = order.toObject();
+    orderData.items = orderData.items.map((item) => ({
+      ...item,
+      image: item.image || imageByItemId.get(item.itemId),
+    }));
+    return orderData;
+  });
+
+  res.json({ orders: ordersWithImages });
 });
 
 const fetchSingleOrder = asyncHandler(async (req, res) => {

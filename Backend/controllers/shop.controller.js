@@ -108,6 +108,10 @@ const CreateShop = asyncHandler(async (req, res) => {
     shopType,
   } = validation.data;
 
+  if (!formattedAddress || /^selected location/i.test(formattedAddress.trim())) {
+    return sendError(res, 400, "A readable formatted shop address is required");
+  }
+
   const imageFile = req.files?.image?.[0];
   const aadharFile = req.files?.aadharImage?.[0];
 

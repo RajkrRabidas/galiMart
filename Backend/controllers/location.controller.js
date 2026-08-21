@@ -1,6 +1,7 @@
 const axios = require("axios");
 
 const GOOGLE_GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json";
+const OSM_REVERSE_GEOCODE_URL = "https://nominatim.openstreetmap.org/reverse";
 
 const isValidCoordinates = (latitude, longitude) => {
   const lat = Number(latitude);
@@ -30,9 +31,75 @@ const extractCityFromGoogleResponse = (googleResult = {}) => {
 const buildFallbackLocation = (latitude, longitude) => ({
   latitude,
   longitude,
-  formattedAddress: `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`,
+  formattedAddress: `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
   city: undefined,
 });
+
+const reverseGeocodeWithOpenStreetMap = async (latitude, longitude) => {
+  const response = await axios.get(OSM_REVERSE_GEOCODE_URL, {
+    params: {
+      format: "jsonv2",
+      lat: latitude,
+      lon: longitude,
+      zoom: 18,
+      addressdetails: 1,
+    },
+    headers: {
+      // Nominatim requires an identifying user agent.
+      "User-Agent": "GaliMart/1.0 (delivery-address-lookup)",
+    },
+    timeout: 8000,
+  });
+
+  const address = response?.data?.display_name;
+  if (!address) {
+    throw new Error("Readable address not found");
+  }
+
+  return {
+    latitude,
+    longitude,
+    formattedAddress: address,
+    city: response.data.address?.city || response.data.address?.town || response.data.address?.village,
+  };
+};
+
+const resolveReadableLocation = async (latitude, longitude) => {
+  if (process.env.GOOGLE_MAPS_API_KEY) {
+    try {
+      const googleResponse = await axios.get(GOOGLE_GEOCODE_URL, {
+        params: {
+          latlng: `${latitude},${longitude}`,
+          key: process.env.GOOGLE_MAPS_API_KEY,
+        },
+        timeout: 8000,
+      });
+
+      const googleResult = googleResponse?.data?.results?.[0];
+      if (googleResponse?.data?.status === "OK" && googleResult?.formatted_address) {
+        return {
+          latitude,
+          longitude,
+          formattedAddress: googleResult.formatted_address,
+          city: extractCityFromGoogleResponse(googleResult),
+          addressComponents: googleResult.address_components || [],
+          placeId: googleResult.place_id,
+        };
+      }
+
+      console.warn("Google reverse geocoding returned:", googleResponse?.data?.status);
+    } catch (error) {
+      console.warn("Google reverse geocoding failed:", error?.response?.status || error.message);
+    }
+  }
+
+  try {
+    return await reverseGeocodeWithOpenStreetMap(latitude, longitude);
+  } catch (error) {
+    console.warn("Readable reverse geocoding failed:", error.message);
+    return null;
+  }
+};
 
 const reverseGeocodeLocation = async (req, res) => {
   const rawLatitude = req.query.latitude;
@@ -55,59 +122,26 @@ const reverseGeocodeLocation = async (req, res) => {
     });
   }
 
-  if (!process.env.GOOGLE_MAPS_API_KEY) {
-    console.warn("Google Maps API key is missing. Falling back to raw coordinates.");
-    return res.json({
-      success: true,
-      location: buildFallbackLocation(latitude, longitude),
-      fallback: true,
+  const location = await resolveReadableLocation(latitude, longitude);
+
+  if (!location?.formattedAddress) {
+    return res.status(404).json({
+      success: false,
+      message: "Readable address not found",
     });
   }
 
-  try {
-    const googleResponse = await axios.get(GOOGLE_GEOCODE_URL, {
-      params: {
-        latlng: `${latitude},${longitude}`,
-        key: process.env.GOOGLE_MAPS_API_KEY,
-      },
-      timeout: 8000,
-    });
-
-    const googleStatus = googleResponse?.data?.status;
-    const googleResults = googleResponse?.data?.results || [];
-
-    if (googleStatus !== "OK" || googleResults.length === 0) {
-      return res.json({
-        success: true,
-        location: buildFallbackLocation(latitude, longitude),
-        fallback: true,
-      });
-    }
-
-    const primaryResult = googleResults[0];
-    const city = extractCityFromGoogleResponse(primaryResult);
-
-    return res.json({
-      success: true,
-      location: {
-        latitude,
-        longitude,
-        formattedAddress: primaryResult?.formatted_address || `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`,
-        city,
-      },
-    });
-  } catch (error) {
-    console.warn("Google reverse geocoding failed, using raw coordinates instead:", error?.response?.status || error.message);
-    return res.json({
-      success: true,
-      location: buildFallbackLocation(latitude, longitude),
-      fallback: true,
-    });
-  }
+  return res.json({
+    success: true,
+    location,
+    source: process.env.GOOGLE_MAPS_API_KEY ? "google-or-openstreetmap" : "openstreetmap",
+  });
 };
 
 module.exports = {
   isValidCoordinates,
   extractCityFromGoogleResponse,
+  reverseGeocodeWithOpenStreetMap,
+  resolveReadableLocation,
   reverseGeocodeLocation,
 };

@@ -72,28 +72,26 @@ const AddAddressPage = () => {
   const [formattedAddress, setFormattedAddress] = useState("");
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
   // 🌍 Reverse geocoding on the backend via Google Maps
   const fetchFormattedAddress = async (lat, lng) => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    setLocationLoading(true);
 
     try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${lat}&longitude=${lng}`,
-        { signal: controller.signal }
-      );
-      const data = await res.json();
+      const { data } = await api.get("/location/reverse-geocode", {
+        params: { latitude: lat, longitude: lng },
+      });
 
-      if (!res.ok || !data?.success || !data?.location) {
+      if (!data?.success || !data?.location?.formattedAddress) {
         throw new Error(data?.message || "Unable to resolve location");
       }
 
-      setFormattedAddress(data.location.formattedAddress || "Current location");
-    } catch {
-      setFormattedAddress("Current location");
-      toast.error("Failed to fetch address");
+      setFormattedAddress(data.location.formattedAddress);
+    } catch (error) {
+      setFormattedAddress("");
+      toast.error(error.response?.data?.message || "Unable to fetch formatted address");
     } finally {
-      clearTimeout(timeout);
+      setLocationLoading(false);
     }
   };
   const setLocation = (lat, lng) => {
@@ -184,7 +182,11 @@ href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         </MapContainer>
       </div>
       {/* 📍 Selected address */}
-      {formattedAddress && (
+        {locationLoading ? (
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-gray-500">
+            Fetching formatted address...
+          </div>
+        ) : formattedAddress && (
         <div className="rounded-lg border bg-green-50 p-3 text-sm">
           📍 {formattedAddress}
         </div>

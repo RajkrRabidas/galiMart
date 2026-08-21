@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import api from "../../api/axios";
 import { fetchShopOrders } from "../../api/orderApi";
 import { getMenuItems } from "../../api/menuApi";
+import { useSocket } from "../../context/SocketContext";
+import notificationSound from "../../assets/notification.wav";
 
 // Components
 import DashboardHeader from "../../components/Shopkeeper/Dashboard/DashboardHeader";
@@ -24,6 +26,42 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const { user } = useAuth();
+  const socket = useSocket();
+  const notificationAudioRef = useRef(null);
+
+  const playNewOrderSound = () => {
+    if (!notificationAudioRef.current) {
+      notificationAudioRef.current = new Audio(notificationSound);
+    }
+
+    const audio = notificationAudioRef.current;
+    audio.currentTime = 0;
+    audio.volume = 0.8;
+    audio.play().catch(() => {
+      // Browsers can block sound until the seller interacts with the page.
+    });
+  };
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (!notificationAudioRef.current) {
+        notificationAudioRef.current = new Audio(notificationSound);
+      }
+
+      const audio = notificationAudioRef.current;
+      audio.muted = true;
+      audio.play()
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
 
   // Fetch shop data
   const fetchMyShop = async () => {
@@ -95,6 +133,27 @@ const Dashboard = () => {
       fetchProducts(shop._id);
     }
   }, [shop?._id]);
+
+  // Keep dashboard orders current when payment processing creates a new order.
+  useEffect(() => {
+    if (!socket || !shop?._id) return undefined;
+
+    const handleNewOrder = () => {
+      fetchOrders(shop._id);
+      playNewOrderSound();
+    };
+    const refreshOrders = () => fetchOrders(shop._id);
+
+    socket.on("order:new", handleNewOrder);
+    socket.on("order:updated", refreshOrders);
+    socket.on("order:rider_assigned", refreshOrders);
+
+    return () => {
+      socket.off("order:new", handleNewOrder);
+      socket.off("order:updated", refreshOrders);
+      socket.off("order:rider_assigned", refreshOrders);
+    };
+  }, [socket, shop?._id]);
 
   // Handle shop open/close toggle
   const handleToggleOpenStatus = async () => {

@@ -4,6 +4,14 @@ const DeliveryCard = ({
   onClick,
   disabled = false,
 }) => {
+  const deliveryAddress =
+    order.deliveryAddress?.formattedAddress ||
+    order.formattedAddress ||
+    order.address ||
+    "Delivery address unavailable";
+  const coordinates = order.deliveryAddress?.latitude && order.deliveryAddress?.longitude
+    ? `${order.deliveryAddress.latitude},${order.deliveryAddress.longitude}`
+    : null;
 
   return (
 
@@ -25,11 +33,21 @@ const DeliveryCard = ({
 
           </p>
 
-          <p className="text-gray-500">
-
-            Address : {order.address}
-
+          <p className="mt-2 text-sm leading-5 text-gray-600">
+            <span className="font-semibold text-gray-800">Delivery address:</span>{" "}
+            {deliveryAddress}
           </p>
+
+          {coordinates && (
+            <a
+              href={`https://www.google.com/maps/search/?api=1&query=${coordinates}`}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-block text-sm font-semibold text-blue-600 hover:text-blue-700"
+            >
+              Open in Google Maps
+            </a>
+          )}
 
           <p className="mt-2 font-semibold">
 

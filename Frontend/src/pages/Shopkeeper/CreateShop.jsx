@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Upload, Store, LoaderCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import { APIProvider, Map, AdvancedMarker } from "@vis.gl/react-google-maps";
+import api from "../../api/axios";
 import { useShops } from "../../context/ShopContext";
 import { SHOP_CATEGORIES } from "../../constants/shopCategories";
 
@@ -53,14 +54,6 @@ const CreateShop = () => {
     setAadharImage(e.target.files[0]);
   };
 
-  const formatFallbackAddress = (lat, lng) => {
-    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) {
-      return "";
-    }
-
-    return `Lat ${Number(lat).toFixed(5)}, Lng ${Number(lng).toFixed(5)}`;
-  };
-
   const setLocation = async (lat, lng, useCurrentLocation = false) => {
     const validLat = Number(lat);
     const validLng = Number(lng);
@@ -78,22 +71,20 @@ const CreateShop = () => {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${validLat}&longitude=${validLng}`
-      );
-      const data = await response.json();
+      const { data } = await api.get("/location/reverse-geocode", {
+        params: { latitude: validLat, longitude: validLng },
+      });
 
-      if (!response.ok || !data?.success || !data?.location) {
-        const fallbackAddress = formatFallbackAddress(validLat, validLng);
+      if (!data?.success || !data?.location?.formattedAddress) {
         setShop((prev) => ({
           ...prev,
-          formattedAddress: fallbackAddress,
+          formattedAddress: "",
         }));
 
         if (useCurrentLocation) {
-          setLocationMessage("Location selected");
-          toast.success("Location selected");
+          setLocationMessage("");
         }
+        toast.error("Unable to fetch a readable address. Please select again.");
         return;
       }
 
@@ -108,16 +99,15 @@ const CreateShop = () => {
       }
     } catch (error) {
       console.warn("Reverse geocoding failed:", error);
-      const fallbackAddress = formatFallbackAddress(validLat, validLng);
       setShop((prev) => ({
         ...prev,
-        formattedAddress: fallbackAddress,
+        formattedAddress: "",
       }));
 
       if (useCurrentLocation) {
-        setLocationMessage("Location selected");
-        toast.success("Location selected");
+        setLocationMessage("");
       }
+      toast.error("Unable to fetch a readable address. Please try again.");
     } finally {
       if (useCurrentLocation) {
         setLocationLoading(false);
@@ -242,7 +232,7 @@ const CreateShop = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-slate-100 flex items-center justify-center p-6">
       <div className="bg-white rounded-3xl shadow-xl p-8 w-full max-w-xl">
         <div className="text-center mb-8">
           <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">

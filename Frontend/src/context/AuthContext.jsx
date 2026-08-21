@@ -115,7 +115,7 @@ export const AuthProvider = ({ children }) => {
       const fallbackLocation = {
         latitude,
         longitude,
-        formattedAddress: formattedAddress || "Current location",
+        formattedAddress: formattedAddress || `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
       };
 
       try {
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
         const resolvedLocation = {
           latitude,
           longitude,
-          formattedAddress: data.location.formattedAddress || "current location",
+          formattedAddress: data.location.formattedAddress || `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
         };
         const resolvedCity = data.location.city || "your location";
 

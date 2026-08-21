@@ -5,7 +5,7 @@ import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 
 const Checkout = () => {
-  const { cartItems } = useCart();
+  const { cartItems, clearCart } = useCart();
 
   const [addresses, setAddresses] = useState([]);
   const [selectedAddress, setSelectedAddress] = useState(null);
@@ -111,6 +111,7 @@ const Checkout = () => {
               orderId,
             });
 
+            await clearCart();
             toast.success("Payment successful 🎉");
             navigate(`/payment-success/${paymentId}?orderId=${orderId}`);
           } catch (error) {

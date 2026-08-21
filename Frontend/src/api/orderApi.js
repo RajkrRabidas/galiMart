@@ -1,5 +1,11 @@
 import api from "./axios";
 
+// Fetch the authenticated customer's paid orders
+export const fetchMyOrders = async () => {
+  const response = await api.get("/orders/my");
+  return response.data;
+};
+
 // Fetch orders for seller's shop
 export const fetchShopOrders = async (shopId) => {
   try {
@@ -34,6 +40,7 @@ export const updateOrderStatus = async (orderId, status) => {
 };
 
 export default {
+  fetchMyOrders,
   fetchShopOrders,
   fetchOrderDetails,
   updateOrderStatus,

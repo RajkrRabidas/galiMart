@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="24" fill="#d1fae5"/>
+  <circle cx="80" cy="72" r="38" fill="#10b981" opacity=".25"/>
+  <path d="M52 96c8-20 48-20 56 0" fill="none" stroke="#047857" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="66" cy="68" r="5" fill="#047857"/>
+  <circle cx="94" cy="68" r="5" fill="#047857"/>
+  <text x="80" y="132" text-anchor="middle" font-family="Arial,sans-serif" font-size="14" font-weight="700" fill="#065f46">Gali Mart</text>
+</svg>

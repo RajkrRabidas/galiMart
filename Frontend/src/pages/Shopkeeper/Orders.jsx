@@ -93,6 +93,27 @@ const Orders = () => {
     });
   };
 
+  useEffect(() => {
+    const unlockAudio = () => {
+      if (!newOrderAudioRef.current) {
+        newOrderAudioRef.current = new Audio(newOrderSound);
+      }
+
+      const audio = newOrderAudioRef.current;
+      audio.muted = true;
+      audio.play()
+        .then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.muted = false;
+        })
+        .catch(() => {});
+    };
+
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    return () => window.removeEventListener("pointerdown", unlockAudio);
+  }, []);
+
   const fetchOrders = async (shopId) => {
     if (!shopId) {
       setOrders([]);
@@ -192,7 +213,7 @@ const Orders = () => {
     <div className="min-h-screen bg-[#eefaf5] pb-28">
       <div className="mx-auto max-w-5xl px-4 pt-6 sm:px-6 sm:pt-8">
         <div className="mb-5">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-[-0.05em] text-slate-900">Orders</h1>
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-slate-900">Orders</h1>
           <p className="mt-1 text-sm text-slate-500">Manage and track your customer orders</p>
         </div>
 

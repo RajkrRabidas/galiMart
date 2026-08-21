@@ -137,6 +137,7 @@ const startOrderConsumer = async () => {
               shopId: order?.shopId || shopId,
               shopName: order?.shopName || shopName,
               location,
+              formattedAddress: order?.deliveryAddress?.formattedAddress || location?.formattedAddress,
             },
           });
         } catch (err) {

@@ -1,16 +1,36 @@
 import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 import OrderCard from "../../components/Orders/OrderCard";
-import { useMarketplace } from "../../context/MarketplaceContext";
+import { useEffect, useState } from "react";
+import { fetchMyOrders } from "../../api/orderApi";
 
 const Orders = () => {
-    const { getCustomerOrders } = useMarketplace();
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-const customerId =
-  localStorage.getItem("customerId") || "customer1";
+  useEffect(() => {
+    let isMounted = true;
 
-const orders = getCustomerOrders(customerId);
+    const loadOrders = async () => {
+      try {
+        const response = await fetchMyOrders();
+        if (isMounted) setOrders(response.orders || []);
+      } catch (requestError) {
+        console.error("Unable to fetch customer orders:", requestError);
+        if (isMounted) setError("Unable to load your orders. Please try again.");
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    loadOrders();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100">
+    <div className="min-h-screen bg-linear-to-b from-emerald-50 via-white to-slate-100">
 
       <div className="max-w-6xl mx-auto p-6 pb-24">
 
@@ -20,7 +40,11 @@ const orders = getCustomerOrders(customerId);
 
         <div className="space-y-6">
 
-          {orders.length === 0 ? (
+          {loading ? (
+            <div className="text-center mt-24 text-gray-500">Loading orders...</div>
+          ) : error ? (
+            <div className="text-center mt-24 text-red-500">{error}</div>
+          ) : orders.length === 0 ? (
 
   <div className="text-center mt-24">
 
@@ -40,10 +64,10 @@ const orders = getCustomerOrders(customerId);
 
 ) : (
 
-  orders.map(order => (
+            orders.map((order) => (
 
     <OrderCard
-      key={order.id}
+          key={order._id || order.id}
       order={order}
     />
 

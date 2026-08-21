@@ -1,5 +1,6 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
+const ShopModel = require("../models/shop.model");
 
 let io = null;
 
@@ -24,7 +25,7 @@ const initSocket = (server) => {
         }
     })
 
-    io.use((socket, next)=> {
+    io.use(async (socket, next)=> {
         try{
             const token = socket.handshake.auth?.token ||
                 getCookie(socket.handshake.headers.cookie, "access_token");
@@ -40,6 +41,16 @@ const initSocket = (server) => {
             }
 
             socket.data.user = decoded.user || { _id: decoded.id };
+
+            // Login tokens contain the user id, but not the seller's shop id.
+            // Resolve the shop here so seller sockets can receive shop-scoped events.
+            if (!socket.data.user.shopId && socket.data.user._id) {
+                const shop = await ShopModel.findOne({ ownerId: socket.data.user._id }).select("_id");
+                if (shop) {
+                    socket.data.user.shopId = shop._id.toString();
+                }
+            }
+
             next();
         }catch(err){
             console.log("Socket connection failed",err)

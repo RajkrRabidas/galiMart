@@ -1,45 +1,54 @@
 import OrderStatusBadge from "./OrderStatusBadge";
-import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { useMarketplace } from "../../context/MarketplaceContext";
 
 const OrderCard = ({ order }) => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const placeholderImage = "/placeholder-food.svg";
+  const firstItem = order.items?.[0];
+  const orderId = order._id || order.id;
+  const status = order.status || order.orderStatus;
+  const statusLabel = status
+    ? status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase())
+    : "Unknown";
 
-const { cancelOrder } = useMarketplace();
   return (
     <div className="bg-white rounded-3xl shadow-lg p-5 flex gap-5">
 
       <img
-        src={order.items[0].image}
+        src={firstItem?.image || placeholderImage}
+        alt={firstItem?.name || "Ordered item"}
+        onError={(event) => {
+          if (event.currentTarget.src.endsWith(placeholderImage)) return;
+          event.currentTarget.src = placeholderImage;
+        }}
         className="w-28 h-28 rounded-2xl object-cover"
       />
 
       <div className="flex-1">
 
         <h2 className="text-xl font-bold">
-          {order.items[0].name}
+          {firstItem?.name || "Order items"}
         </h2>
 
         <p className="text-gray-500 mt-1">
-          Order ID : {order.id}
+          Order ID : {orderId}
         </p>
 
         <p className="text-gray-500">
-          Ordered : {order.date}
+          Ordered : {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
         </p>
 
         <p className="font-semibold mt-2">
-          Qty : {order.items.reduce((t, i) => t + i.quantity, 0)}
+          Qty : {(order.items || []).reduce((total, item) => total + (item.quantity || 0), 0)}
         </p>
 
         <p className="text-emerald-600 font-bold text-lg mt-2">
-          ₹{order.total}
+          ₹{order.totalAmount ?? order.total ?? 0}
         </p>
 
         <div className="mt-4">
 
-          <OrderStatusBadge status={order.orderStatus} />
+          <OrderStatusBadge status={statusLabel} />
 
         </div>
 
@@ -48,25 +57,11 @@ const { cancelOrder } = useMarketplace();
       <div className="flex flex-col justify-between">
 
         <button
-          onClick={() => navigate(`/track-order/${order.id}`)}
+          onClick={() => navigate(`/track-order/${orderId}`)}
           className="bg-emerald-600 text-white px-5 py-2 rounded-xl"
         >
           Track
         </button>
-
-        {order.orderStatus !== "Delivered" &&
- order.orderStatus !== "Cancelled" && (
-          <button
-            onClick={() => {
-
-  cancelOrder(order.id);
-
-  toast.success("Order Cancelled");}}
-            className="border border-red-500 text-red-500 px-5 py-2 rounded-xl"
-          >
-            Cancel
-          </button>
-        )}
 
       </div>
 
