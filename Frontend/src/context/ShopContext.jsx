@@ -159,7 +159,7 @@ const fetchNearbyShops = useCallback(async (params) => {
   // GET SHOP OF LOGGED IN SELLER
   // -----------------------------
 
-  const getMyShop = async () => {
+  const getMyShop = useCallback(async () => {
   try {
     const data = await getMyShopApi();
     return data ?? null;
@@ -170,7 +170,7 @@ const fetchNearbyShops = useCallback(async (params) => {
 
     throw error;
   }
-};
+}, []);
 
   return (
 

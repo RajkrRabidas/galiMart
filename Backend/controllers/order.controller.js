@@ -183,7 +183,7 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
   });
 });
 
-const ALLOWED_STATUSES = ["accepted", "preparing", "ready_for_delivery"];
+const ALLOWED_STATUSES = ["accepted", "preparing", "ready_for_rider"];
 
 const updateOrderStatus = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -233,7 +233,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
   // now assign riders
 
-  if (status === "ready_for_delivery") {
+  if (status === "ready_for_rider") {
     console.log(
       "Publishing Order ready for rider event for order",
       order._id.toString(),
