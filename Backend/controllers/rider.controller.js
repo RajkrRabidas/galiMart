@@ -24,6 +24,7 @@ const addRidderProfile = async (req, res) => {
   const path = require("path");
 
   const uploadsDir = path.join(__dirname, "../uploads/riders");
+  let uploadResult;
 
   try {
     await fs.mkdir(uploadsDir, { recursive: true });
@@ -33,7 +34,7 @@ const addRidderProfile = async (req, res) => {
 
     await fs.writeFile(filePath, file.buffer);
 
-    const uploadResult = {
+    uploadResult = {
       filename: fileName,
       path: `/uploads/riders/${fileName}`,
       mimetype: file.mimetype,
@@ -81,7 +82,7 @@ const addRidderProfile = async (req, res) => {
         type: "Point",
         coordinates: [parseFloat(longitude), parseFloat(latitude)],
       },
-      isActive: false,
+      isAvailable: false,
       isVerified: false,
     });
 
@@ -128,9 +129,10 @@ const toggleRiderAvailability = async (req, res) => {
     });
   }
 
-  const { isAvailble, latitude, longitude } = req.body;
+  const { isAvailable, isAvailble, latitude, longitude } = req.body;
+  const requestedAvailability = isAvailable ?? isAvailble;
 
-  if (typeof isAvailble !== "boolean") {
+  if (typeof requestedAvailability !== "boolean") {
     return res.status(400).json({
       message: "isAvailble must be boolean",
     });
@@ -152,13 +154,13 @@ const toggleRiderAvailability = async (req, res) => {
     });
   }
 
-  if (isAvailble && !rider.isVerified) {
+  if (requestedAvailability && !rider.isVerified) {
     return res.status(403).json({
       message: "Rider is not verified yet",
     });
   }
 
-  rider.isActive = isAvailble;
+  rider.isAvailable = requestedAvailability;
   rider.location = {
     type: "Point",
     coordinates: [parseFloat(longitude), parseFloat(latitude)],
@@ -168,8 +170,8 @@ const toggleRiderAvailability = async (req, res) => {
 
   await rider.save();
 
-  return res.json({
-    message: isAvailble ? "Rider is now online" : "Rider is now offline",
+  res.json({
+    message: requestedAvailability ? "Rider is now online" : "Rider is now offline",
     rider,
   });
 };

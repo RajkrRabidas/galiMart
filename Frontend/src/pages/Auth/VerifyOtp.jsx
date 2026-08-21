@@ -97,7 +97,7 @@ if (shop) {
 
     } else if (role === "service_provider") {
       navigate("/service/dashboard");
-    } else if (role === "delivery") {
+    } else if (role === "rider" || role === "delivery") {
       navigate("/delivery/dashboard");
     } else {
       navigate("/home");

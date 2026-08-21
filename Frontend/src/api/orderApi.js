@@ -9,7 +9,7 @@ export const fetchMyOrders = async () => {
 // Fetch orders for seller's shop
 export const fetchShopOrders = async (shopId) => {
   try {
-    const response = await api.get(`/orders/${shopId}`);
+    const response = await api.get(`/orders/shop/${shopId}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching shop orders:", error);

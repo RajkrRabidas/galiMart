@@ -9,6 +9,7 @@ import ProductDetails from "../pages/Customer/ProductDetails";
 import Cart from "../pages/Customer/Cart";
 import Checkout from "../pages/Customer/Checkout";
 import CustomerOrders from "../pages/Customer/Orders";
+import OrderDetails from "../pages/Customer/OrderDetails";
 import Profile from "../pages/Customer/Profile";
 import Addresses from "../pages/Customer/Addresses";
 import Settings from "../pages/Customer/Settings";
@@ -51,6 +52,7 @@ const AppRoutes = () => {
       <Route path="/checkout" element={<ProtectedRoute allowedRoles={["user"]}><Checkout /></ProtectedRoute>} />
       <Route path="/payment-success/:paymentId" element={<ProtectedRoute allowedRoles={["user"]}><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/orders" element={<ProtectedRoute allowedRoles={["user"]}><CustomerOrders /></ProtectedRoute>} />
+      <Route path="/orders/:id" element={<ProtectedRoute allowedRoles={["user"]}><OrderDetails /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
       <Route path="/addresses" element={<ProtectedRoute allowedRoles={["user"]}><Addresses /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={["user"]}><Settings /></ProtectedRoute>} />
@@ -76,10 +78,10 @@ const AppRoutes = () => {
       <Route path="/service/:id" element={<ProtectedRoute allowedRoles={["user", "service_provider"]}><ServiceDetails /></ProtectedRoute>} />
       <Route path="/service/bookings" element={<ProtectedRoute allowedRoles={["service_provider"]}><ServiceBookings /></ProtectedRoute>} />
 
-      <Route path="/delivery/dashboard" element={<ProtectedRoute allowedRoles={["delivery"]}><DeliveryDashboard /></ProtectedRoute>} />
-      <Route path="/delivery/orders" element={<ProtectedRoute allowedRoles={["delivery"]}><DeliveryOrders /></ProtectedRoute>} />
-      <Route path="/delivery/profile" element={<ProtectedRoute allowedRoles={["delivery"]}><DeliveryProfile /></ProtectedRoute>} />
-      <Route path="/delivery/create-profile" element={<ProtectedRoute allowedRoles={["delivery"]}><CreateDeliveryProfile /></ProtectedRoute>} />
+      <Route path="/delivery/dashboard" element={<ProtectedRoute allowedRoles={["rider"]}><DeliveryDashboard /></ProtectedRoute>} />
+      <Route path="/delivery/orders" element={<ProtectedRoute allowedRoles={["rider"]}><DeliveryOrders /></ProtectedRoute>} />
+      <Route path="/delivery/profile" element={<ProtectedRoute allowedRoles={["rider"]}><DeliveryProfile /></ProtectedRoute>} />
+      <Route path="/delivery/create-profile" element={<ProtectedRoute allowedRoles={["rider"]}><CreateDeliveryProfile /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

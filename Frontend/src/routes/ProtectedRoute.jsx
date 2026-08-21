@@ -7,6 +7,7 @@ const getDefaultRouteForRole = (role) => {
       return "/seller/dashboard";
     case "service_provider":
       return "/service/dashboard";
+    case "rider":
     case "delivery":
       return "/delivery/dashboard";
     case "user":

@@ -78,7 +78,7 @@ const sendOtpSms = async (phone, otp) => {
     to: `+91${phone}`,
     from: twilioFromNumber,
   });
-
+  console.log(`[OTP] SMS sent. Phone: ${phone}, OTP: ${otp}`);
   return true;
 };
 
@@ -108,7 +108,7 @@ const issueOtp = async ({ phone, role, purpose }) => {
 
   await logAuthEvent("otp_sent", { phone, purpose });
 
-  return { status: 202, body: { message: "OTP sent successfully." } };
+  return { status: 202, body: { message: "OTP sent successfully.", otp } };
 };
 
 const verifyOtpAgainstStoredValue = async ({ phone, otp, purpose }) => {

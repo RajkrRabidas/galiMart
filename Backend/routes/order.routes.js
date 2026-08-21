@@ -20,7 +20,7 @@ router.get("/my", isAuth, getMyOrders);
 router.put("/assign/rider", isAuth, assignRiderToOrder);
 router.get("/current/rider", isAuth, getCurrentOrdersForRider);
 router.put("/update/status/rider", isAuth, updateOrderStatusRider);
-router.get("/:shopId", isAuth, isSeller, fetchShopOrders);
+router.get("/shop/:shopId", isAuth, isSeller, fetchShopOrders);
 router.put("/:orderId", isAuth, isSeller, updateOrderStatus);
 router.get("/:id", isAuth, fetchSingleOrder);
 
