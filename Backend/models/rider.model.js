@@ -7,6 +7,11 @@ const riderSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    name: {
+        type: String,
+        required: true,
+        trim: true
+    },
 
     picture: {
         type: String,
@@ -37,8 +42,8 @@ const riderSchema = new mongoose.Schema({
     location: {
         type: {
             type: String,
-            enum: ["point"],
-            default: "point"
+            enum: ["Point"],
+            default: "Point"
         },
         coordinates: {
             type: [Number],

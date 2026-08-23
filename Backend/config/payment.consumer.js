@@ -113,7 +113,7 @@ const startOrderConsumer = async () => {
         location: {
           $near: {
             $geometry: location,
-            $maxDistance: 7000,
+            $maxDistance: 2000,
           },
         },
       });
@@ -151,7 +151,7 @@ const startOrderConsumer = async () => {
       channel.ack(msg);
       console.log("message acknowledged for order:", orderId);
     } catch (error) {
-      console.error("❌ Order consumer error ", error);
+      console.error("❌ OrderReadyForRider consumer error ", error);
     }
   });
 };

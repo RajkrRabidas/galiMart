@@ -14,9 +14,10 @@ const addRidderProfile = async (req, res) => {
     });
   }
 
-  const file = req.file;
+  const profileFile = req.files?.image?.[0];
+  const aadharFile = req.files?.aadharImage?.[0];
 
-  if (!file) {
+  if (!profileFile || !aadharFile) {
     return res.status(400).json({ message: "Rider image is required" });
   }
 
@@ -29,15 +30,17 @@ const addRidderProfile = async (req, res) => {
   try {
     await fs.mkdir(uploadsDir, { recursive: true });
 
-    const fileName = `${Date.now()}-${file.originalname}`;
-    const filePath = path.join(uploadsDir, fileName);
+    const profileFileName = `${Date.now()}-${profileFile.originalname}`;
+    const aadharFileName = `${Date.now()}-aadhar-${aadharFile.originalname}`;
+    const profileFilePath = path.join(uploadsDir, profileFileName);
+    const aadharFilePath = path.join(uploadsDir, aadharFileName);
 
-    await fs.writeFile(filePath, file.buffer);
+    await fs.writeFile(profileFilePath, profileFile.buffer);
+    await fs.writeFile(aadharFilePath, aadharFile.buffer);
 
     uploadResult = {
-      filename: fileName,
-      path: `/uploads/riders/${fileName}`,
-      mimetype: file.mimetype,
+      profilePath: `/uploads/riders/${profileFileName}`,
+      aadharImagePath: `/uploads/riders/${aadharFileName}`,
     };
   } catch (error) {
     console.error("Error saving file:", error);
@@ -45,18 +48,18 @@ const addRidderProfile = async (req, res) => {
   }
 
   const {
+    name,
     phoneNumber,
     aadharNumber,
-    aadharImage,
     drivingLicenseNumber,
     latitude,
     longitude,
   } = req.body;
 
   if (
+    !name ||
     !phoneNumber ||
     !aadharNumber ||
-    !aadharImage ||
     !drivingLicenseNumber ||
     !latitude ||
     !longitude
@@ -73,10 +76,11 @@ const addRidderProfile = async (req, res) => {
   try {
     const riderProfile = await Rider.create({
       userId: user._id,
-      picture: uploadResult.path,
+      name: name.trim(),
+      picture: uploadResult.profilePath,
       phoneNumber,
       aadharNumber,
-      aadharImage: uploadResult.path,
+      aadharImage: uploadResult.aadharImagePath,
       drivingLicenseNumber,
       location: {
         type: "Point",

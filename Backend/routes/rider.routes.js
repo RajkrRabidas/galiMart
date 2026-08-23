@@ -6,7 +6,15 @@ const {addRidderProfile, fetchMyProfile, toggleRiderAvailability,acceptOrder, fe
 
 const router = express.Router()
 
-router.post("/add/profile", isAuth, uploadFile.single("image"), addRidderProfile)
+router.post(
+	"/add/profile",
+	isAuth,
+	uploadFile.fields([
+		{ name: "image", maxCount: 2 },
+		{ name: "aadharImage", maxCount: 2 },
+	]),
+	addRidderProfile,
+)
 router.get("/myprofile", isAuth, fetchMyProfile)
 router.patch("/toggle-availability", isAuth, toggleRiderAvailability)
 router.post("/accept/:orderId", isAuth, acceptOrder)

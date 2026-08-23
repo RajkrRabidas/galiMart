@@ -241,7 +241,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       order._id.toString(),
     );
 
-    await publishOrderEvent("order.ready_for_rider", {
+    await publishOrderEvent("order_ready_for_rider", {
       orderId: order._id.toString(),
       shopId: order.shopId.toString(),
       shopName: order.shopName,
