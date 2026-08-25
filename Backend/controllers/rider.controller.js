@@ -175,7 +175,9 @@ const toggleRiderAvailability = async (req, res) => {
   await rider.save();
 
   res.json({
-    message: requestedAvailability ? "Rider is now online" : "Rider is now offline",
+    message: requestedAvailability
+      ? "Rider is now online"
+      : "Rider is now offline",
     rider,
   });
 };
@@ -190,7 +192,7 @@ const acceptOrder = async (req, res) => {
     });
   }
 
-  const rider = await Rider.findOne({
+  const rider = await Rider.findOneAnd({
     userId: riderUserId,
     isAvailable: true,
   });
@@ -202,9 +204,14 @@ const acceptOrder = async (req, res) => {
   }
 
   try {
-    const orderAvailable = await orderModel.findOne({ riderId: rider._id, status: { $ne: "delivered" } });
+    const orderAvailable = await orderModel.findOne({
+      riderId: rider._id,
+      status: { $ne: "delivered" },
+    });
     if (orderAvailable) {
-      return res.status(400).json({ message: "You already have an active order" });
+      return res
+        .status(400)
+        .json({ message: "You already have an active order" });
     }
 
     const order = await orderModel.findById(orderId);
@@ -224,7 +231,7 @@ const acceptOrder = async (req, res) => {
     await Rider.findOneAndUpdate(
       { userId: riderUserId, isAvailable: true },
       { isAvailable: false },
-      { returnDocument: 'after' },
+      { returnDocument: "after" },
     );
 
     res.json({ message: "Order accepted successfully", success: true, order });
@@ -297,7 +304,9 @@ const updateOrderStatus = async (req, res) => {
       return res.json({ message: "Order status updated successfully", order });
     }
 
-    return res.status(400).json({ message: "Order cannot be updated in this state" });
+    return res
+      .status(400)
+      .json({ message: "Order cannot be updated in this state" });
   } catch (error) {
     res
       .status(500)

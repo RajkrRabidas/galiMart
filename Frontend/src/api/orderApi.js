@@ -39,9 +39,15 @@ export const updateOrderStatus = async (orderId, status) => {
   }
 };
 
+export const retryRiderAssignment = async (orderId) => {
+  const response = await api.post(`/orders/${orderId}/retry-rider`);
+  return response.data;
+};
+
 export default {
   fetchMyOrders,
   fetchShopOrders,
   fetchOrderDetails,
   updateOrderStatus,
+  retryRiderAssignment,
 };

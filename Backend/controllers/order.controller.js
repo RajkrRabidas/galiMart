@@ -256,6 +256,49 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     .json({ message: "Order status updated successfully", order });
 });
 
+const retryRiderAssignment = asyncHandler(async (req, res) => {
+  const user = req.user;
+  const { orderId } = req.params;
+
+  if (!user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const order = await orderModel.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+
+  const shop = await ShopModel.findById(order.shopId);
+  if (!shop) {
+    return res.status(404).json({ message: "Shop not found" });
+  }
+
+  if (shop.ownerId.toString() !== user._id.toString()) {
+    return res
+      .status(403)
+      .json({ message: "you are not allowed to retry rider assignment" });
+  }
+
+  if (order.status !== "ready_for_rider" || order.riderId) {
+    return res.status(400).json({
+      message: "Rider assignment cannot be retried for this order",
+    });
+  }
+
+  await publishOrderEvent("order_ready_for_rider", {
+    orderId: order._id.toString(),
+    shopId: order.shopId.toString(),
+    shopName: order.shopName,
+    location: order.deliveryAddress,
+  });
+
+  return res.status(200).json({
+    message: "Rider assignment retry started",
+    success: true,
+  });
+});
+
 const getMyOrders = asyncHandler(async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ message: "Unauthorized" });
@@ -438,6 +481,7 @@ module.exports = {
   fetchOrderForPayment,
   fetchShopOrders,
   updateOrderStatus,
+  retryRiderAssignment,
   getMyOrders,
   fetchSingleOrder,
   assignRiderToOrder,

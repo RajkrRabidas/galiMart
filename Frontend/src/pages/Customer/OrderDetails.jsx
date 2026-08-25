@@ -13,7 +13,7 @@ const statusLabels = {
   rider_assigned: "Rider assigned",
   picked_up: "Out for delivery",
   delivered: "Delivered",
-  cancelled: "Cancelled",
+  cancelled: "Cancelled", 
 };
 
 const formatStatus = (status) =>

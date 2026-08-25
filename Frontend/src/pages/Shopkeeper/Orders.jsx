@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import {
   AlertCircle,
-  Check,
   ChevronDown,
   ChevronUp,
   Clock3,
@@ -12,7 +11,11 @@ import {
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
 import { useShops } from "../../context/ShopContext";
 import { useSocket } from "../../context/SocketContext";
-import { fetchShopOrders, updateOrderStatus } from "../../api/orderApi";
+import {
+  fetchShopOrders,
+  retryRiderAssignment,
+  updateOrderStatus,
+} from "../../api/orderApi";
 import newOrderSound from "../../assets/notification.wav";
 
 const FILTERS = [
@@ -68,6 +71,32 @@ const getActionLabel = (status) => ({
   accepted: "Start Preparing",
   preparing: "Mark as Ready",
 })[status] || "View Order";
+
+const ReadyForRiderRetry = ({ order, onRetry }) => {
+  const [retryVisible, setRetryVisible] = useState(false);
+
+  useEffect(() => {
+    if (order.status !== "ready_for_rider") return undefined;
+
+    const timer = setTimeout(() => {
+      setRetryVisible(true);
+    }, 5000); // 5 minutes
+
+    return () => clearTimeout(timer);
+  }, [order._id, order.status]);
+
+  if (order.status !== "ready_for_rider" || !retryVisible) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onRetry(order._id)}
+      className="mt-3 w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+    >
+      Retry rider assignment
+    </button>
+  );
+};
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
@@ -204,8 +233,18 @@ const Orders = () => {
     }
   };
 
-  const handleRetry = async () => {
+  const handleRetry = async (orderId) => {
     if (!shop?._id) return;
+
+    if (orderId) {
+      try {
+        await retryRiderAssignment(orderId);
+        toast.success("Rider assignment retry started");
+      } catch (errorInfo) {
+        toast.error(errorInfo.response?.data?.message || "Unable to retry rider assignment");
+      }
+    }
+
     await fetchOrders(shop._id);
   };
 
@@ -405,6 +444,11 @@ const Orders = () => {
                       {nextStatus ? actionLabel : "View Order"}
                     </button>
                   </div>
+
+                  <ReadyForRiderRetry
+                    order={order}
+                    onRetry={handleRetry}
+                  />
 
                   {isExpanded && (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">

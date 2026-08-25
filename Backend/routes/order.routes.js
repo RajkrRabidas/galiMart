@@ -5,6 +5,7 @@ const {
   fetchOrderForPayment,
   fetchShopOrders,
   updateOrderStatus,
+  retryRiderAssignment,
   getMyOrders,
   fetchSingleOrder,
   assignRiderToOrder,
@@ -22,6 +23,7 @@ router.get("/current/rider", isAuth, getCurrentOrdersForRider);
 router.put("/update/status/rider", isAuth, updateOrderStatusRider);
 router.get("/shop/:shopId", isAuth, isSeller, fetchShopOrders);
 router.put("/:orderId", isAuth, isSeller, updateOrderStatus);
+router.post("/:orderId/retry-rider", isAuth, isSeller, retryRiderAssignment);
 router.get("/:id", isAuth, fetchSingleOrder);
 
 
