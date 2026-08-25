@@ -15,6 +15,7 @@ const connectRabbitMQ = async () => {
         // Ensure both queues exist
         await channel.assertQueue(process.env.PAYMENT_QUEUE, { durable: true });
         await channel.assertQueue(process.env.RIDER_READY_QUEUE, { durable: true });
+        await channel.assertQueue(process.env.ORDER_READY_QUEUE, { durable: true });
 
         console.log("Connected to RabbitMQ");
         return channel;

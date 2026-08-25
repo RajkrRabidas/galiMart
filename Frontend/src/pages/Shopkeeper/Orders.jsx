@@ -17,6 +17,7 @@ import {
   updateOrderStatus,
 } from "../../api/orderApi";
 import newOrderSound from "../../assets/notification.wav";
+import { createNotificationPlayer } from "../../utils/notificationSound";
 
 const FILTERS = [
   { id: "all", label: "All" },
@@ -107,40 +108,24 @@ const Orders = () => {
   const [shop, setShop] = useState(null);
   const socket = useSocket();
   const { getMyShop } = useShops();
-  const newOrderAudioRef = useRef(null);
+  const notificationPlayerRef = useRef(null);
 
-  const playNewOrderSound = () => {
-    if (!newOrderAudioRef.current) {
-      newOrderAudioRef.current = new Audio(newOrderSound);
-    }
-
-    const audio = newOrderAudioRef.current;
-    audio.currentTime = 0;
-    audio.volume = 0.8;
-    audio.play().catch(() => {
-      // Browser may block autoplay until user interaction; ignore silent failure.
-    });
-  };
+  if (!notificationPlayerRef.current) {
+    notificationPlayerRef.current = createNotificationPlayer(newOrderSound);
+  }
 
   useEffect(() => {
     const unlockAudio = () => {
-      if (!newOrderAudioRef.current) {
-        newOrderAudioRef.current = new Audio(newOrderSound);
-      }
-
-      const audio = newOrderAudioRef.current;
-      audio.muted = true;
-      audio.play()
-        .then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.muted = false;
-        })
-        .catch(() => {});
+      notificationPlayerRef.current?.unlock();
     };
 
-    window.addEventListener("pointerdown", unlockAudio, { once: true });
-    return () => window.removeEventListener("pointerdown", unlockAudio);
+    window.addEventListener("pointerdown", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      notificationPlayerRef.current?.destroy();
+    };
   }, []);
 
   const fetchOrders = async (shopId) => {
@@ -195,7 +180,7 @@ const Orders = () => {
     const refreshOrders = () => fetchOrders(shop._id);
     const handleNewOrder = () => {
       refreshOrders();
-      playNewOrderSound();
+      notificationPlayerRef.current?.play();
     };
 
     socket.on("order:new", handleNewOrder);

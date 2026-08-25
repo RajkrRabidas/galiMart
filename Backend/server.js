@@ -2,7 +2,7 @@ const app = require("./src/app");
 const PORT = process.env.PORT || 3000;
 const connectToDB = require("./config/db");
 const { connectRabbitMQ } = require("./config/rabbitmq");
-const { startPaymentConsumer } = require("./config/payment.consumer");
+const { startPaymentConsumer, startOrderConsumer } = require("./config/payment.consumer");
 const { initSocket } = require("./services/socket");
 const http = require("http")
 
@@ -12,6 +12,7 @@ const bootstrap = async () => {
   try {
     await connectRabbitMQ();
     await startPaymentConsumer();
+    await startOrderConsumer();
     initSocket(server);
     await connectToDB();
 

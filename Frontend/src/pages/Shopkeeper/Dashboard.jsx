@@ -6,6 +6,7 @@ import { fetchShopOrders } from "../../api/orderApi";
 import { getMenuItems } from "../../api/menuApi";
 import { useSocket } from "../../context/SocketContext";
 import notificationSound from "../../assets/notification.wav";
+import { createNotificationPlayer } from "../../utils/notificationSound";
 
 // Components
 import DashboardHeader from "../../components/Shopkeeper/Dashboard/DashboardHeader";
@@ -27,40 +28,24 @@ const Dashboard = () => {
   const [ordersLoading, setOrdersLoading] = useState(true);
   const { user } = useAuth();
   const socket = useSocket();
-  const notificationAudioRef = useRef(null);
+  const notificationPlayerRef = useRef(null);
 
-  const playNewOrderSound = () => {
-    if (!notificationAudioRef.current) {
-      notificationAudioRef.current = new Audio(notificationSound);
-    }
-
-    const audio = notificationAudioRef.current;
-    audio.currentTime = 0;
-    audio.volume = 0.8;
-    audio.play().catch(() => {
-      // Browsers can block sound until the seller interacts with the page.
-    });
-  };
+  if (!notificationPlayerRef.current) {
+    notificationPlayerRef.current = createNotificationPlayer(notificationSound);
+  }
 
   useEffect(() => {
     const unlockAudio = () => {
-      if (!notificationAudioRef.current) {
-        notificationAudioRef.current = new Audio(notificationSound);
-      }
-
-      const audio = notificationAudioRef.current;
-      audio.muted = true;
-      audio.play()
-        .then(() => {
-          audio.pause();
-          audio.currentTime = 0;
-          audio.muted = false;
-        })
-        .catch(() => {});
+      notificationPlayerRef.current?.unlock();
     };
 
-    window.addEventListener("pointerdown", unlockAudio, { once: true });
-    return () => window.removeEventListener("pointerdown", unlockAudio);
+    window.addEventListener("pointerdown", unlockAudio);
+    window.addEventListener("keydown", unlockAudio);
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+      notificationPlayerRef.current?.destroy();
+    };
   }, []);
 
   // Fetch shop data
@@ -140,7 +125,7 @@ const Dashboard = () => {
 
     const handleNewOrder = () => {
       fetchOrders(shop._id);
-      playNewOrderSound();
+      notificationPlayerRef.current?.play();
     };
     const refreshOrders = () => fetchOrders(shop._id);
 

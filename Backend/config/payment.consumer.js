@@ -91,7 +91,11 @@ const startOrderConsumer = async () => {
 
       console.log("event type:", event.type);
 
-      if (event.type !== "order.ready_for_rider") {
+      // Support both event names used by older and newer producers.
+      if (![
+        "order.ready_for_rider",
+        "order_ready_for_rider",
+      ].includes(event.type)) {
         console.log("Ignoring event type:", event.type);
         channel.ack(msg);
         return;
@@ -99,6 +103,10 @@ const startOrderConsumer = async () => {
 
       const { orderId, shopId, shopName, location } = event.data;
       const order = await orderModel.findById(orderId);
+      const riderLocation = {
+        type: "Point",
+        coordinates: [Number(location.longitude), Number(location.latitude)],
+      };
 
       console.log(
         "Searching for rider nearby for order:",
@@ -107,18 +115,26 @@ const startOrderConsumer = async () => {
         location,
       );
 
-      const riders = await Rider.find({
+      let riders = await Rider.find({
         isAvailable: true,
         isVerified: true,
         location: {
           $near: {
-            $geometry: location,
+            $geometry: riderLocation,
             $maxDistance: 2000,
           },
         },
       });
 
-      console.log(`found ${riders.length} nearby riders for order ${orderId}`);
+      if (riders.length === 0) {
+        riders = await Rider.find({
+          isAvailable: true,
+          isVerified: true,
+        }).sort({ lastActiveAt: -1 }).limit(20);
+        console.log(`No nearby riders; found ${riders.length} online riders as fallback`);
+      }
+
+      console.log(`found ${riders.length} riders for order ${orderId}`);
 
       if (riders.length === 0) {
         console.log("No available riders found for order:", orderId);

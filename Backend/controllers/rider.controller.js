@@ -192,7 +192,7 @@ const acceptOrder = async (req, res) => {
     });
   }
 
-  const rider = await Rider.findOneAnd({
+  const rider = await Rider.findOne({
     userId: riderUserId,
     isAvailable: true,
   });
@@ -259,7 +259,9 @@ const fetchMyCrrentOrder = async (req, res) => {
   try {
     const orders = await orderModel
       .find({
-        riderId: rider._id.toString(),
+        riderId: {
+          $in: [rider._id.toString(), rider.userId.toString()],
+        },
         status: { $ne: "delivered" },
       })
       .sort({ createdAt: -1 });
@@ -270,6 +272,30 @@ const fetchMyCrrentOrder = async (req, res) => {
       .status(500)
       .json({ message: "Error fetching current order", error: error.message });
   }
+};
+
+const fetchAvailableOrders = async (req, res) => {
+  const riderUserId = req.user?._id;
+
+  if (!riderUserId) {
+    return res.status(401).json({ message: "Please login" });
+  }
+
+  const rider = await Rider.findOne({ userId: riderUserId, isVerified: true });
+  if (!rider) {
+    return res.status(404).json({ message: "rider not found" });
+  }
+
+  const orders = await orderModel
+    .find({
+      riderId: null,
+      status: "ready_for_rider",
+      paymentStatus: "paid",
+    })
+    .sort({ createdAt: -1 })
+    .limit(20);
+
+  return res.json({ orders });
 };
 
 const updateOrderStatus = async (req, res) => {
@@ -320,5 +346,6 @@ module.exports = {
   toggleRiderAvailability,
   acceptOrder,
   fetchMyCrrentOrder,
+  fetchAvailableOrders,
   updateOrderStatus,
 };

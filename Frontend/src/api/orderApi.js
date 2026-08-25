@@ -44,10 +44,28 @@ export const retryRiderAssignment = async (orderId) => {
   return response.data;
 };
 
+export const acceptRiderOrder = async (orderId) => {
+  const response = await api.post(`/rider/accept/${orderId}`);
+  return response.data;
+};
+
+export const updateRiderOrderStatus = async (orderId) => {
+  const response = await api.put(`/rider/order/update/${orderId}`);
+  return response.data;
+};
+
+export const fetchAvailableRiderOrders = async () => {
+  const response = await api.get("/rider/order/available");
+  return response.data;
+};
+
 export default {
   fetchMyOrders,
   fetchShopOrders,
   fetchOrderDetails,
   updateOrderStatus,
   retryRiderAssignment,
+  acceptRiderOrder,
+  updateRiderOrderStatus,
+  fetchAvailableRiderOrders,
 };

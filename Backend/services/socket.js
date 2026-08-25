@@ -1,6 +1,7 @@
 const { Server } = require("socket.io");
 const jwt = require("jsonwebtoken");
 const ShopModel = require("../models/shop.model");
+const Rider = require("../models/rider.model");
 
 let io = null;
 
@@ -58,7 +59,7 @@ const initSocket = (server) => {
         }
     })
 
-    io.on("connection" , (socket) => {
+    io.on("connection" , async (socket) => {
         const user = socket.data.user;
 
         if(!user){
@@ -69,6 +70,14 @@ const initSocket = (server) => {
         const userId = user._id;
 
         socket.join(`user:${userId}`);
+
+        // Resolve the rider by user id instead of relying on the JWT role.
+        // Some older login tokens do not contain the role, which otherwise
+        // prevents delivery notifications from reaching the rider room.
+        const rider = await Rider.findOne({ userId }).select("_id");
+        if (rider) {
+            socket.join(`rider:${rider._id}`);
+        }
 
         if(user.shopId){
             socket.join(`shop:${user.shopId}`);

@@ -65,6 +65,14 @@ const reverseGeocodeWithOpenStreetMap = async (latitude, longitude) => {
 };
 
 const resolveReadableLocation = async (latitude, longitude) => {
+  // Prefer the free provider so a missing Google billing/API restriction
+  // does not prevent address lookup.
+  try {
+    return await reverseGeocodeWithOpenStreetMap(latitude, longitude);
+  } catch (error) {
+    console.warn("OpenStreetMap reverse geocoding failed:", error.message);
+  }
+
   if (process.env.GOOGLE_MAPS_API_KEY) {
     try {
       const googleResponse = await axios.get(GOOGLE_GEOCODE_URL, {
@@ -93,12 +101,7 @@ const resolveReadableLocation = async (latitude, longitude) => {
     }
   }
 
-  try {
-    return await reverseGeocodeWithOpenStreetMap(latitude, longitude);
-  } catch (error) {
-    console.warn("Readable reverse geocoding failed:", error.message);
-    return null;
-  }
+  return null;
 };
 
 const reverseGeocodeLocation = async (req, res) => {
