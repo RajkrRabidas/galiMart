@@ -1,6 +1,8 @@
 const Rider = require("../models/rider.model");
 const orderModel = require("../models/order");
 const Shop = require("../models/shop.model");
+const { emitRealtimeEvent } = require("../services/realtime.service");
+const { getIO } = require("../services/socket");
 
 const addShopDetails = async (orders) => {
   const shopIds = [...new Set(orders.map((order) => order.shopId).filter(Boolean))];
@@ -263,6 +265,15 @@ const acceptOrder = async (req, res) => {
       { isAvailable: false },
       { returnDocument: "after" },
     );
+
+    // Emit socket event to notify all connected riders that this order is taken
+    // Broadcast to all clients so any rider viewing the available orders list will see it removed
+    const io = getIO();
+    io.emit("order:taken_by_rider", {
+      orderId: order._id.toString(),
+      riderId: rider._id.toString(),
+      riderName: rider.name,
+    });
 
     res.json({ message: "Order accepted successfully", success: true, order: enrichedOrder });
   } catch (error) {

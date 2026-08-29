@@ -7,6 +7,16 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css';
 import api from '../../api/axios';
 import { useSocket } from '../../context/SocketContext';
 
+// Hide routing instructions panel
+const style = document.createElement('style');
+style.innerHTML = `
+  .leaflet-routing-container,
+  .leaflet-routing-alternatives-container {
+    display: none !important;
+  }
+`;
+document.head.appendChild(style);
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:

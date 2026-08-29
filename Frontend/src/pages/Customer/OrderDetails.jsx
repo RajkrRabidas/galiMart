@@ -1,9 +1,18 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, CheckCircle2, Clock3, MapPin, Phone, Store } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  Phone,
+  Store,
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 import OrderStatusBadge from "../../components/Orders/OrderStatusBadge";
 import { fetchOrderDetails } from "../../api/orderApi";
+import { useSocket } from "../../context/SocketContext";
+import RiderOrderMap from "../Delivery/RiderOrderMap";
 
 const statusLabels = {
   placed: "Processing",
@@ -13,13 +22,14 @@ const statusLabels = {
   rider_assigned: "Rider assigned",
   picked_up: "Out for delivery",
   delivered: "Delivered",
-  cancelled: "Cancelled", 
+  cancelled: "Cancelled",
 };
 
 const formatStatus = (status) =>
   statusLabels[status] || status?.replaceAll("_", " ") || "Unknown";
 
-const formatCurrency = (amount) => `₹${Number(amount || 0).toLocaleString("en-IN")}`;
+const formatCurrency = (amount) =>
+  `₹${Number(amount || 0).toLocaleString("en-IN")}`;
 
 const formatDate = (date) =>
   date
@@ -32,9 +42,11 @@ const formatDate = (date) =>
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const socket = useSocket();
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [riderLocation, setRiderLocation] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -56,6 +68,30 @@ const OrderDetails = () => {
       isMounted = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!socket || !id) return;
+
+    socket.emit("join-room", `user:${id}`);
+    return () => {
+      socket.emit("leave", `user:${id}`);
+    };
+  }, [socket, id]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const onRiderLocation = ({ latitude, longitude }) => {
+      console.log("Received rider location:", latitude, longitude);
+      setRiderLocation({ lat: latitude, lng: longitude });
+    };
+
+    socket.on("rider:location", onRiderLocation);
+
+    return () => {
+      socket.off("rider:location", onRiderLocation);
+    };
+  }, [socket]);
 
   if (loading) {
     return <PageMessage message="Loading order details..." />;
@@ -88,7 +124,9 @@ const OrderDetails = () => {
             <h1 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Order #{String(orderId).slice(-6)}
             </h1>
-            <p className="mt-1 text-xs text-slate-500">Placed {formatDate(order.createdAt)}</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Placed {formatDate(order.createdAt)}
+            </p>
           </div>
           <OrderStatusBadge status={status} />
         </div>
@@ -96,25 +134,40 @@ const OrderDetails = () => {
         <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center gap-2">
             <Store size={18} className="text-emerald-600" />
-            <h2 className="font-semibold text-slate-900">{order.shopName || "Gali Mart"}</h2>
+            <h2 className="font-semibold text-slate-900">
+              {order.shopName || "Gali Mart"}
+            </h2>
           </div>
           <div className="divide-y divide-slate-100">
             {items.map((item, index) => (
-              <div className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0" key={`${item.itemId || item.name}-${index}`}>
+              <div
+                className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
+                key={`${item.itemId || item.name}-${index}`}
+              >
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                     {item.image ? (
-                      <img src={item.image || placeholderImage} alt="" className="h-full w-full object-cover" />
+                      <img
+                        src={item.image || placeholderImage}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <span className="text-xs text-slate-400">Item</span>
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-slate-800">{item.name || "Item"}</p>
-                    <p className="text-sm text-slate-500">Qty {item.quantity || 0} · {formatCurrency(item.price)}</p>
+                    <p className="truncate font-medium text-slate-800">
+                      {item.name || "Item"}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      Qty {item.quantity || 0} · {formatCurrency(item.price)}
+                    </p>
                   </div>
                 </div>
-                <p className="shrink-0 font-semibold text-slate-800">{formatCurrency(item.total ?? item.price * item.quantity)}</p>
+                <p className="shrink-0 font-semibold text-slate-800">
+                  {formatCurrency(item.total ?? item.price * item.quantity)}
+                </p>
               </div>
             ))}
           </div>
@@ -126,7 +179,9 @@ const OrderDetails = () => {
             <h2 className="font-semibold text-slate-900">Delivery address</h2>
           </div>
           <p className="font-medium text-slate-800">{address?.fullName}</p>
-          <p className="text-sm leading-6 text-slate-600">{address?.formattedAddress || "Address unavailable"}</p>
+          <p className="text-sm leading-6 text-slate-600">
+            {address?.formattedAddress || "Address unavailable"}
+          </p>
           {address?.mobile && (
             <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-500">
               <Phone size={14} /> {address.mobile}
@@ -147,7 +202,11 @@ const OrderDetails = () => {
           </div>
           <div className="mt-5 flex items-center gap-2 text-xs text-slate-500">
             <CheckCircle2 size={15} className="text-emerald-600" />
-            Payment: {order.paymentMethod === "razorpay" ? "Razorpay" : "Cash on delivery"} · {order.paymentStatus || "pending"}
+            Payment:{" "}
+            {order.paymentMethod === "razorpay"
+              ? "Razorpay"
+              : "Cash on delivery"}{" "}
+            · {order.paymentStatus || "pending"}
           </div>
         </section>
 
@@ -160,6 +219,18 @@ const OrderDetails = () => {
             <Clock3 size={18} />
             Track order
           </button>
+        )}
+
+        {(order.status === "rider_assigned" || order.status === "picked_up") && (
+          <section className="mt-4 rounded-2xl border border-slate-100 bg-white shadow-sm overflow-hidden">
+            <div className="p-5 sm:p-6 border-b border-slate-100">
+              <h2 className="font-semibold text-slate-900 flex items-center gap-2">
+                <MapPin size={18} className="text-emerald-600" />
+                Live Tracking
+              </h2>
+            </div>
+            <RiderOrderMap currentOrder={order} />
+          </section>
         )}
       </main>
       <BottomNavbar />

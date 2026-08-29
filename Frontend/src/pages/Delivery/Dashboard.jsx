@@ -260,8 +260,18 @@ const Dashboard = () => {
       notificationPlayerRef.current?.play();
     };
 
+    const handleOrderTakenByRider = (data) => {
+      if (!data?.orderId) return;
+      // Remove the order from incoming list if it was taken by any rider
+      setIncoming((items) => items.filter((item) => item.orderId !== data.orderId));
+    };
+
     socket.on("order:ready_for_rider", handleOrderReady);
-    return () => socket.off("order:ready_for_rider", handleOrderReady);
+    socket.on("order:taken_by_rider", handleOrderTakenByRider);
+    return () => {
+      socket.off("order:ready_for_rider", handleOrderReady);
+      socket.off("order:taken_by_rider", handleOrderTakenByRider);
+    };
   }, [socket, user?.role]);
 
   const handleAcceptOrder = async (orderId) => {
