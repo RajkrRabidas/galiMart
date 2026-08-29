@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { categories } from "./categoryData";
+import { categories } from "./categorydata";
 
 const CategorySection = () => (
   <section className="mt-8 rounded-[32px] bg-white/90 px-0 py-5 sm:p-5 md:p-6 shadow-[0_30px_70px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70">
