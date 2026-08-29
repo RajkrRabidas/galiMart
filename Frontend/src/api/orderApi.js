@@ -54,6 +54,15 @@ export const updateRiderOrderStatus = async (orderId) => {
   return response.data;
 };
 
+export const updateRiderLocation = async ({ latitude, longitude, isAvailable = true }) => {
+  const response = await api.patch("/rider/toggle-availability", {
+    isAvailable,
+    latitude,
+    longitude,
+  });
+  return response.data;
+};
+
 export const fetchAvailableRiderOrders = async () => {
   const response = await api.get("/rider/order/available");
   return response.data;
@@ -67,5 +76,6 @@ export default {
   retryRiderAssignment,
   acceptRiderOrder,
   updateRiderOrderStatus,
+  updateRiderLocation,
   fetchAvailableRiderOrders,
 };

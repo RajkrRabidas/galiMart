@@ -5,6 +5,8 @@ const orderSchema = new mongoose.Schema(
     userId: { type: String, required: true, index: true },
     shopId: { type: String, required: true, index: true },
     shopName: { type: String, required: true },
+    shopPhone: { type: String, default: null },
+    pickupAddress: { type: String, default: null },
     riderId: { type: String, default: null },
     riderName: { type: String, default: null },
     riderPhone: { type: Number, default: null },
@@ -26,6 +28,7 @@ const orderSchema = new mongoose.Schema(
     totalAmount: Number,
     addressId: { type: String, required: true },
     deliveryAddress: {
+      fullName: { type: String, default: "Customer" },
       formattedAddress: { type: String, required: true },
       mobile: { type: Number, required: true },
       latitude: Number,

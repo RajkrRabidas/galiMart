@@ -86,6 +86,25 @@ const initSocket = (server) => {
         console.log(`User connected ${userId}`);
         console.log("Socket room: ", [...socket.rooms]);
 
+        socket.on("join-room", (room) => {
+            if (!room) return;
+            socket.join(room);
+            console.log(`Socket ${userId} joined room ${room}`);
+        });
+
+        socket.on("rider:location", ({ room, riderId, latitude, longitude }) => {
+            if (!room || latitude == null || longitude == null) return;
+
+            const payload = {
+                riderId,
+                latitude,
+                longitude,
+                timestamp: new Date().toISOString(),
+            };
+
+            io.to(room).emit("rider:location", payload);
+        });
+
         socket.on("disconnect", () => {
             console.log(`User disconnected ${userId}`);
         });

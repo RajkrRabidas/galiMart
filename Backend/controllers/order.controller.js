@@ -110,6 +110,8 @@ const createOrder = asyncHandler(async (req, res) => {
     userId: user._id.toString(),
     shopId,
     shopName: shop.name,
+    shopPhone: shop.phone ? String(shop.phone) : null,
+    pickupAddress: shop.autoLocation?.formattedAddress || null,
     riderId: null,
     items: orderItems,
     subTotal,
@@ -118,6 +120,7 @@ const createOrder = asyncHandler(async (req, res) => {
     totalAmount,
     addressId: address._id.toString(),
     deliveryAddress: {
+      fullName: address.fullName,
       formattedAddress: address.formattedAddress,
       mobile: address.mobile,
       latitude,

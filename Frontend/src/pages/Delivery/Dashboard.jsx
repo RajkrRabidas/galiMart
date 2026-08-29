@@ -5,8 +5,10 @@ import {
   MapPin,
   Navigation,
   Package,
+  Phone,
   Radio,
   RefreshCw,
+  Store,
   Truck,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +25,7 @@ import {
 import { useSocket } from "../../context/SocketContext";
 import newRiderSound from "../../assets/riderNotification.wav";
 import { createNotificationPlayer } from "../../utils/notificationSound";
+import RiderOrderMap from "./RiderOrderMap";
 
 
 const Dashboard = () => {
@@ -510,19 +513,24 @@ const Dashboard = () => {
           </aside>
         </div>
       </main>
+
+      <RiderOrderMap currentOrder={currentOrder} />
       <BottomNavbar />
     </div>
   );
 };
 
 const shortId = (id) => id ? `#${String(id).slice(-8)}` : "#—";
-const addressParts = (order) => (order.deliveryAddress?.formattedAddress || order.formattedAddress || "Address available after acceptance").split(",").map((part) => part.trim()).filter(Boolean);
+const addressParts = (order) => (order.deliveryAddress?.formattedAddress || order.formattedAddress || "Address available after acceptance").split(",").map((part) => part).filter(Boolean);
 const MapsLink = ({ order, label = "Navigate" }) => {
   const address = order.deliveryAddress;
-  if (address?.latitude === undefined || address?.longitude === undefined) return null;
-  return <a href={`https://www.google.com/maps/dir/?api=1&destination=${address.latitude},${address.longitude}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800"><Navigation size={16} />{label}</a>;
+  const destination = address?.latitude !== undefined && address?.longitude !== undefined
+    ? `${address.latitude},${address.longitude}`
+    : address?.formattedAddress;
+  if (!destination) return null;
+  return <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-sm font-bold text-emerald-700 hover:text-emerald-800"><Navigation size={16} />{label}</a>;
 };
-const AddressBlock = ({ order, title = "Pickup from" }) => <div className="mt-5 flex gap-3"><MapPin className="mt-0.5 shrink-0 text-emerald-600" size={19} /><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p><p className="mt-1 font-bold text-slate-900">{order.shopName || "Shop"}</p><p className="mt-1 max-w-lg text-sm leading-5 text-slate-500">{addressParts(order).slice(0, 3).map((part, index) => <span key={`${part}-${index}`} className="block">{part}{index === 2 ? "" : index < addressParts(order).length - 1 ? "," : ""}</span>)}</p></div></div>;
+const AddressBlock = ({ order, title = "Drop location" }) => <div className="mt-5 flex gap-3"><MapPin className="mt-0.5 shrink-0 text-emerald-600" size={19} /><div className="min-w-0"><p className="text-xs font-bold uppercase tracking-wider text-slate-400">{title}</p><p className="mt-1 font-bold text-slate-900">{order.deliveryAddress?.fullName || "Customer"}</p><p className="mt-1 max-w-lg text-sm leading-5 text-slate-500">{addressParts(order).slice(0, 3).map((part, index) => <span key={`${part}-${index}`} className="block">{part}{index === 2 ? "" : index < addressParts(order).length - 1 ? "," : ""}</span>)}</p></div></div>;
 const IncomingDelivery = ({ order, clock, accepting, onAccept }) => {
   const remainingSeconds = clock
     ? Math.max(0, Math.ceil((60000 - (clock - order.receivedAt)) / 1000))
@@ -535,9 +543,29 @@ const IncomingDelivery = ({ order, clock, accepting, onAccept }) => {
   return <article className="mb-3 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700"><Radio size={13} /> New delivery</span><span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${expired ? "bg-slate-100 text-slate-500" : remainingSeconds <= 10 ? "bg-rose-50 text-rose-600" : "bg-emerald-50 text-emerald-700"}`}><span className="h-1.5 w-1.5 rounded-full bg-current" />{expired ? "Expired" : `Accept in ${timerLabel}`}</span></div><AddressBlock order={order} /><div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"><div><p className="text-xs text-slate-400">Order {shortId(order.orderId || order._id)}</p>{order.riderDistance !== undefined && <p className="mt-1 text-sm font-semibold text-slate-600">{order.riderDistance} away</p>}</div><MapsLink order={order} /></div><div className="mt-5 flex gap-3"><button type="button" onClick={onAccept} disabled={accepting || expired} className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300">{accepting ? "Accepting..." : expired ? "Request expired" : "Accept Delivery"}</button></div></article>;
 };
 const stages = [{ status: "rider_assigned", label: "Accepted" }, { status: "picked_up", label: "Picked up" }, { status: "delivered", label: "Delivered" }];
-const ActiveDelivery = ({ order, onAdvance, updating }) => { const currentIndex = stages.findIndex((stage) => stage.status === order.status); const nextLabel = order.status === "rider_assigned" ? "Mark as Picked Up" : order.status === "picked_up" ? "Complete Delivery" : null; return <article className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-emerald-100"><div className="flex items-center gap-2 text-sm font-bold text-emerald-700"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Delivery in progress</div><AddressBlock order={order} /><div className="mt-5 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-2xl bg-slate-50 p-3"><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pickup</p><p className="mt-1 truncate text-sm font-semibold">{order.shopName || "Shop"}</p></div><ArrowRight className="text-emerald-500" size={18} /><div><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Drop</p><p className="mt-1 truncate text-sm font-semibold">Customer</p></div></div><div className="mt-5 flex items-center justify-between gap-2">{stages.map((stage, index) => <div key={stage.status} className="flex items-center gap-2"><div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${index <= currentIndex ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}>{index < currentIndex ? <Check size={14} /> : index + 1}</div>{index < stages.length - 1 && <div className={`h-px w-5 sm:w-10 ${index < currentIndex ? "bg-emerald-500" : "bg-slate-200"}`} />}</div>)}</div><div className="mt-4 flex items-center justify-between text-xs text-slate-500"><span>Order {shortId(order._id || order.orderId)}</span><span className="font-semibold capitalize text-emerald-700">{order.status?.replaceAll("_", " ")}</span></div>{nextLabel && <div className="mt-5 flex items-center justify-between gap-4"><MapsLink order={order} label={order.status === "rider_assigned" ? "Navigate to pickup" : "Navigate to customer"} /><button onClick={onAdvance} disabled={updating} className="rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">{updating ? "Updating..." : nextLabel}</button></div>}</article>; };
+const formatMoney = (value) => `₹${Number(value || 0).toLocaleString("en-IN")}`;
+const PhoneLink = ({ phone, label }) => phone ? <a href={`tel:${phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100"><Phone size={14} />{label}</a> : <span className="text-xs text-slate-400">Not available</span>;
+const ActiveDelivery = ({ order, onAdvance, updating }) => {
+  const currentIndex = stages.findIndex((stage) => stage.status === order.status);
+  const nextLabel = order.status === "rider_assigned" ? "Mark as Picked Up" : order.status === "picked_up" ? "Complete Delivery" : null;
+  const dropAddress = addressParts(order).join(", ");
+  const customerPhone = order.deliveryAddress?.mobile || order.mobile || order.customerPhone;
+  const shopPhone = order.shopPhone || order.shop?.phone;
+  return <article className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-emerald-100">
+    <div className="flex items-center justify-between gap-3"><div className="flex items-center gap-2 text-sm font-bold text-emerald-700"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />Delivery in progress</div><span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold capitalize text-emerald-700">{order.status?.replaceAll("_", " ")}</span></div>
+    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4"><SummaryStat label="Total price" value={formatMoney(order.totalAmount)} /><SummaryStat label="Your earning" value={formatMoney(order.riderAmount)} accent /><SummaryStat label="Distance" value={`${order.riderDistance ?? "—"} km`} /><SummaryStat label="Order" value={shortId(order._id || order.orderId)} /></div>
+    <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch"><LocationCard icon={<Store size={17} />} label="Pickup from shop" name={order.shopName || "Shop"} address={order.pickupAddress || "Pickup location available in navigation"} phone={shopPhone} phoneLabel="Call shopkeeper" /><div className="hidden items-center justify-center text-emerald-500 md:flex"><ArrowRight size={20} /></div><LocationCard icon={<MapPin size={17} />} label="Drop to customer" name={order.deliveryAddress?.fullName || "Customer"} address={dropAddress || "Address unavailable"} phone={customerPhone} phoneLabel="Call customer" /></div>
+    <div className="mt-5 flex items-center justify-between gap-2">{stages.map((stage, index) => <div key={stage.status} className="flex items-center gap-2"><div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${index <= currentIndex ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}>{index < currentIndex ? <Check size={14} /> : index + 1}</div>{index < stages.length - 1 && <div className={`h-px w-5 sm:w-10 ${index < currentIndex ? "bg-emerald-500" : "bg-slate-200"}`} />}</div>)}</div>
+    <div className="mt-4 flex items-center justify-end text-xs text-slate-500"><MapsLink order={order} label="Navigate to drop" /></div>
+    {nextLabel && <button onClick={onAdvance} disabled={updating} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">{updating ? "Updating..." : nextLabel}</button>}
+  </article>;
+};
+const SummaryStat = ({ label, value, accent }) => <div className={`rounded-2xl p-3 ${accent ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-900"}`}><p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? "text-emerald-100" : "text-slate-400"}`}>{label}</p><p className="mt-1 truncate text-lg font-black">{value}</p></div>;
+const LocationCard = ({ icon, label, name, address, phone, phoneLabel }) => <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-700">{icon}{label}</div><p className="mt-2 font-bold text-slate-900">{name}</p><p className="mt-1 min-h-10 text-sm leading-5 text-slate-500">{address}</p><div className="mt-3"><PhoneLink phone={phone} label={phoneLabel} /></div></div>;
 const OverviewCard = ({ label, value, icon }) => <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100"><div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">{icon}</div><p className="mt-3 text-xs font-medium text-slate-500">{label}</p><p className="mt-1 text-2xl font-bold">{value}</p></div>;
 const EmptyDeliveryState = ({ isOnline, onGoOnline }) => <div className="rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600"><Truck size={24} /></div><h3 className="mt-4 font-bold">{isOnline ? "No delivery requests" : "You're currently offline"}</h3><p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-500">{isOnline ? "You're online and ready. New requests will appear here." : "Go online to start receiving delivery requests."}</p>{!isOnline && <button onClick={onGoOnline} className="mt-5 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white">Go Online</button>}</div>;
+
 const DashboardSkeleton = () => <div className="mx-auto max-w-6xl animate-pulse space-y-5"><div className="h-12 w-2/3 rounded-xl bg-slate-200" /><div className="h-28 rounded-3xl bg-slate-200" /><div className="h-7 w-1/3 rounded-lg bg-slate-200" /><div className="h-64 rounded-3xl bg-slate-200" /></div>;
+
 
 export default Dashboard;

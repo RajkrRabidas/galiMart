@@ -1,5 +1,33 @@
 const Rider = require("../models/rider.model");
 const orderModel = require("../models/order");
+const Shop = require("../models/shop.model");
+
+const addShopDetails = async (orders) => {
+  const shopIds = [...new Set(orders.map((order) => order.shopId).filter(Boolean))];
+  if (shopIds.length === 0) return orders;
+
+  const shops = await Shop.find({ _id: { $in: shopIds } }).select("phone autoLocation").lean();
+  const shopById = new Map(shops.map((shop) => [shop._id.toString(), shop]));
+
+  return orders.map((order) => {
+    const data = order.toObject ? order.toObject() : order;
+    const shop = shopById.get(String(data.shopId));
+    const shopCoordinates = shop?.autoLocation?.coordinates;
+    const pickupLocation =
+      data.pickupLocation ||
+      (shopCoordinates && shopCoordinates.length === 2
+        ? { lat: shopCoordinates[1], lng: shopCoordinates[0] }
+        : null);
+
+    return {
+      ...data,
+      shopPhone: data.shopPhone || (shop?.phone ? String(shop.phone) : null),
+      pickupAddress: data.pickupAddress || shop?.autoLocation?.formattedAddress || null,
+      pickupLocation,
+      shopLocation: data.shopLocation || pickupLocation,
+    };
+  });
+};
 
 const addRidderProfile = async (req, res) => {
   const user = req.user;
@@ -228,13 +256,15 @@ const acceptOrder = async (req, res) => {
     order.status = "rider_assigned";
     await order.save();
 
+    const [enrichedOrder] = await addShopDetails([order]);
+
     await Rider.findOneAndUpdate(
       { userId: riderUserId, isAvailable: true },
       { isAvailable: false },
       { returnDocument: "after" },
     );
 
-    res.json({ message: "Order accepted successfully", success: true, order });
+    res.json({ message: "Order accepted successfully", success: true, order: enrichedOrder });
   } catch (error) {
     res.status(400).json({
       message: "Error accepting order",
@@ -266,7 +296,7 @@ const fetchMyCrrentOrder = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    res.json({ message: "Current order fetched successfully", orders });
+    res.json({ message: "Current order fetched successfully", orders: await addShopDetails(orders) });
   } catch (error) {
     res
       .status(500)
@@ -295,7 +325,7 @@ const fetchAvailableOrders = async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(20);
 
-  return res.json({ orders });
+  return res.json({ orders: await addShopDetails(orders) });
 };
 
 const updateOrderStatus = async (req, res) => {
@@ -321,13 +351,15 @@ const updateOrderStatus = async (req, res) => {
     if (order.status === "rider_assigned") {
       order.status = "picked_up";
       await order.save();
-      return res.json({ message: "Order status updated successfully", order });
+      const [enrichedOrder] = await addShopDetails([order]);
+      return res.json({ message: "Order status updated successfully", order: enrichedOrder });
     }
 
     if (order.status === "picked_up") {
       order.status = "delivered";
       await order.save();
-      return res.json({ message: "Order status updated successfully", order });
+      const [enrichedOrder] = await addShopDetails([order]);
+      return res.json({ message: "Order status updated successfully", order: enrichedOrder });
     }
 
     return res
