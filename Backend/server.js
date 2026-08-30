@@ -10,17 +10,29 @@ const server = http.createServer(app)
 
 const bootstrap = async () => {
   try {
-    await connectRabbitMQ();
-    await startPaymentConsumer();
-    await startOrderConsumer();
-    initSocket(server);
+    // Connect to critical services
     await connectToDB();
+    console.log("✅ Database connected");
+
+    // Initialize optional services (non-blocking)
+    connectRabbitMQ()
+      .then(() => {
+        startPaymentConsumer();
+        startOrderConsumer();
+        console.log("✅ RabbitMQ consumers started");
+      })
+      .catch((err) => {
+        console.warn("⚠️ RabbitMQ not available, continuing without message queue...");
+      });
+
+    initSocket(server);
+    console.log("✅ WebSocket initialized");
 
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`✅ Server running on port ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Startup failed", error);
+    console.error("❌ Startup failed:", error.message);
     process.exit(1);
   }
 };
