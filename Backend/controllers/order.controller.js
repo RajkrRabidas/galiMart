@@ -244,14 +244,22 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
       order._id.toString(),
     );
 
-    await publishOrderEvent("order_ready_for_rider", {
-      orderId: order._id.toString(),
-      shopId: order.shopId.toString(),
-      shopName: order.shopName,
-      location: order.deliveryAddress,
-    });
+    try {
+      const publishResult = await publishOrderEvent("order_ready_for_rider", {
+        orderId: order._id.toString(),
+        shopId: order.shopId.toString(),
+        shopName: order.shopName,
+        location: order.deliveryAddress,
+      });
 
-    console.log("event Published successfully");
+      if (publishResult.success) {
+        console.log("✅ Event published successfully");
+      } else {
+        console.warn("⚠️ Event not published to queue:", publishResult.reason);
+      }
+    } catch (error) {
+      console.warn("⚠️ Error publishing rider assignment event:", error.message);
+    }
   }
 
   return res
@@ -289,12 +297,20 @@ const retryRiderAssignment = asyncHandler(async (req, res) => {
     });
   }
 
-  await publishOrderEvent("order_ready_for_rider", {
-    orderId: order._id.toString(),
-    shopId: order.shopId.toString(),
-    shopName: order.shopName,
-    location: order.deliveryAddress,
-  });
+  try {
+    const publishResult = await publishOrderEvent("order_ready_for_rider", {
+      orderId: order._id.toString(),
+      shopId: order.shopId.toString(),
+      shopName: order.shopName,
+      location: order.deliveryAddress,
+    });
+
+    if (!publishResult.success) {
+      console.warn("⚠️ Event not published to queue:", publishResult.reason);
+    }
+  } catch (error) {
+    console.warn("⚠️ Error publishing rider assignment event:", error.message);
+  }
 
   return res.status(200).json({
     message: "Rider assignment retry started",

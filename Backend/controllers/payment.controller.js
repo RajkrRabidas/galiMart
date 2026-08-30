@@ -80,11 +80,21 @@ const verifyRazorpayPayment = async (req, res) => {
     return res.status(400).json({ message: "payment verification failed" });
   }
 
-  await publishPaymentSuccess({
-    orderId,
-    paymentId: rezorpay_payment_id,
-    paymentMethod: "razorpay",
-  });
+  try {
+    const publishResult = await publishPaymentSuccess({
+      orderId,
+      paymentId: rezorpay_payment_id,
+      paymentMethod: "razorpay",
+    });
+
+    if (!publishResult.success) {
+      console.warn("⚠️ Payment event not published to queue:", publishResult.reason);
+      // Still continue - payment is verified in DB
+    }
+  } catch (error) {
+    console.error("⚠️ Error publishing payment event:", error.message);
+    // Still continue - payment is verified in DB
+  }
 
   res.json({
     success: true,
