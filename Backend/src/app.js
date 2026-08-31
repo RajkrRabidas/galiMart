@@ -23,7 +23,8 @@ app.use(
       "http://localhost:5173",
       "http://localhost:3000",
       "https://galimart.vercel.app",
-      "https://galimart.vercel.app/"
+      "https://galimart.vercel.app/",
+      "https://https://www.galimart.co.in/",
     ],
     credentials: true,
   })

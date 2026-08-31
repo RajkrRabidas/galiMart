@@ -3,23 +3,6 @@ import { completeProfile as completeProfileApi, getMyProfile, logoutUser } from 
 
 const AuthContext = createContext(null);
 
-const readCachedLocation = () => {
-  try {
-    const storedLocation = localStorage.getItem("cachedLocation");
-    return storedLocation ? JSON.parse(storedLocation) : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeCachedLocation = (locationData) => {
-  try {
-    localStorage.setItem("cachedLocation", JSON.stringify(locationData));
-  } catch (error) {
-    console.error("Unable to cache location:", error);
-  }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUserState] = useState(() => {
     try {
@@ -33,8 +16,8 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [location, setLocation] = useState(() => readCachedLocation());
-  const [city, setCity] = useState(() => readCachedLocation()?.city || null);
+  const [location, setLocation] = useState(null);
+  const [city, setCity] = useState(null);
 
   const setUser = (value) => {
     setUserState(value);
@@ -144,12 +127,10 @@ export const AuthProvider = ({ children }) => {
 
         setLocation(resolvedLocation);
         setCity(resolvedCity);
-        writeCachedLocation({ ...resolvedLocation, city: resolvedCity });
         setLoadingLocation(false);
       } catch (error) {
         setLocation(fallbackLocation);
         setCity("your location");
-        writeCachedLocation({ ...fallbackLocation, city: "your location" });
         setLoadingLocation(false);
       }
     };
@@ -200,7 +181,6 @@ export const AuthProvider = ({ children }) => {
       setLocation,
       city,
       setCity,
-      writeCachedLocation,
     }),
     [user, profile, authLoading, loadingLocation, location, city]
   );
