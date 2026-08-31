@@ -3,9 +3,9 @@ const userModel = require("../models/user.model");
 const crypto = require("crypto");
 const sanitize = require("mongo-sanitize");
 const bcrypt = require("bcryptjs");
+const axios = require("axios");
 const { registerSchema, loginSchema, completeProfileSchema } = require("../config/zod");
 const { redisClient } = require("../services/redis");
-const twilio = require("twilio");
 const ROLES = require("../constants/roles");
 const {
   generateToken,
@@ -15,12 +15,12 @@ const {
 } = require("../config/generateToken");
 const userDetailsModel = require("../models/userDetails.model");
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID || process.env.accountSid;
-const authToken = process.env.TWILIO_AUTH_TOKEN || process.env.authToken;
-const twilioFromNumber =
-  process.env.TWILIO_FROM_NUMBER || process.env.fromNumber || "+15717478662";
-
-const twilioClient = accountSid && authToken ? new twilio(accountSid, authToken) : null;
+const apitxtAuthKey = process.env.APITXT_AUTH_KEY || process.env.apitxtAuthKey || process.env.authkey || null;
+const apitxtApiKey = process.env.APITXT_API_KEY || process.env.apitxtApiKey || process.env.apiKey || null;
+const apitxtSenderId = process.env.APITXT_SENDER_ID || process.env.apitxtSenderId || "APITXT";
+const apitxtSmsUrl = process.env.APITXT_SMS_URL || process.env.apitxtSmsUrl || "https://www.apitxt.com/api/sendmsg.php";
+const apitxtRoute = process.env.APITXT_ROUTE || process.env.apitxtRoute || "4";
+const apitxtCountry = process.env.APITXT_COUNTRY || process.env.apitxtCountry || "91";
 
 const OTP_TTL_SECONDS = 300;
 const OTP_ATTEMPT_LIMIT = 5;
@@ -68,17 +68,61 @@ const logAuthEvent = async (event, payload) => {
 };
 
 const sendOtpSms = async (phone, otp) => {
-  if (!twilioClient) {
-    console.log(`[OTP] SMS skipped. Phone: ${phone}, OTP: ${otp}`);
+  const cleanPhone = String(phone || "").replace(/\D/g, "");
+  const normalizedPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
+
+  if (!apitxtAuthKey) {
+    console.log(`[OTP] APITxT config missing. Phone: ${normalizedPhone}, OTP: ${otp}`);
     return true;
   }
 
-  await twilioClient.messages.create({
-    body: `Your OTP is: ${otp}`,
-    to: `+91${phone}`,
-    from: twilioFromNumber,
+  if (!normalizedPhone || normalizedPhone.length < 10) {
+    throw new Error(`APITxT SMS failed: invalid mobile number received. Raw: ${phone}`);
+  }
+
+  const requestBody = new URLSearchParams({
+    authkey: apitxtAuthKey,
+    mobile: normalizedPhone,
+    mobiles: normalizedPhone,
+    otp: String(otp),
+    message: `Your OTP is: ${otp}`,
+    sender: apitxtSenderId,
+    route: apitxtRoute,
+    country: apitxtCountry,
+    response: "json",
   });
-  console.log(`[OTP] SMS sent. Phone: ${phone}, OTP: ${otp}`);
+
+  const headers = {
+    "Content-Type": "application/x-www-form-urlencoded",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+    Origin: "https://apitxt.com",
+    Referer: "https://apitxt.com/",
+    "X-Requested-With": "XMLHttpRequest",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+  };
+
+  if (apitxtApiKey && !String(apitxtApiKey).startsWith("your_")) {
+    headers.Authorization = `Bearer ${apitxtApiKey}`;
+  }
+
+  const response = await axios.post(apitxtSmsUrl, requestBody.toString(), {
+    headers,
+    timeout: 20000,
+  });
+
+  const responseData = response?.data || {};
+  const responseStatus = responseData?.status ?? response?.status;
+  const isSuccessResponse =
+    responseStatus === "success" ||
+    responseStatus === "SUCCESS" ||
+    responseStatus === 200 ||
+    Number(responseStatus) === 200;
+
+  if (!isSuccessResponse) {
+    throw new Error(`APITxT SMS failed: ${JSON.stringify(responseData)}`);
+  }
+
   return true;
 };
 
