@@ -15,6 +15,17 @@ const locationRouter = require("../routes/location.routes")
 
 const cors = require("cors");
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://galimart.up.railway.app",
+  "https://galimart.co.in",
+  "https://www.galimart.co.in",
+  "https://galimart.vercel.app",
+  "https://www.galimart.vercel.app",
+];
+
+const normalizeOrigin = (origin) => (origin || "").replace(/\/+$/, "");
 
 const app = express();
 app.use(
@@ -31,6 +42,8 @@ app.use(
       callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 app.use(express.json());
@@ -55,15 +68,3 @@ connectRedis().catch((error) => {
 });
 
 module.exports = app;
-
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://galimart.up.railway.app",
-  "https://galimart.co.in",
-  "https://www.galimart.co.in",
-  "https://galimart.vercel.app/",
-  "https://www.galimart.vercel.app/"
-];
-
-const normalizeOrigin = (origin) => (origin || "").replace(/\/+$/, "");
