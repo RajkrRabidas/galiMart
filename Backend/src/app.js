@@ -22,9 +22,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
-      "https://galimart.vercel.app",
-      "https://galimart.vercel.app/",
-      "https://https://www.galimart.co.in/",
+      "https://galimart.up.railway.app",
+      "https://www.galimart.co.in/"
     ],
     credentials: true,
   })
