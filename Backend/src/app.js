@@ -62,6 +62,8 @@ const allowedOrigins = [
   "https://galimart.up.railway.app",
   "https://galimart.co.in",
   "https://www.galimart.co.in",
+  "https://galimart.vercel.app/",
+  "https://www.galimart.vercel.app/"
 ];
 
 const normalizeOrigin = (origin) => (origin || "").replace(/\/+$/, "");
