@@ -68,22 +68,23 @@ const logAuthEvent = async (event, payload) => {
 };
 
 const sendOtpSms = async (phone, otp) => {
-  const cleanPhone = String(phone || "").replace(/\D/g, "");
-  const normalizedPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
+  const normalizedPhone = userModel.normalizePhone(phone);
+  const cleanPhone = String(normalizedPhone || "").replace(/\D/g, "");
+  const apitxtPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
 
   if (!apitxtAuthKey) {
-    console.log(`[OTP] APITxT config missing. Phone: ${normalizedPhone}, OTP: ${otp}`);
+    console.log(`[OTP] APITxT config missing. Phone: ${apitxtPhone}, OTP: ${otp}`);
     return true;
   }
 
-  if (!normalizedPhone || normalizedPhone.length < 10) {
+  if (!apitxtPhone || apitxtPhone.length < 10) {
     throw new Error(`APITxT SMS failed: invalid mobile number received. Raw: ${phone}`);
   }
 
   const requestBody = new URLSearchParams({
     authkey: apitxtAuthKey,
-    mobile: normalizedPhone,
-    mobiles: normalizedPhone,
+    mobile: apitxtPhone,
+    mobiles: apitxtPhone,
     otp: String(otp),
     message: `Your OTP is: ${otp}`,
     sender: apitxtSenderId,
@@ -127,12 +128,13 @@ const sendOtpSms = async (phone, otp) => {
 };
 
 const issueOtp = async ({ phone, role, purpose }) => {
+  const normalizedPhone = userModel.normalizePhone(phone);
   const otp = generateOtp();
   const hashedOtp = await bcrypt.hash(otp, 10);
-  const activeOtpKey = purpose === "login" ? `verify-login-token:${phone}` : `verify-register-token:${phone}`;
-  const attemptKey = `otp-attempt:${phone}:${purpose}`;
-  const resendKey = `otp-resend:${phone}:${purpose}`;
-  const cooldownKey = `otp-cooldown:${phone}:${purpose}`;
+  const activeOtpKey = purpose === "login" ? `verify-login-token:${normalizedPhone}` : `verify-register-token:${normalizedPhone}`;
+  const attemptKey = `otp-attempt:${normalizedPhone}:${purpose}`;
+  const resendKey = `otp-resend:${normalizedPhone}:${purpose}`;
+  const cooldownKey = `otp-cooldown:${normalizedPhone}:${purpose}`;
 
   const currentResends = parseInt((await redisClient.get(resendKey)) || "0", 10);
   if (currentResends >= OTP_RESEND_LIMIT) {
@@ -143,21 +145,22 @@ const issueOtp = async ({ phone, role, purpose }) => {
     return { status: 429, body: { message: "Please wait before requesting another OTP." } };
   }
 
-  const dataToStore = JSON.stringify({ phone, role, otp: hashedOtp, purpose, createdAt: Date.now() });
+  const dataToStore = JSON.stringify({ phone: normalizedPhone, role, otp: hashedOtp, purpose, createdAt: Date.now() });
   await redisClient.set(activeOtpKey, dataToStore, { EX: OTP_TTL_SECONDS });
   await redisClient.del(attemptKey);
   await redisClient.set(resendKey, currentResends + 1, { EX: OTP_RESEND_COOLDOWN_SECONDS });
   await redisClient.set(cooldownKey, "true", { EX: OTP_RESEND_COOLDOWN_SECONDS });
-  await sendOtpSms(phone, otp);
+  await sendOtpSms(normalizedPhone, otp);
 
-  await logAuthEvent("otp_sent", { phone, purpose });
+  await logAuthEvent("otp_sent", { phone: normalizedPhone, purpose });
 
   return { status: 202, body: { message: "OTP sent successfully.", otp } };
 };
 
 const verifyOtpAgainstStoredValue = async ({ phone, otp, purpose }) => {
-  const activeOtpKey = purpose === "login" ? `verify-login-token:${phone}` : `verify-register-token:${phone}`;
-  const attemptKey = `otp-attempt:${phone}:${purpose}`;
+  const normalizedPhone = userModel.normalizePhone(phone);
+  const activeOtpKey = purpose === "login" ? `verify-login-token:${normalizedPhone}` : `verify-register-token:${normalizedPhone}`;
+  const attemptKey = `otp-attempt:${normalizedPhone}:${purpose}`;
 
   const storedData = await redisClient.get(activeOtpKey);
   if (!storedData) {
@@ -227,8 +230,9 @@ const registerUser = async (req, res) => {
 
   try {
     const { phone, role } = validation.data;
+    const normalizedPhone = userModel.normalizePhone(phone);
 
-    const phoneRateLimitKey = `register-rate-limit:phone:${phone}`;
+    const phoneRateLimitKey = `register-rate-limit:phone:${normalizedPhone}`;
     const ipRateLimitKey = `register-rate-limit:ip:${req.ip}`;
 
     if (
@@ -238,12 +242,12 @@ const registerUser = async (req, res) => {
       return res.status(429).json({ message: "Too many requests. Please try again later." });
     }
 
-    const existingUser = await userModel.findOne({ phone });
+    const existingUser = await userModel.findOne({ phone: normalizedPhone });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists, please login instead." });
     }
 
-    const otpResult = await issueOtp({ phone, role, purpose: "register" });
+    const otpResult = await issueOtp({ phone: normalizedPhone, role, purpose: "register" });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
     }
@@ -264,20 +268,21 @@ const verifyOtp = async (req, res) => {
   try {
     const sanitizedBody = sanitize(req.body);
     const { phone, otp } = sanitizedBody;
+    const normalizedPhone = userModel.normalizePhone(phone);
 
-    if (!phone || !otp) {
+    if (!normalizedPhone || !otp) {
       return res.status(400).json({ message: "Phone and OTP are required." });
     }
 
-    const verification = await verifyOtpAgainstStoredValue({ phone, otp, purpose: "register" });
+    const verification = await verifyOtpAgainstStoredValue({ phone: normalizedPhone, otp, purpose: "register" });
     if (verification.status !== 200) {
       return res.status(verification.status).json(verification.body);
     }
 
     const parsed = verification.body;
-    const existingUser = await userModel.findOne({ phone });
+    const existingUser = await userModel.findOne({ phone: normalizedPhone });
     if (existingUser) {
-      await logAuthEvent("registration_conflict", { phone });
+      await logAuthEvent("registration_conflict", { phone: normalizedPhone });
       return res.status(400).json({ message: "User already exists, please login instead." });
     }
 
@@ -291,7 +296,7 @@ const verifyOtp = async (req, res) => {
     });
 
     const tokens = await generateToken(newUser.id, res);
-    await logAuthEvent("register_verified", { userId: newUser.id, phone });
+    await logAuthEvent("register_verified", { userId: newUser.id, phone: normalizedPhone });
 
     res.status(200).json({ message: "Registration successful.", user: newUser, tokens });
   } catch (error) {
@@ -311,7 +316,8 @@ const loginUser = async (req, res) => {
 
   try {
     const { phone } = validation.data;
-    const existingUser = await userModel.findOne({ phone });
+    const normalizedPhone = userModel.normalizePhone(phone);
+    const existingUser = await userModel.findOne({ phone: normalizedPhone });
 
     if (!existingUser) {
       return res.status(404).json({ message: "No account found. Please register first." });
@@ -321,7 +327,7 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: "This account is unavailable." });
     }
 
-    const otpResult = await issueOtp({ phone, role: existingUser.role, purpose: "login" });
+    const otpResult = await issueOtp({ phone: normalizedPhone, role: existingUser.role, purpose: "login" });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
     }
@@ -337,18 +343,19 @@ const verifyLoginOtp = async (req, res) => {
   try {
     const sanitizedBody = sanitize(req.body);
     const { phone, otp } = sanitizedBody;
+    const normalizedPhone = userModel.normalizePhone(phone);
 
-    if (!phone || !otp) {
+    if (!normalizedPhone || !otp) {
       return res.status(400).json({ message: "Phone and OTP are required." });
     }
 
-    const verification = await verifyOtpAgainstStoredValue({ phone, otp, purpose: "login" });
+    const verification = await verifyOtpAgainstStoredValue({ phone: normalizedPhone, otp, purpose: "login" });
     if (verification.status !== 200) {
       return res.status(verification.status).json(verification.body);
     }
 
     const parsed = verification.body;
-    const user = await userModel.findOne({ phone: parsed.phone });
+    const user = await userModel.findOne({ phone: userModel.normalizePhone(parsed.phone) });
 
     if (!user || user.isBlocked || user.isDeleted) {
       return res.status(403).json({ message: "This account is unavailable." });
@@ -358,7 +365,7 @@ const verifyLoginOtp = async (req, res) => {
     await user.save();
 
     const tokens = await generateToken(user.id, res);
-    await logAuthEvent("login_verified", { userId: user.id, phone });
+    await logAuthEvent("login_verified", { userId: user.id, phone: normalizedPhone });
 
     res.status(200).json({ message: "Login successful.", user, tokens });
   } catch (error) {
@@ -371,24 +378,25 @@ const resendOtp = async (req, res) => {
   try {
     const sanitizedBody = sanitize(req.body);
     const { phone, purpose } = sanitizedBody;
+    const normalizedPhone = userModel.normalizePhone(phone);
 
-    if (!phone || !["register", "login"].includes(purpose)) {
+    if (!normalizedPhone || !["register", "login"].includes(purpose)) {
       return res.status(400).json({ message: "Phone and purpose are required." });
     }
 
     if (purpose === "register") {
-      const existingUser = await userModel.findOne({ phone });
+      const existingUser = await userModel.findOne({ phone: normalizedPhone });
       if (existingUser) {
         return res.status(400).json({ message: "User already exists, please login instead." });
       }
     } else {
-      const existingUser = await userModel.findOne({ phone });
+      const existingUser = await userModel.findOne({ phone: normalizedPhone });
       if (!existingUser || existingUser.isBlocked || existingUser.isDeleted) {
         return res.status(404).json({ message: "No active account found." });
       }
     }
 
-    const otpResult = await issueOtp({ phone, role: purpose === "register" ? ROLES.CUSTOMER : undefined, purpose });
+    const otpResult = await issueOtp({ phone: normalizedPhone, role: purpose === "register" ? ROLES.CUSTOMER : undefined, purpose });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
     }

@@ -1,13 +1,28 @@
 const z = require("zod");
 const ROLES = require("../constants/roles");
 
+const normalizePhone = (value) => {
+  if (value === null || value === undefined) return value;
+
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return value;
+
+  const withoutCountryCode = digits.startsWith("91") ? digits.slice(2) : digits;
+  return withoutCountryCode.startsWith("0") ? withoutCountryCode.slice(1) : withoutCountryCode;
+};
+
+const phoneSchema = z.preprocess(
+  (value) => normalizePhone(value),
+  z.string().trim().min(10, "Phone number must be at least 10 characters long"),
+);
+
 const registerSchema = z.object({
-  phone: z.string().min(10, "Phone number must be at least 10 characters long"),
+  phone: phoneSchema,
   role: z.enum(Object.values(ROLES)).optional(),
 });
 
 const loginSchema = z.object({
-  phone: z.string().min(10, "Phone number must be at least 10 characters long"),
+  phone: phoneSchema,
 });
 
 const completeProfileSchema = z.object({

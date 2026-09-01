@@ -37,6 +37,7 @@ import DeliveryOrders from "../pages/Delivery/Orders";
 import DeliveryProfile from "../pages/Delivery/Profile";
 import CreateDeliveryProfile from "../pages/Delivery/CreateProfile";
 import PaymentSuccess from "../pages/Customer/paymentSuccess";
+import CategoryShops from "../pages/Customer/CategoryShops";
 import NotFound from "../pages/404";
 
 const AppRoutes = () => {
@@ -47,6 +48,7 @@ const AppRoutes = () => {
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
 
       <Route path="/home" element={<ProtectedRoute allowedRoles={["user"]}><Home /></ProtectedRoute>} />
+      <Route path="/category/:type" element={<ProtectedRoute allowedRoles={["user"]}><CategoryShops /></ProtectedRoute>} />
       <Route path="/product/:id" element={<ProtectedRoute allowedRoles={["user"]}><ProductDetails /></ProtectedRoute>} />
       <Route path="/cart" element={<ProtectedRoute allowedRoles={["user"]}><Cart /></ProtectedRoute>} />
       <Route path="/checkout" element={<ProtectedRoute allowedRoles={["user"]}><Checkout /></ProtectedRoute>} />

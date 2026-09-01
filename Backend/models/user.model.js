@@ -1,12 +1,26 @@
 const mongoose = require("mongoose");
 const ROLES = require("../constants/roles");
 
+const normalizePhone = (value) => {
+  if (value === null || value === undefined) return "";
+
+  const digits = String(value).replace(/\D/g, "");
+  if (!digits) return "";
+
+  const withoutCountryCode = digits.startsWith("91") ? digits.slice(2) : digits;
+  const withoutLeadingZero = withoutCountryCode.startsWith("0") ? withoutCountryCode.slice(1) : withoutCountryCode;
+
+  return withoutLeadingZero;
+};
+
 const userSchema = new mongoose.Schema(
   {
     phone: {
       type: String,
       required: true,
       unique: true,
+      trim: true,
+      set: normalizePhone,
     },
     role: {
       type: String,
@@ -30,10 +44,34 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    
   },
   { timestamps: true },
 );
+
+userSchema.statics.normalizePhone = normalizePhone;
+
+userSchema.pre("save", function (next) {
+  if (this.phone) {
+    this.phone = normalizePhone(this.phone);
+  }
+  next();
+});
+
+userSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+
+  if (update && typeof update === "object") {
+    if (update.$set && typeof update.$set.phone !== "undefined") {
+      update.$set.phone = normalizePhone(update.$set.phone);
+    }
+
+    if (typeof update.phone !== "undefined") {
+      update.phone = normalizePhone(update.phone);
+    }
+  }
+
+  next();
+});
 
 // Ensure only documents with a real email string are indexed as unique
 userSchema.index(

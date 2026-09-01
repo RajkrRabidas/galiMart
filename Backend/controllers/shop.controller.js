@@ -69,8 +69,8 @@ const sendSuccess = (res, statusCode, message, data) => {
   return res.status(statusCode).json({ success: true, message, data });
 };
 
-const getNearbyShopCacheKey = ({ latitude, longitude, radius = 5000, search = "" }) => {
-  return `shops:nearby:${Number(latitude)}:${Number(longitude)}:${Number(radius)}:${String(search).trim().toLowerCase()}`;
+const getNearbyShopCacheKey = ({ latitude, longitude, radius = 5000, search = "", shopType = "" }) => {
+  return `shops:nearby:${Number(latitude)}:${Number(longitude)}:${Number(radius)}:${String(search).trim().toLowerCase()}:${String(shopType).trim().toLowerCase()}`;
 };
 
 const CreateShop = asyncHandler(async (req, res) => {
@@ -285,7 +285,7 @@ const updateShop = asyncHandler(async (req, res) => {
 });
 
 const getNearByShop = asyncHandler(async (req, res) => {
-  const { latitude, longitude, radius, search = "" } = req.query;
+  const { latitude, longitude, radius, search = "", shopType = "" } = req.query;
 
   if (!latitude || !longitude) {
     return res
@@ -294,7 +294,8 @@ const getNearByShop = asyncHandler(async (req, res) => {
   }
 
   const normalizedRadius = Number(radius) || 5000;
-  const cacheKey = getNearbyShopCacheKey({ latitude, longitude, radius: normalizedRadius, search });
+  const normalizedShopType = String(shopType).trim().toLowerCase();
+  const cacheKey = getNearbyShopCacheKey({ latitude, longitude, radius: normalizedRadius, search, shopType: normalizedShopType });
   const cachedShop = await getJson(cacheKey);
 
   if (cachedShop) {
@@ -310,6 +311,10 @@ const getNearByShop = asyncHandler(async (req, res) => {
 
   if (search) {
     query.name = { $regex: search, $options: "i" };
+  }
+
+  if (normalizedShopType) {
+    query.shopType = normalizedShopType;
   }
 
   const shop = await shopModel.aggregate([
