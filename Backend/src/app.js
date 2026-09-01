@@ -19,12 +19,17 @@ const cors = require("cors");
 const app = express();
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "https://galimart.up.railway.app",
-      "https://www.galimart.co.in/"
-    ],
+    origin: (origin, callback) => {
+      const normalizedOrigin = normalizeOrigin(origin);
+
+      if (!origin || allowedOrigins.includes(normalizedOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      console.warn(`Blocked CORS origin: ${origin}`);
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -50,3 +55,13 @@ connectRedis().catch((error) => {
 });
 
 module.exports = app;
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://galimart.up.railway.app",
+  "https://galimart.co.in",
+  "https://www.galimart.co.in",
+];
+
+const normalizeOrigin = (origin) => (origin || "").replace(/\/+$/, "");
