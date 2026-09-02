@@ -87,7 +87,7 @@ const OrderCard = ({ order }) => {
         <div className="flex gap-2 pt-2 sm:w-auto sm:flex-col sm:justify-between sm:gap-3 sm:pt-0">
           <button
             onClick={() => navigate(`/orders/${orderId}`)}
-            className="group/btn inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-700 transition duration-200 hover:border-emerald-400 hover:from-emerald-100 hover:to-emerald-50 hover:shadow-md sm:flex-none sm:text-sm"
+            className="group/btn inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50 px-3 py-2.5 text-xs font-semibold text-emerald-700 transition duration-200 hover:border-emerald-400 hover:from-emerald-100 hover:to-emerald-50 hover:shadow-md sm:flex-none sm:text-sm cursor-pointer"
           >
             <Eye size={16} />
             Details
@@ -95,7 +95,7 @@ const OrderCard = ({ order }) => {
 
           <button
             onClick={() => navigate(`/track-order/${orderId}`)}
-            className="group/btn inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-gradient-to-b from-emerald-500 to-emerald-600 px-3 py-2.5 text-xs font-semibold text-white transition duration-200 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg sm:flex-none sm:text-sm"
+            className="group/btn inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-gradient-to-b from-emerald-500 to-emerald-600 px-3 py-2.5 text-xs font-semibold text-white transition duration-200 hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg sm:flex-none sm:text-sm cursor-pointer"
           >
             <Zap size={16} />
             Track

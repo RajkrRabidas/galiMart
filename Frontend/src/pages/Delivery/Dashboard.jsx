@@ -378,7 +378,7 @@ const Dashboard = () => {
           <p className="mt-2 text-sm leading-6 text-slate-500">
             Something went wrong while loading your delivery information.
           </p>
-          <button onClick={fetchProfile} className="mt-6 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-700">
+          <button onClick={fetchProfile} className="mt-6 rounded-xl bg-emerald-600 px-5 py-3 font-semibold text-white transition hover:bg-emerald-700 cursor-pointer">
             Try again
           </button>
         </div>

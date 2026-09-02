@@ -230,7 +230,7 @@ const Checkout = () => {
           <button 
             disabled={!selectedAddressId || loadingPayment || creatingOrder} 
             onClick={paywithRazorpay} 
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2d7ff9] px-4 py-3 text-white font-semibold transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2d7ff9] px-4 py-3 text-white font-semibold transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
           >
             {loadingPayment || creatingOrder ? "Processing..." : "Pay with Razorpay"}
           </button>

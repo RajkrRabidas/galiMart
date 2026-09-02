@@ -61,7 +61,7 @@ const PaymentSuccess = () => {
                 <button
                   type="button"
                   onClick={copyPaymentId}
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 cursor-pointer"
                 >
                   <Clipboard size={14} /> Copy
                 </button>
@@ -77,14 +77,14 @@ const PaymentSuccess = () => {
               type="button"
               disabled={!orderId}
               onClick={() => navigate(`/track-order/${orderId}`)}
-              className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
             >
               Track order
             </button>
             <button
               type="button"
               onClick={() => navigate("/home")}
-              className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="flex-1 rounded-xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-50 cursor-pointer"
             >
               Continue shopping
             </button>
@@ -94,7 +94,7 @@ const PaymentSuccess = () => {
             <button
               type="button"
               onClick={() => navigate("/orders")}
-              className="w-full text-center text-sm font-semibold text-emerald-700 hover:text-emerald-800"
+              className="w-full text-center text-sm font-semibold text-emerald-700 hover:text-emerald-800 cursor-pointer"
             >
               View My Orders
             </button>

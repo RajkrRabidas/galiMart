@@ -49,7 +49,7 @@ const Services = () => {
               navigate("/service/add-service")
             }
 
-            className="bg-emerald-600 text-white px-6 py-3 rounded-xl"
+            className="bg-emerald-600 text-white px-6 py-3 rounded-xl cursor-pointer"
 
           >
 
@@ -119,7 +119,7 @@ const Services = () => {
                             navigate(`/service/edit-service/${service.id}`)
                           }
 
-                          className="flex-1 bg-blue-600 text-white py-3 rounded-xl"
+                          className="flex-1 bg-blue-600 text-white py-3 rounded-xl cursor-pointer"
 
                         >
 
@@ -143,7 +143,7 @@ const Services = () => {
 
                           }}
 
-                          className="flex-1 bg-red-600 text-white py-3 rounded-xl"
+                          className="flex-1 bg-red-600 text-white py-3 rounded-xl cursor-pointer"
 
                         >
 

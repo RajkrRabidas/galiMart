@@ -82,7 +82,7 @@ const ProductCard = ({ product, shopId }) => {
 
         <button
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition duration-200 hover:bg-red-50"
+          className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md transition duration-200 hover:bg-red-50 cursor-pointer"
           aria-label="Add to wishlist"
         >
           <Heart size={18} className="text-slate-500" />
@@ -115,7 +115,7 @@ const ProductCard = ({ product, shopId }) => {
                 type="button"
                 onClick={(e) => handleQuantityChange(e, "decrease")}
                 disabled={loading}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-emerald-700 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-emerald-700 shadow-sm transition hover:bg-emerald-100 disabled:opacity-50 cursor-pointer"
                 aria-label="Decrease quantity"
               >
                 <Minus size={15} />

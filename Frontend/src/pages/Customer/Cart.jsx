@@ -25,7 +25,7 @@ const Cart = () => {
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-700 shadow-sm ring-1 ring-slate-200 transition hover:bg-slate-50 cursor-pointer"
             aria-label="Go back"
           >
             <ArrowLeft size={18} />
@@ -43,7 +43,7 @@ const Cart = () => {
               type="button"
               onClick={handleClearCart}
               disabled={loading}
-              className="rounded-full border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+              className="rounded-full border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50 cursor-pointer"
             >
               Clear cart
             </button>

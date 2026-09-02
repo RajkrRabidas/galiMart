@@ -18,7 +18,7 @@ const ShopSection = ({ shops: propShops, loading: propLoading }) => {
           <p className="mt-1 text-sm text-slate-500">Free delivery from nearby shops.</p>
         </div>
 
-        <button className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800">
+        <button className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800 cursor-pointer">
           View all
           <ArrowRight size={18} />
         </button>

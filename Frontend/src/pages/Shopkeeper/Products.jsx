@@ -188,7 +188,7 @@ const Products = () => {
               onClick={() =>
                 window.location.href = "/seller/add-product"
               }
-              className="px-8 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center gap-2"
+              className="px-8 py-4 bg-emerald-600 text-white font-semibold rounded-xl hover:bg-emerald-700 transition-all duration-200 shadow-md hover:shadow-lg inline-flex items-center gap-2 cursor-pointer"
             >
               <Package size={20} />
               Add Your First Product
@@ -295,7 +295,7 @@ const Products = () => {
                 setSearch("");
                 setSelectedAvailability("all");
               }}
-              className="px-6 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all duration-200 inline-flex items-center gap-2"
+              className="px-6 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-all duration-200 inline-flex items-center gap-2 cursor-pointer"
             >
               Clear Filters
             </button>

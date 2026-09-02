@@ -120,7 +120,7 @@ const Orders = () => {
           <div className="mb-8 flex gap-3 overflow-x-auto pb-2">
             <button
               onClick={() => setSelectedFilter("all")}
-              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition ${
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition cursor-pointer ${
                 selectedFilter === "all"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "border border-slate-300 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
@@ -130,7 +130,7 @@ const Orders = () => {
             </button>
             <button
               onClick={() => setSelectedFilter("active")}
-              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition ${
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition cursor-pointer ${
                 selectedFilter === "active"
                   ? "bg-amber-500 text-white shadow-md"
                   : "border border-slate-300 text-slate-700 hover:border-amber-400 hover:bg-amber-50"
@@ -140,7 +140,7 @@ const Orders = () => {
             </button>
             <button
               onClick={() => setSelectedFilter("delivered")}
-              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition ${
+              className={`whitespace-nowrap rounded-full px-6 py-2.5 text-sm font-semibold transition cursor-pointer ${
                 selectedFilter === "delivered"
                   ? "bg-emerald-600 text-white shadow-md"
                   : "border border-slate-300 text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"

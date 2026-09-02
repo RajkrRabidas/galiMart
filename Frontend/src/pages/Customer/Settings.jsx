@@ -34,7 +34,7 @@ const Settings = () => {
                   : "Light Mode Enabled"
               );
             }}
-            className="w-full flex justify-between items-center p-5 hover:bg-gray-50"
+            className="w-full flex justify-between items-center p-5 hover:bg-gray-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <Moon className="text-emerald-600"/>
@@ -50,7 +50,7 @@ const Settings = () => {
 
           <button
             onClick={() => toast("Language feature coming soon")}
-            className="w-full flex justify-between items-center p-5 hover:bg-gray-50"
+            className="w-full flex justify-between items-center p-5 hover:bg-gray-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <Globe className="text-emerald-600"/>
@@ -62,7 +62,7 @@ const Settings = () => {
 
           <button
             onClick={() => toast("Change Password coming soon")}
-            className="w-full flex justify-between items-center p-5 hover:bg-gray-50"
+            className="w-full flex justify-between items-center p-5 hover:bg-gray-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <Lock className="text-emerald-600"/>
@@ -72,7 +72,7 @@ const Settings = () => {
 
           <button
             onClick={() => toast("Privacy Policy")}
-            className="w-full flex justify-between items-center p-5 hover:bg-gray-50"
+            className="w-full flex justify-between items-center p-5 hover:bg-gray-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">
               <Shield className="text-emerald-600"/>

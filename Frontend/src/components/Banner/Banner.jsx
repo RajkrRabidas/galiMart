@@ -43,7 +43,7 @@ const Banner = () => (
                 {banner.subtitle}
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-3xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition-transform duration-300 hover:-translate-y-0.5 hover:bg-slate-100">
+            <button className="inline-flex items-center gap-2 rounded-3xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition-transform duration-300 hover:-translate-y-0.5 hover:bg-slate-100 cursor-pointer">
               Shop now
               <ArrowRight size={16} />
             </button>

@@ -101,7 +101,7 @@ const CreateProfile = () => {
           />
 
           <button
-            className="w-full bg-emerald-600 text-white py-3 rounded-xl"
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl cursor-pointer"
           >
 
             Save & Continue

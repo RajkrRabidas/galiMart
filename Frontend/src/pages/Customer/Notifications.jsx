@@ -34,7 +34,7 @@ const Notifications = () => {
 
             <button
               onClick={markAllRead}
-              className="bg-emerald-600 text-white px-4 py-2 rounded-xl flex items-center gap-2"
+              className="bg-emerald-600 text-white px-4 py-2 rounded-xl flex items-center gap-2 cursor-pointer"
             >
               <CheckCheck size={18}/>
               Read All
@@ -42,7 +42,7 @@ const Notifications = () => {
 
             <button
               onClick={clearNotifications}
-              className="bg-red-500 text-white px-4 py-2 rounded-xl"
+              className="bg-red-500 text-white px-4 py-2 rounded-xl cursor-pointer"
             >
               <Trash2 size={18}/>
             </button>

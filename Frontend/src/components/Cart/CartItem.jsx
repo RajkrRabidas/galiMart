@@ -42,7 +42,7 @@ const CartItem = ({ item }) => {
           <button 
             onClick={() => decreaseQuantity(itemId)}
             disabled={loading}
-            className="bg-gray-200 w-8 h-8 rounded-full flex justify-center items-center hover:bg-gray-300 disabled:opacity-50"
+            className="bg-gray-200 w-8 h-8 rounded-full flex justify-center items-center hover:bg-gray-300 disabled:opacity-50 cursor-pointer"
           >
 
             <Minus size={16}/>
@@ -54,7 +54,7 @@ const CartItem = ({ item }) => {
           <button 
             onClick={() => increaseQuantity(itemId)}
             disabled={loading}
-            className="bg-emerald-500 text-white w-8 h-8 rounded-full flex justify-center items-center hover:bg-emerald-600 disabled:opacity-50"
+            className="bg-emerald-500 text-white w-8 h-8 rounded-full flex justify-center items-center hover:bg-emerald-600 disabled:opacity-50 cursor-pointer"
           >
 
             <Plus size={16}/>

@@ -19,7 +19,7 @@ const HomeHeader = () => {
     <div className="absolute left-0 top-20 h-40 w-40 -translate-x-1/3 rounded-full bg-white/10 blur-3xl" />
 
     <div className="relative flex items-center justify-between">
-      <button className="flex items-center gap-2 text-left text-sm font-semibold text-emerald-100 transition hover:text-white">
+      <button className="flex items-center gap-2 text-left text-sm font-semibold text-emerald-100 transition hover:text-white cursor-pointer">
         <MapPin size={18} fill="currentColor" />
         <span>
           <span className="block font-bold">{city}</span>
@@ -29,11 +29,11 @@ const HomeHeader = () => {
       </button>
 
       <div className="flex items-center gap-3">
-        <button aria-label="Notifications" className="relative rounded-2xl border border-white/20 bg-white/10 p-3 transition-transform duration-200 hover:scale-105">
+        <button aria-label="Notifications" className="relative rounded-2xl border border-white/20 bg-white/10 p-3 transition-transform duration-200 hover:scale-105 cursor-pointer">
           <Bell size={20} />
           <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full bg-lime-300 shadow-[0_0_0_4px_rgba(255,255,255,0.12)]" />
         </button>
-        <Link to="/cart" aria-label="Cart" className="relative rounded-2xl border border-white/20 bg-white/10 p-3 transition-transform duration-200 hover:scale-105">
+        <Link to="/cart" aria-label="Cart" className="relative rounded-2xl border border-white/20 bg-white/10 p-3 transition-transform duration-200 hover:scale-105 cursor-pointer">
           <ShoppingCart size={22} />
           <span className="absolute -right-2 -top-2 grid h-4 min-w-4 place-items-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">2</span>
         </Link>

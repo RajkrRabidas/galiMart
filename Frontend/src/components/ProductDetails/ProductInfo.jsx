@@ -112,7 +112,7 @@ const ProductInfo = ({ product, discountPercent }) => {
             <button
               onClick={() => quantity > 1 && setQuantity(quantity - 1)}
               disabled={isAdding}
-              className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50"
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center hover:bg-gray-50 transition disabled:opacity-50 cursor-pointer"
             >
               <Minus size={18} className="text-gray-700" />
             </button>
@@ -122,7 +122,7 @@ const ProductInfo = ({ product, discountPercent }) => {
             <button
               onClick={() => setQuantity(quantity + 1)}
               disabled={isAdding}
-              className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center hover:bg-emerald-600 transition disabled:opacity-50 text-white"
+              className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center hover:bg-emerald-600 transition disabled:opacity-50 text-white cursor-pointer"
             >
               <Plus size={18} />
             </button>

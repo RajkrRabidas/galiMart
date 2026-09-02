@@ -94,7 +94,7 @@ const Bookings = () => {
     )
   }
 
-  className={`flex-1 py-2 rounded-xl text-white ${
+  className={`flex-1 py-2 rounded-xl text-white cursor-pointer ${
     booking.status !== "Pending"
       ? "bg-gray-400 cursor-not-allowed"
       : "bg-emerald-600 hover:bg-emerald-700"
@@ -113,7 +113,7 @@ const Bookings = () => {
     )
   }
 
-  className={`flex-1 py-2 rounded-xl text-white ${
+  className={`flex-1 py-2 rounded-xl text-white cursor-pointer ${
     booking.status !== "Pending"
       ? "bg-gray-400 cursor-not-allowed"
       : "bg-red-500 hover:bg-red-600"
@@ -132,7 +132,7 @@ const Bookings = () => {
     )
   }
 
-  className={`flex-1 py-2 rounded-xl text-white ${
+  className={`flex-1 py-2 rounded-xl text-white cursor-pointer ${
     booking.status === "Completed"
       ? "bg-gray-400 cursor-not-allowed"
       : "bg-blue-600 hover:bg-blue-700"

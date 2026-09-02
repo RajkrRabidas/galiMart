@@ -140,7 +140,7 @@ console.log("Service:", service);
 
           <button
             type="submit"
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold cursor-pointer"
           >
 
             Add Service

@@ -112,7 +112,7 @@ const {
   navigate("/orders");
 
 }}
-        className="w-full mt-8 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold"
+        className="w-full mt-8 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-semibold cursor-pointer"
       >
         Place Order
       </button>

@@ -92,7 +92,7 @@ const ReadyForRiderRetry = ({ order, onRetry }) => {
     <button
       type="button"
       onClick={() => onRetry(order._id)}
-      className="mt-3 w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100"
+      className="mt-3 w-full rounded-xl border border-violet-200 bg-violet-50 px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-100 cursor-pointer"
     >
       Retry rider assignment
     </button>
@@ -272,7 +272,7 @@ const Orders = () => {
                   key={item.id}
                   type="button"
                   onClick={() => setFilter(item.id)}
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 cursor-pointer ${
                     isActive
                       ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                       : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"

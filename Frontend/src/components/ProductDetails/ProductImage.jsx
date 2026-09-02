@@ -22,7 +22,7 @@ const ProductImage = ({ image, productName }) => {
       {/* Main Image Container */}
       <div className="relative bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
         <div
-          className="relative w-full aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 cursor-zoom-in overflow-hidden"
+          className="relative w-full aspect-square flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 cursor-zoom-in hover:cursor-pointer overflow-hidden"
           onMouseMove={handleMouseMove}
           onClick={() => setIsZoomed(true)}
         >
@@ -56,7 +56,7 @@ const ProductImage = ({ image, productName }) => {
             <button
               key={idx}
               onClick={() => setSelectedImage(img)}
-              className={`relative w-20 h-20 rounded-xl border-2 transition-all overflow-hidden flex-shrink-0 ${
+              className={`relative w-20 h-20 rounded-xl border-2 transition-all overflow-hidden flex-shrink-0 cursor-pointer ${
                 selectedImage === img
                   ? "border-emerald-500 shadow-md"
                   : "border-gray-200 hover:border-gray-300"

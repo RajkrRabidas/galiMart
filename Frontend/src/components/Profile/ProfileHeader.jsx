@@ -15,7 +15,7 @@ const ProfileHeader = ({ user, profile }) => {
             className="h-24 w-24 rounded-full border-4 border-white"
           />
 
-          <button className="absolute bottom-0 right-0 rounded-full bg-white p-2 text-emerald-600 shadow-lg">
+          <button className="absolute bottom-0 right-0 rounded-full bg-white p-2 text-emerald-600 shadow-lg cursor-pointer">
             <Camera size={18} />
           </button>
         </div>

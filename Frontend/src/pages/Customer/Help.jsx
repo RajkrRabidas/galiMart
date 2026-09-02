@@ -25,7 +25,7 @@ const Help = () => {
             onClick={() =>
               window.open("tel:+919876543210")
             }
-            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5"
+            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5 cursor-pointer"
           >
             <Phone className="text-green-600"/>
 
@@ -37,7 +37,7 @@ const Help = () => {
             onClick={() =>
               window.open("mailto:support@galimart.com")
             }
-            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5"
+            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5 cursor-pointer"
           >
             <Mail className="text-blue-600"/>
 
@@ -49,7 +49,7 @@ const Help = () => {
             onClick={() =>
               toast("Live Chat Coming Soon")
             }
-            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5"
+            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5 cursor-pointer"
           >
             <MessageCircle className="text-purple-600"/>
 
@@ -61,7 +61,7 @@ const Help = () => {
             onClick={() =>
               toast("FAQ Coming Soon")
             }
-            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5"
+            className="bg-white rounded-2xl shadow-lg p-5 w-full flex items-center gap-5 cursor-pointer"
           >
             <CircleHelp className="text-orange-600"/>
 

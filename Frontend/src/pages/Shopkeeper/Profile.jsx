@@ -92,7 +92,7 @@ const Profile = () => {
 
             onClick={logout}
 
-            className="w-full mt-10 bg-red-500 hover:bg-red-600 text-white py-4 rounded-2xl"
+            className="w-full mt-10 bg-red-500 hover:bg-red-600 text-white py-4 rounded-2xl cursor-pointer"
 
           >
 

@@ -18,7 +18,7 @@ const CategorySection = () => {
         <button
           type="button"
           onClick={() => navigate("/category/restaurants")}
-          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 transition hover:text-emerald-900"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 transition hover:text-emerald-900 cursor-pointer"
         >
           View All <ArrowRight size={16} />
         </button>
@@ -36,7 +36,7 @@ const CategorySection = () => {
             transition={{ delay: index * 0.05 }}
             whileHover={{ y: -4, scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="group rounded-[33px] border border-slate-200/70 bg-white/90 p-5 text-left shadow-[0_20px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_70px_rgba(15,23,42,0.12)]"
+            className="group rounded-[33px] border border-slate-200/70 bg-white/90 p-5 text-left shadow-[0_20px_50px_rgba(15,23,42,0.08)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_25px_70px_rgba(15,23,42,0.12)] cursor-pointer"
           >
             <span
               className={`inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-[26px] bg-gradient-to-br ${category.bg} shadow-[0_14px_30px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70`}

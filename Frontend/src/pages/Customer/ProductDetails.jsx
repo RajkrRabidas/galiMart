@@ -76,7 +76,7 @@ const ProductDetails = () => {
           </p>
           <button
             onClick={() => navigate(-1)}
-            className="px-8 py-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition font-semibold"
+            className="px-8 py-3 bg-emerald-600 text-white rounded-full hover:bg-emerald-700 transition font-semibold cursor-pointer"
           >
             Go Back
           </button>
@@ -98,7 +98,7 @@ const ProductDetails = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition font-semibold"
+            className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition font-semibold cursor-pointer"
           >
             <ChevronLeft size={24} />
             <span className="hidden sm:inline">Back to Shop</span>
@@ -108,14 +108,14 @@ const ProductDetails = () => {
           <div className="flex items-center gap-4">
             <button
               onClick={handleShare}
-              className="p-2 hover:bg-gray-100 rounded-full transition"
+              className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
               title="Share product"
             >
               <Share2 size={20} className="text-gray-700" />
             </button>
             <button
               onClick={() => setIsFavorite(!isFavorite)}
-              className="p-2 hover:bg-gray-100 rounded-full transition"
+              className="p-2 hover:bg-gray-100 rounded-full transition cursor-pointer"
               title="Add to favorites"
             >
               <Heart

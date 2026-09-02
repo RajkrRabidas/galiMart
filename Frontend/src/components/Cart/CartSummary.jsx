@@ -47,7 +47,7 @@ const CartSummary = () => {
       <button
         type="button"
         onClick={() => canCheckout && navigate("/checkout")}
-        className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition ${!canCheckout ? "cursor-not-allowed opacity-50" : "hover:bg-emerald-500"}`}
+        className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-emerald-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/30 transition ${!canCheckout ? "cursor-not-allowed opacity-50" : "hover:bg-emerald-500 cursor-pointer"}`}
         disabled={!canCheckout}
       >
         {checkoutLabel}

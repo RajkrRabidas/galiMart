@@ -30,7 +30,7 @@ const AddressCard = ({ addresses, selectedAddress, onSelectAddress, loading }) =
                   key={addr._id}
                   type="button"
                   onClick={() => onSelectAddress(addr)}
-                  className={`w-full rounded-3xl border p-4 text-left transition ${
+                  className={`w-full rounded-3xl border p-4 text-left transition cursor-pointer ${
                     selectedAddress?._id === addr._id
                       ? "border-emerald-600 bg-emerald-50"
                       : "border-gray-200 bg-white hover:border-emerald-300"

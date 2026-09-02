@@ -24,14 +24,14 @@ const AddressCard = ({ address, onDelete, onEdit }) => {
 
         <button
   onClick={() => onEdit(address)}
-  className="text-emerald-600 hover:scale-110 transition"
+  className="text-emerald-600 hover:scale-110 transition cursor-pointer"
 >
   <Pencil size={20} />
 </button>
 
         <button
     onClick={() => onDelete(address.id)}
-    className="text-red-500 hover:scale-110 transition"
+    className="text-red-500 hover:scale-110 transition cursor-pointer"
 >
     <Trash2 size={20}/>
 </button>
