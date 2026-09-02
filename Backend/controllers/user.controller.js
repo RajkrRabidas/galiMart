@@ -106,7 +106,7 @@ const sendOtpSms = async (phone, otp) => {
   if (apitxtApiKey && !String(apitxtApiKey).startsWith("your_")) {
     headers.Authorization = `Bearer ${apitxtApiKey}`;
   }
-S
+
   try {
     const response = await axios.post(apitxtSmsUrl, requestBody.toString(), {
       headers,
