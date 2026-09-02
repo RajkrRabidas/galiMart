@@ -106,25 +106,40 @@ const sendOtpSms = async (phone, otp) => {
   if (apitxtApiKey && !String(apitxtApiKey).startsWith("your_")) {
     headers.Authorization = `Bearer ${apitxtApiKey}`;
   }
+S
+  try {
+    const response = await axios.post(apitxtSmsUrl, requestBody.toString(), {
+      headers,
+      timeout: 20000,
+    });
 
-  const response = await axios.post(apitxtSmsUrl, requestBody.toString(), {
-    headers,
-    timeout: 20000,
-  });
+    const responseData = response?.data || {};
+    const responseStatus = responseData?.status ?? response?.status;
+    const isSuccessResponse =
+      responseStatus === "success" ||
+      responseStatus === "SUCCESS" ||
+      responseStatus === 200 ||
+      Number(responseStatus) === 200;
 
-  const responseData = response?.data || {};
-  const responseStatus = responseData?.status ?? response?.status;
-  const isSuccessResponse =
-    responseStatus === "success" ||
-    responseStatus === "SUCCESS" ||
-    responseStatus === 200 ||
-    Number(responseStatus) === 200;
+    if (!isSuccessResponse) {
+      throw new Error(`APITxT SMS failed: ${JSON.stringify(responseData)}`);
+    }
 
-  if (!isSuccessResponse) {
-    throw new Error(`APITxT SMS failed: ${JSON.stringify(responseData)}`);
+    return true;
+  } catch (error) {
+    const isLocalFallbackMode =
+      process.env.NODE_ENV === "development" ||
+      process.env.NODE_ENV === "test" ||
+      process.env.OTP_SMS_FALLBACK === "true" ||
+      process.env.LOCALHOST === "true";
+
+    if (isLocalFallbackMode) {
+      console.warn(`[OTP] SMS provider unreachable. Falling back to local dev mode. Phone: ${apitxtPhone}, OTP: ${otp}. Reason: ${error?.code || error?.message || "unknown"}`);
+      return true;
+    }
+
+    throw error;
   }
-
-  return true;
 };
 
 const issueOtp = async ({ phone, role, purpose }) => {

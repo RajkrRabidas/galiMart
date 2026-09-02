@@ -113,43 +113,6 @@ const CategoryShops = () => {
   return (
     <div className="min-h-screen bg-[#edf2f5] p-3 md:p-5">
       <div className="mx-auto flex max-w-[1460px] overflow-hidden rounded-[28px] border border-slate-200 bg-[#f5f7f8] shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-        <aside className="hidden w-[220px] flex-col border-r border-slate-200 bg-white/90 px-4 py-5 lg:flex">
-          <div className="mb-8 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 text-lg font-black text-emerald-700">Q</div>
-            <div>
-              <p className="text-xl font-black tracking-tight text-slate-900">QuickKart</p>
-              <p className="text-[10px] text-slate-400">Delivery near you</p>
-            </div>
-          </div>
-
-          <nav className="space-y-2 text-sm text-slate-600">
-            {[
-              { label: "Home", icon: Home, active: true },
-              { label: "Categories", icon: Store },
-              { label: "Orders", icon: ShoppingBag },
-              { label: "Wishlist", icon: Heart },
-              { label: "Offers", icon: ShoppingCart },
-              { label: "Notifications", icon: User },
-            ].map(({ label, icon: Icon, active }) => (
-              <button
-                key={label}
-                type="button"
-                className={`flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left font-medium transition ${active ? "bg-emerald-50 text-emerald-700" : "hover:bg-slate-100"}`}
-              >
-                <Icon size={16} />
-                {label}
-              </button>
-            ))}
-          </nav>
-
-          <div className="mt-auto rounded-[22px] bg-slate-50 p-3">
-            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Support
-            </div>
-            <p className="text-sm font-semibold text-slate-700">Help & Support</p>
-          </div>
-        </aside>
 
         <main className="flex-1 bg-[#f4f6f8] p-3 sm:p-4 lg:p-5">
           <header className="mb-5 flex flex-col gap-3 rounded-[24px] bg-white p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
@@ -198,14 +161,21 @@ const CategoryShops = () => {
                   {selectedKey === "restaurants" ? <UtensilsCrossed size={32} /> : selectedKey === "fashion" ? <ShoppingBag size={32} /> : selectedKey === "medicine" ? <Heart size={32} /> : selectedKey === "electronics" ? <Store size={32} /> : selectedKey === "services" ? <ShoppingCart size={32} /> : <Store size={32} />}
                 </div>
               </div>
+            </div>
+          </section>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {categoryMeta.categories.slice(0, 6).map((item, idx) => (
-                  <span key={`${item}-${idx}`} className={`rounded-full px-3 py-1.5 text-[10px] font-semibold ${theme.chip}`}>
-                    {item}
-                  </span>
-                ))}
-              </div>
+          <section className="rounded-[28px] bg-white p-3 shadow-sm">
+
+            <div className="flex flex-wrap gap-2">
+              {categoryMeta.categories.slice(0, 10).map((tag, idx) => (
+                <button
+                  key={`${tag}-${idx}`}
+                  type="button"
+                  className="rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200"
+                >
+                  {tag}
+                </button>
+              ))}
             </div>
           </section>
 
@@ -243,24 +213,7 @@ const CategoryShops = () => {
             </div>
           </section>
 
-          <section className="rounded-[28px] bg-white p-3 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-black text-slate-900">Browse by category</h2>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold text-slate-500">All</span>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {categoryMeta.categories.slice(0, 10).map((tag, idx) => (
-                <button
-                  key={`${tag}-${idx}`}
-                  type="button"
-                  className="rounded-full bg-slate-100 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-200"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </section>
+          
         </main>
       </div>
     </div>

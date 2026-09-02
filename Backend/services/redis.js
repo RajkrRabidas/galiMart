@@ -68,22 +68,55 @@ const createFallbackRedisClient = () => ({
   },
 });
 
-const redisClient = process.env.REDIS_URL
-  ? createClient({ url: process.env.REDIS_URL })
-  : createFallbackRedisClient();
+const fallbackRedisClient = createFallbackRedisClient();
+let activeRedisClient = process.env.REDIS_URL ? createClient({ url: process.env.REDIS_URL, socket: { connectTimeout: 1500, reconnectStrategy: false } }) : fallbackRedisClient;
+
+const redisClient = new Proxy(activeRedisClient, {
+  get(target, property) {
+    if (property === "then") return undefined;
+
+    const value = activeRedisClient[property];
+    if (typeof value !== "function") {
+      return value;
+    }
+
+    return (...args) => {
+      const invoke = () => Promise.resolve().then(() => value.apply(activeRedisClient, args));
+
+      if (activeRedisClient === fallbackRedisClient) {
+        return invoke();
+      }
+
+      return invoke().catch((error) => {
+        const message = String(error?.message || error || "");
+        const isRedisFailure = /timeout|timed out|EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ECONNRESET|closed|unable to connect|connection.*failed/i.test(message);
+
+        if (isRedisFailure) {
+          console.warn(`[Redis] ${String(property)} failed (${message}). Falling back to in-memory store.`);
+          activeRedisClient = fallbackRedisClient;
+          return Promise.resolve(fallbackRedisClient[property](...args));
+        }
+
+        throw error;
+      });
+    };
+  },
+});
 
 const connectRedis = async () => {
   if (!process.env.REDIS_URL) {
+    activeRedisClient = fallbackRedisClient;
     console.log("Redis not configured; using in-memory cache fallback");
     return false;
   }
 
   try {
-    await redisClient.connect();
+    await activeRedisClient.connect();
     console.log("Connected to Redis");
     return true;
   } catch (err) {
-    console.error("Failed to connect to Redis:", err.message);
+    activeRedisClient = fallbackRedisClient;
+    console.warn("Redis unavailable; using in-memory cache fallback:", err.message);
     return false;
   }
 };

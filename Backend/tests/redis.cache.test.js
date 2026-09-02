@@ -15,6 +15,26 @@ const { getJson, setJson, clearPattern } = require("../services/redis");
     const cleared = await getJson("test:location:cache");
     assert.strictEqual(cleared, null, "Matching cache entries should be cleared");
 
+    const originalRedisUrl = process.env.REDIS_URL;
+    try {
+      process.env.REDIS_URL = "redis://127.0.0.1:1";
+      delete require.cache[require.resolve("../services/redis")];
+
+      const { connectRedis: connectBrokenRedis, redisClient: brokenRedisClient } = require("../services/redis");
+      const connected = await connectBrokenRedis();
+      assert.strictEqual(connected, false, "Broken Redis settings should fail closed and fall back");
+
+      await brokenRedisClient.set("fallback:otp", "123456");
+      assert.strictEqual(await brokenRedisClient.get("fallback:otp"), "123456", "Redis fallback should still store OTP data in memory");
+    } finally {
+      if (originalRedisUrl) {
+        process.env.REDIS_URL = originalRedisUrl;
+      } else {
+        delete process.env.REDIS_URL;
+      }
+      delete require.cache[require.resolve("../services/redis")];
+    }
+
     console.log("redis cache helpers test passed");
   } catch (error) {
     console.error(error);

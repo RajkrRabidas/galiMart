@@ -54,7 +54,10 @@ userSchema.pre("save", function (next) {
   if (this.phone) {
     this.phone = normalizePhone(this.phone);
   }
-  next();
+
+  if (typeof next === "function") {
+    next();
+  }
 });
 
 userSchema.pre("findOneAndUpdate", function (next) {
@@ -70,7 +73,9 @@ userSchema.pre("findOneAndUpdate", function (next) {
     }
   }
 
-  next();
+  if (typeof next === "function") {
+    next();
+  }
 });
 
 // Ensure only documents with a real email string are indexed as unique
