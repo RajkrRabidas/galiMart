@@ -3,8 +3,8 @@ const { redisClient } = require("../services/redis");
 
 const cookieOptions = {
   httpOnly: true,
-  secure: false,
-  sameSite: "lax",
+  secure: true,
+  sameSite: "none",
 };
 
 const jwtSecret = process.env.JWT_SECRET;
