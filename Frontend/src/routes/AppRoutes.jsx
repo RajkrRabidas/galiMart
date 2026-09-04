@@ -39,6 +39,7 @@ import CreateDeliveryProfile from "../pages/Delivery/CreateProfile";
 import PaymentSuccess from "../pages/Customer/paymentSuccess";
 import CategoryShops from "../pages/Customer/CategoryShops";
 import NotFound from "../pages/404";
+import AdminDashboard from "../pages/Admin/Dashboard";
 
 const AppRoutes = () => {
   return (
@@ -84,6 +85,7 @@ const AppRoutes = () => {
       <Route path="/delivery/orders" element={<ProtectedRoute allowedRoles={["rider"]}><DeliveryOrders /></ProtectedRoute>} />
       <Route path="/delivery/profile" element={<ProtectedRoute allowedRoles={["rider"]}><DeliveryProfile /></ProtectedRoute>} />
       <Route path="/delivery/create-profile" element={<ProtectedRoute allowedRoles={["rider"]}><CreateDeliveryProfile /></ProtectedRoute>} />
+      <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -40,6 +40,11 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    suspensionReason: {
+      type: String,
+      trim: true,
+      default: null,
+    },
     lastLogin: {
       type: Date,
       default: null,

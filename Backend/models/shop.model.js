@@ -39,6 +39,9 @@ const shopSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    verificationReason: { type: String, trim: true, default: null },
+    verifiedAt: { type: Date, default: null },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     autoLocation:{
         type: {
             type: String,

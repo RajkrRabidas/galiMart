@@ -39,6 +39,16 @@ const riderSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    verificationStatus: {
+        type: String,
+        enum: ["pending", "approved", "rejected"],
+        default: "pending",
+    },
+    verificationReason: { type: String, trim: true, default: null },
+    verifiedAt: { type: Date, default: null },
+    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+    isSuspended: { type: Boolean, default: false },
+    suspensionReason: { type: String, trim: true, default: null },
     location: {
         type: {
             type: String,

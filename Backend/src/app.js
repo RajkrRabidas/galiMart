@@ -12,6 +12,7 @@ const paymentRouter = require("../routes/payment.routes")
 const realTimeRouter = require("../routes/realTime.routes")
 const riderRouter = require("../routes/rider.routes")
 const locationRouter = require("../routes/location.routes")
+const adminRouter = require("../routes/admin.routes")
 
 const cors = require("cors");
 
@@ -62,6 +63,7 @@ app.use("/api/payment", paymentRouter)
 app.use("/api/realtime", realTimeRouter);
 app.use("/api/rider", riderRouter)
 app.use("/api/location", locationRouter)
+app.use("/api/admin", adminRouter)
 
 connectRedis().catch((error) => {
   console.error("Redis connection error:", error);

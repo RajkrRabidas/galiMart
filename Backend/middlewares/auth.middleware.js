@@ -57,15 +57,30 @@ const isSeller = async (req, res, next) => {
 };
 
 const isAdmin = async (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Please login first" });
-  }
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Please login first" });
+    }
 
-  if (req.user.role !== "admin") {
-    return res.status(403).json({ message: "Access denied. Only admins can perform this action." });
-  }
+    // Refresh the role from MongoDB because isAuth may have populated req.user
+    // from Redis before an account was promoted or demoted.
+    const userId = req.user._id || req.user.id;
+    const currentUser = await userModel.findById(userId).select("-password");
 
-  next();
+    if (!currentUser || currentUser.isBlocked || currentUser.isDeleted) {
+      return res.status(403).json({ message: "Access denied. Only admins can perform this action." });
+    }
+
+    if (currentUser.role !== "admin") {
+      return res.status(403).json({ message: "Access denied. Only admins can perform this action." });
+    }
+
+    req.user = currentUser;
+    next();
+  } catch(error) {
+    console.error("isAdmin middleware error:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 module.exports = { isAuth, isSeller, isAdmin };

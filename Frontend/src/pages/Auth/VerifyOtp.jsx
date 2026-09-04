@@ -84,7 +84,9 @@ const VerifyOtp = () => {
 
     const role = response.user?.role;
 
-    if (role === "seller") {
+    if (role === "admin") {
+      navigate("/admin/dashboard");
+    } else if (role === "seller") {
 
     const shop = await getMyShop();
 
