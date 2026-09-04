@@ -8,9 +8,6 @@ const cookieOptions = {
   // Optional: domain: process.env.COOKIE_DOMAIN || undefined
 };
 
-res.clearCookie("access_token", cookieClearOptions);
-res.clearCookie("refresh_token", cookieClearOptions);
-
 const jwtSecret = process.env.JWT_SECRET;
 const refreshSecret = process.env.REFRESH_SECRET || process.env.REFRESH_SECERET;
 
