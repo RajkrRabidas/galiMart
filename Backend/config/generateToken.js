@@ -3,9 +3,13 @@ const { redisClient } = require("../services/redis");
 
 const cookieOptions = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none",
+  secure: process.env.NODE_ENV === "production",            // true in production (HTTPS)
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // none in prod for cross-site
+  // Optional: domain: process.env.COOKIE_DOMAIN || undefined
 };
+
+res.clearCookie("access_token", cookieClearOptions);
+res.clearCookie("refresh_token", cookieClearOptions);
 
 const jwtSecret = process.env.JWT_SECRET;
 const refreshSecret = process.env.REFRESH_SECRET || process.env.REFRESH_SECERET;
