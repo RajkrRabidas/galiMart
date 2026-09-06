@@ -20,6 +20,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
   "https://galimart.up.railway.app",
+  "https://galimart-production.up.railway.app", // <-- add this
   "https://galimart.co.in",
   "https://www.galimart.co.in",
   "https://galimart.vercel.app",
