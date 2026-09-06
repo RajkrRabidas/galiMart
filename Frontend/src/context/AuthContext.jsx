@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   
   const [loadingLocation, setLoadingLocation] = useState(false);
+  const [locationError, setLocationError] = useState(null);
   const [location, setLocation] = useState(() => {
     try {
       const storedLocation = localStorage.getItem("user_location");
@@ -87,11 +88,21 @@ export const AuthProvider = ({ children }) => {
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
+      const error = new Error("This browser does not support location services.");
+      setLocationError(error.message);
       setLoadingLocation(false);
-      return Promise.reject(new Error("Browser does not support location services."));
+      return Promise.reject(error);
+    }
+
+    if (!window.isSecureContext && !["localhost", "127.0.0.1"].includes(window.location.hostname)) {
+      const error = new Error("Location requires a secure HTTPS connection.");
+      setLocationError(error.message);
+      setLoadingLocation(false);
+      return Promise.reject(error);
     }
 
     setLoadingLocation(true);
+    setLocationError(null);
 
     return new Promise((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
@@ -139,18 +150,18 @@ export const AuthProvider = ({ children }) => {
         (error) => {
           console.error("Geolocation error:", error);
           setLoadingLocation(false);
-          reject(error);
+          const message = error.code === 1
+            ? "Location permission is blocked. Allow location for this website in browser settings, then try again."
+            : error.code === 2
+              ? "Your location could not be determined. Turn on GPS/location services and try again."
+              : "Location request timed out. Check GPS/location services and try again.";
+          setLocationError(message);
+          reject(new Error(message));
         },
-        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
       );
     });
   }, []);
-
-  useEffect(() => {
-    // Refresh on every app open; cached location is only an offline/initial fallback.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    requestLocation().catch(() => {});
-  }, [requestLocation]);
 
   const value = useMemo(
     () => ({
@@ -169,8 +180,9 @@ export const AuthProvider = ({ children }) => {
       city,
       setCity,
       requestLocation,
+      locationError,
     }),
-    [user, profile, authLoading, loadingLocation, location, city, requestLocation]
+    [user, profile, authLoading, loadingLocation, location, city, requestLocation, locationError]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

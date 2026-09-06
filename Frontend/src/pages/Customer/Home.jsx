@@ -14,9 +14,16 @@ import { useSearchParams } from "react-router";
 const Home = () => {
   const nearbyRadius = 20000;
   const { shops, loading, fetchNearbyShops } = useShops();
-  const { location, loadingLocation, requestLocation } = useAuth();
+  const { location, loadingLocation, requestLocation, locationError } = useAuth();
   const [searchParam] = useSearchParams();
   const search = searchParam.get("search") || "";
+
+  // If a cached location exists, refresh it in the background without blocking the page.
+  useEffect(() => {
+    if (location) {
+      requestLocation().catch(() => {});
+    }
+  }, []);
 
   // Fetch nearby shops when location or search changes
   useEffect(() => {
@@ -53,7 +60,10 @@ const Home = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center">
-          <p className="text-lg font-semibold text-gray-700 mb-4">Location access required</p>
+          <p className="text-lg font-semibold text-gray-700 mb-2">Location access required</p>
+          <p className="mb-4 max-w-sm text-sm text-gray-500">
+            {locationError || "Allow location access in your browser to find nearby shops."}
+          </p>
           <button
             onClick={requestLocationAccess}
             className="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
