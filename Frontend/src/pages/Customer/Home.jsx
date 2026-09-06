@@ -14,7 +14,7 @@ import { useSearchParams } from "react-router";
 const Home = () => {
   const nearbyRadius = 20000;
   const { shops, loading, fetchNearbyShops } = useShops();
-  const { location, loadingLocation } = useAuth();
+  const { location, loadingLocation, requestLocation } = useAuth();
   const [searchParam] = useSearchParams();
   const search = searchParam.get("search") || "";
 
@@ -33,20 +33,15 @@ const Home = () => {
   }, [location?.latitude, location?.longitude, search, fetchNearbyShops]);
 
   // Request location access if denied
-  const requestLocationAccess = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        () => {
-          window.location.reload();
-        },
-        () => {
-          alert("Please enable location access in browser settings");
-        }
-      );
+  const requestLocationAccess = async () => {
+    try {
+      await requestLocation();
+    } catch {
+      alert("Please enable location access in browser settings and try again.");
     }
   };
 
-  if (loadingLocation) {
+  if (loadingLocation && !location) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <p className="text-lg font-semibold text-gray-700">Getting your location...</p>

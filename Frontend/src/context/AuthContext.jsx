@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { completeProfile as completeProfileApi, getMyProfile, logoutUser } from "../api/authApi";
 
 const AuthContext = createContext(null);
@@ -16,8 +16,15 @@ export const AuthProvider = ({ children }) => {
   const [authLoading, setAuthLoading] = useState(true);
   
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [location, setLocation] = useState(null);
-  const [city, setCity] = useState(null);
+  const [location, setLocation] = useState(() => {
+    try {
+      const storedLocation = localStorage.getItem("user_location");
+      return storedLocation ? JSON.parse(storedLocation) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [city, setCity] = useState(() => localStorage.getItem("user_city"));
 
   const setUser = (value) => {
     setUserState(value);
@@ -78,92 +85,72 @@ export const AuthProvider = ({ children }) => {
     bootstrap();
   }, []);
 
-  useEffect(() => {
+  const requestLocation = useCallback(() => {
     if (!navigator.geolocation) {
-      alert("Browser does not support location services.");
       setLoadingLocation(false);
-      return;
+      return Promise.reject(new Error("Browser does not support location services."));
     }
 
     setLoadingLocation(true);
-    let timeoutId;
-    let isCompleted = false;
 
-    const handlePosition = async (position) => {
-      if (isCompleted) return;
-      isCompleted = true;
-      clearTimeout(timeoutId);
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        async ({ coords }) => {
+          const { latitude, longitude } = coords;
+          const fallbackLocation = {
+            latitude,
+            longitude,
+            formattedAddress: `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
+          };
 
-      const { latitude, longitude, formattedAddress } = position.coords;
-      const fallbackLocation = {
-        latitude,
-        longitude,
-        formattedAddress: formattedAddress || `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
-      };
+          // Coordinates are usable immediately; reverse geocoding is only an enhancement.
+          setLocation(fallbackLocation);
+          setCity("your location");
+          localStorage.setItem("user_location", JSON.stringify(fallbackLocation));
 
-      try {
-        const controller = new AbortController();
-        const timeoutTimer = setTimeout(() => controller.abort(), 3000);
+          try {
+            const controller = new AbortController();
+            const timeoutTimer = setTimeout(() => controller.abort(), 3000);
+            const response = await fetch(
+              `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${latitude}&longitude=${longitude}`,
+              { signal: controller.signal }
+            );
+            clearTimeout(timeoutTimer);
+            const data = await response.json();
 
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL || "http://localhost:3000/api"}/location/reverse-geocode?latitude=${latitude}&longitude=${longitude}`,
-          { signal: controller.signal }
-        );
-
-        clearTimeout(timeoutTimer);
-
-        const data = await response.json();
-
-        if (!response.ok || !data?.success || !data?.location) {
-          throw new Error(data?.message || "Unable to resolve location");
-        }
-
-        const resolvedLocation = {
-          latitude,
-          longitude,
-          formattedAddress: data.location.formattedAddress || `Selected location (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`,
-        };
-        const resolvedCity = data.location.city || "your location";
-
-        setLocation(resolvedLocation);
-        setCity(resolvedCity);
-        setLoadingLocation(false);
-      } catch (error) {
-        setLocation(fallbackLocation);
-        setCity("your location");
-        setLoadingLocation(false);
-      }
-    };
-
-    const handleError = (error) => {
-      if (isCompleted) return;
-      isCompleted = true;
-      clearTimeout(timeoutId);
-      console.error("Geolocation error:", error);
-      setLocation(null);
-      setCity("Location unavailable");
-      setLoadingLocation(false);
-    };
-
-    const handleTimeout = () => {
-      if (!isCompleted) {
-        isCompleted = true;
-        setLocation(null);
-        setLoadingLocation(false);
-      }
-    };
-
-    // Set timeout for geolocation (8 seconds)
-    timeoutId = setTimeout(handleTimeout, 8000);
-
-    navigator.geolocation.getCurrentPosition(handlePosition, handleError, {
-      enableHighAccuracy: false,
-      timeout: 7000,
-      maximumAge: 0
+            if (response.ok && data?.success && data?.location) {
+              const resolvedLocation = {
+                ...fallbackLocation,
+                formattedAddress: data.location.formattedAddress || fallbackLocation.formattedAddress,
+              };
+              const resolvedCity = data.location.city || "your location";
+              setLocation(resolvedLocation);
+              setCity(resolvedCity);
+              localStorage.setItem("user_location", JSON.stringify(resolvedLocation));
+              localStorage.setItem("user_city", resolvedCity);
+            }
+          } catch {
+            // Coordinates are already available if reverse geocoding fails.
+          } finally {
+            setLoadingLocation(false);
+            resolve(fallbackLocation);
+          }
+        },
+        (error) => {
+          console.error("Geolocation error:", error);
+          setLoadingLocation(false);
+          reject(error);
+        },
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
+      );
     });
-
-    return () => clearTimeout(timeoutId);
   }, []);
+
+  useEffect(() => {
+    // Refresh on every app open; cached location is only an offline/initial fallback.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    requestLocation().catch(() => {});
+  }, [requestLocation]);
 
   const value = useMemo(
     () => ({
@@ -181,8 +168,9 @@ export const AuthProvider = ({ children }) => {
       setLocation,
       city,
       setCity,
+      requestLocation,
     }),
-    [user, profile, authLoading, loadingLocation, location, city]
+    [user, profile, authLoading, loadingLocation, location, city, requestLocation]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
