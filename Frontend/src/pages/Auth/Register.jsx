@@ -168,7 +168,7 @@ const Register = () => {
                 Shopkeeper
               </option>
 
-              <option value="delivery">
+              <option value="rider">
                 Delivery Partner
               </option>
 

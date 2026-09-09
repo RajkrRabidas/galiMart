@@ -162,7 +162,7 @@ const Login = () => {
 
               </option>
 
-              <option value="delivery">
+              <option value="rider">
 
                 Delivery Partner
 
