@@ -54,6 +54,8 @@ const createValidationErrorResponse = (validation) => {
   };
 };
 
+const isValidUserRole = (role) => Object.values(ROLES).includes(role);
+
 const logAuthEvent = async (event, payload) => {
   try {
     if (typeof redisClient?.lPush !== "function") {
@@ -342,6 +344,13 @@ const loginUser = async (req, res) => {
       return res.status(403).json({ message: "This account is unavailable." });
     }
 
+    if (!isValidUserRole(existingUser.role)) {
+      return res.status(400).json({
+        code: "INVALID_ACCOUNT_ROLE",
+        message: "This account has an invalid role. Please contact support.",
+      });
+    }
+
     const otpResult = await issueOtp({ phone: normalizedPhone, role: existingUser.role, purpose: "login" });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
@@ -374,6 +383,13 @@ const verifyLoginOtp = async (req, res) => {
 
     if (!user || user.isBlocked || user.isDeleted) {
       return res.status(403).json({ message: "This account is unavailable." });
+    }
+
+    if (!isValidUserRole(user.role)) {
+      return res.status(400).json({
+        code: "INVALID_ACCOUNT_ROLE",
+        message: "This account has an invalid role. Please contact support.",
+      });
     }
 
     user.lastLogin = Date.now();

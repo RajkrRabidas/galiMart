@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { loginUser } from "../../api/authApi";
 
 const Login = () => {
@@ -40,10 +41,9 @@ const Login = () => {
     });
 
   } catch (error) {
-    setError(
-      error.response?.data?.message ||
-      "Failed to send OTP"
-    );
+    const message = error.response?.data?.message || "Failed to send OTP";
+    setError(message);
+    toast.error(message);
   }
 };
 

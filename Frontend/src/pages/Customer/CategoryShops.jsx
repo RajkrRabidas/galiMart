@@ -17,6 +17,7 @@ import {
 import { categories } from "../../components/CategorySection/categorydata";
 import { getMenuItems } from "../../api/menuApi";
 import { useAuth } from "../../context/AuthContext";
+import { formatShopDistance } from "../../utils/formatDistance";
 import { useShops } from "../../context/ShopContext";
 import { SHOP_CATEGORIES } from "../../constants/shopCategories";
 import ProductCard from "../../components/ProductSection/ProductCard";
@@ -121,12 +122,6 @@ const CategoryShops = () => {
   }, [searchTerm, selectedKey, shops]);
 
   const shopsToRender = filteredShops.length > 0 ? filteredShops.slice(0, 4) : [];
-
-  const formatDistance = (shop) => {
-    const raw = Number(shop?.distanceKm ?? shop?.distance ?? 0);
-    if (!Number.isFinite(raw)) return "0";
-    return raw > 1000 ? (raw / 1000).toFixed(1) : raw.toFixed(1);
-  };
 
   useEffect(() => {
     if (!shopsToRender.length) {
@@ -349,7 +344,7 @@ const CategoryShops = () => {
                       <div className="flex items-center justify-between text-[10px] text-slate-500 sm:text-[11px]">
                         <span className="inline-flex items-center gap-1">
                           <MapPin size={10} className="sm:h-[11px] sm:w-[11px]" />
-                          {shop.distance || "4.5"} km
+                          {formatShopDistance(shop)} km
                         </span>
                         <span className="inline-flex items-center gap-1">
                           <Clock3 size={10} className="sm:h-[11px] sm:w-[11px]" />

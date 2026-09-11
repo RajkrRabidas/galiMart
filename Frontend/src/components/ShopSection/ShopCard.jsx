@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bike, Star } from "lucide-react";
+import { formatShopDistance } from "../../utils/formatDistance";
 
 const ShopCard = ({ shop }) => {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ const ShopCard = ({ shop }) => {
           }
 
         <span className="absolute left-3 top-3 rounded-2xl bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-sm">
-          {shop.distance} km away
+          {formatShopDistance(shop)} km away
         </span>
       </div>
 
