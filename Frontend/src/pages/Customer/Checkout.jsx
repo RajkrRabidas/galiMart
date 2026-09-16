@@ -43,7 +43,7 @@ const Checkout = () => {
     return total + (itemPrice * quantity);
   }, 0);
 
-  const deliveryFee = subTotal < 250 ? 30 : 0;
+  const deliveryFee = subTotal === 0 ? 0 : subTotal > 300 ? 0 : 30;
 
   const platFormFee = 7;
 
@@ -211,9 +211,9 @@ const Checkout = () => {
             <span>₹{platFormFee}</span>
           </div>
 
-          {subTotal < 250 && (
+          {subTotal > 0 && subTotal <= 300 && (
             <p className="text-xs text-gray-500 mt-2">
-              Note: Delivery fee is waived for orders above ₹250.
+              Note: Delivery fee is waived for orders above ₹300.
             </p>
           )}
 

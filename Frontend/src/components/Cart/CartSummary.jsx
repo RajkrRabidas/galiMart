@@ -6,7 +6,7 @@ import { useShops } from "../../context/ShopContext";
 const CartSummary = () => {
   const navigate = useNavigate();
 
-  const { subtotal, delivery, totalPrice } = useCart();
+  const { subtotal, delivery, platformFee, totalPrice } = useCart();
   const { shop } = useShops();
   const isShopOpen = shop ? Boolean(shop.isOpen) : true;
   const canCheckout = subtotal > 0 && isShopOpen;
@@ -32,8 +32,13 @@ const CartSummary = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <span>Delivery</span>
+          <span>Delivery fee</span>
           <span className="font-semibold text-slate-900">₹{delivery}</span>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <span>Platform fee</span>
+          <span className="font-semibold text-slate-900">₹{platformFee}</span>
         </div>
       </div>
 

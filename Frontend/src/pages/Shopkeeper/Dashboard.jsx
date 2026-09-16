@@ -206,8 +206,16 @@ const Dashboard = () => {
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
-  const todayOrders = orders.filter((order) => new Date(order.createdAt) >= todayStart);
+  const toSafeNumber = (value) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const paidOrders = orders.filter((order) => order.paymentStatus === "paid");
+  const todayOrders = paidOrders.filter((order) => new Date(order.createdAt) >= todayStart);
   const todaySales = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  const todayEarning = todayOrders.reduce((sum, order) => sum + toSafeNumber(order.sellerPayout), 0);
+  const totalEarning = paidOrders.reduce((sum, order) => sum + toSafeNumber(order.sellerPayout), 0);
   const pendingOrders = orders.filter((order) =>
     ["placed", "accepted", "preparing", "ready_for_rider", "rider_assigned", "picked_up"].includes(
       order.status
@@ -217,6 +225,7 @@ const Dashboard = () => {
   // Icons for stat cards
   const statIcons = {
     sales: <TrendingUp size={20} className="text-white" />,
+    earning: <TrendingUp size={20} className="text-white" />,
     orders: <ShoppingBag size={20} className="text-white" />,
     pending: <Clock size={20} className="text-white" />,
     products: <Package size={20} className="text-white" />,
@@ -247,11 +256,19 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold mb-4 text-gray-900">Today's Business</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              title="Today's Sales"
-              value={`₹${todaySales.toLocaleString("en-IN")}`}
-              subtext={todayOrders.length === 0 ? "No sales yet" : `${todayOrders.length} orders`}
-              icon={statIcons.sales}
-              color="bg-green-100"
+              title="Today's Earnings"
+              value={`₹${todayEarning.toLocaleString("en-IN")}`}
+              subtext={todayOrders.length === 0 ? "No payout yet" : "Seller payout"}
+              icon={statIcons.earning}
+              color="bg-emerald-100"
+              loading={ordersLoading}
+            />
+            <StatsCard
+              title="Total Earnings"
+              value={`₹${totalEarning.toLocaleString("en-IN")}`}
+              subtext="All payouts"
+              icon={statIcons.earning}
+              color="bg-cyan-100"
               loading={ordersLoading}
             />
             <StatsCard
@@ -269,14 +286,6 @@ const Dashboard = () => {
               icon={statIcons.pending}
               color="bg-amber-100"
               loading={ordersLoading}
-            />
-            <StatsCard
-              title="Active Products"
-              value={products.filter((p) => p.isAvailable).length}
-              subtext={`of ${products.length} total`}
-              icon={statIcons.products}
-              color="bg-purple-100"
-              loading={false}
             />
           </div>
         </div>

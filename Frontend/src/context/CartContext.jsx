@@ -115,9 +115,9 @@ export const CartProvider = ({ children }) => {
     0
   );
 
-  const delivery = subtotal === 0 ? 0 : subtotal >= 500 ? 0 : 30;
-
-  const totalPrice = subtotal + delivery;
+  const delivery = subtotal === 0 ? 0 : subtotal > 300 ? 0 : 30;
+  const platformFee = subtotal === 0 ? 0 : 7;
+  const totalPrice = subtotal + delivery + platformFee;
 
   return (
 
@@ -131,6 +131,7 @@ export const CartProvider = ({ children }) => {
         clearCart,
         subtotal,
         delivery,
+        platformFee,
         totalPrice,
         loading,
       }}

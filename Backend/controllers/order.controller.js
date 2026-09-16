@@ -6,6 +6,7 @@ const shopMenuModel = require("../models/shopMenu.model");
 const orderModel = require("../models/order");
 const { publishOrderEvent } = require("../config/payment.producer");
 const { emitRealtimeEvent } = require("../services/realtime.service");
+const { calculateOrderSettlement, DELIVERY_FEE_RUPEES, PLATFORM_FEE_RUPEES, FREE_DELIVERY_THRESHOLD_RUPEES } = require("../config/settlement");
 
 const createOrder = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -98,9 +99,15 @@ const createOrder = asyncHandler(async (req, res) => {
       total: itemTotal,
     };
   });
-  const deliveryFee = subTotal < 250 ? 49 : 0;
-  const platformFee = 7;
-  const totalAmount = subTotal + deliveryFee + platformFee;
+
+  const deliveryFee = subTotal > FREE_DELIVERY_THRESHOLD_RUPEES ? 0 : DELIVERY_FEE_RUPEES;
+  const platformFee = PLATFORM_FEE_RUPEES;
+  const settlement = calculateOrderSettlement({
+    subtotal: subTotal,
+    platformFee,
+    deliveryFee,
+  });
+  const totalAmount = settlement.customerPayable;
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
@@ -114,10 +121,19 @@ const createOrder = asyncHandler(async (req, res) => {
     pickupAddress: shop.autoLocation?.formattedAddress || null,
     riderId: null,
     items: orderItems,
-    subTotal,
-    deliveryFee,
-    platformFee,
+    subTotal: settlement.subtotal,
+    deliveryFee: settlement.deliveryFee,
+    platformFee: settlement.platformFee,
     totalAmount,
+    customerPayable: settlement.customerPayable,
+    sellerCommissionPercent: settlement.sellerCommissionPercent,
+    sellerCommissionAmount: settlement.sellerCommissionAmount,
+    sellerPayout: settlement.sellerPayout,
+    riderPayout: settlement.riderPayout,
+    riderIncentive: settlement.riderIncentive,
+    platformRevenue: settlement.platformRevenue,
+    settlementStatus: settlement.settlementStatus,
+    paymentStatus: "pending",
     addressId: address._id.toString(),
     deliveryAddress: {
       fullName: address.fullName,

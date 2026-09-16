@@ -154,7 +154,10 @@ const AdminTools = ({ overview, users, orders, complaints, logs, search, setSear
   const [tab, setTab] = useState("overview");
   const filteredUsers = users.filter((user) => !search || user.phone?.includes(search) || user.role?.includes(search));
   const filteredOrders = orders.filter((order) => !orderStatus || order.status === orderStatus);
-  const money = Number(overview.revenue?.amount || 0).toLocaleString("en-IN");
+  const totalEarning = Number(overview.totalEarning ?? overview.revenue?.amount ?? 0);
+  const todayEarning = Number(overview.todayEarning ?? 0);
+  const actualEarning = Number(overview.actualEarning ?? totalEarning ?? 0);
+  const profit = Number(overview.profit ?? actualEarning ?? 0);
   const tabs = [["overview", "Overview", ShieldCheck], ["users", "Users", Users], ["orders", "Orders", Package], ["complaints", "Complaints", MessageSquare], ["logs", "Activity logs", ClipboardList]];
 
   return <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
@@ -162,8 +165,17 @@ const AdminTools = ({ overview, users, orders, complaints, logs, search, setSear
       {tabs.map(([key, label, Icon]) => <button key={key} type="button" onClick={() => setTab(key)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${tab === key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Icon size={16} />{label}</button>)}
     </div>
 
-    {tab === "overview" && <div className="grid gap-4 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-      {[["Users", overview.users, Users], ["Shops", overview.shops, Store], ["Riders", overview.riders, Truck], ["Orders", overview.orders, Package], ["Pending shops", overview.pendingShops, Store], ["Pending riders", overview.pendingRiders, Truck], ["Open complaints", overview.openComplaints, MessageSquare], ["Paid revenue", `₹${money}`, IndianRupee]].map(([label, value, Icon]) => <div key={label} className="rounded-2xl bg-slate-50 p-4"><Icon className="text-emerald-600" size={20} /><p className="mt-3 text-2xl font-bold text-slate-900">{value ?? 0}</p><p className="text-sm text-slate-500">{label}</p></div>)}
+    {tab === "overview" && <div className="grid gap-4 pt-5 sm:grid-cols-2 xl:grid-cols-4">
+      {[
+        ['Users', overview.users, Users],
+        ['Shops', overview.shops, Store],
+        ['Riders', overview.riders, Truck],
+        ['Orders', overview.orders, Package],
+        ['Total earnings', `₹${totalEarning.toLocaleString("en-IN")}`, IndianRupee],
+        ['Today earnings', `₹${todayEarning.toLocaleString("en-IN")}`, IndianRupee],
+        ['Actual earnings', `₹${actualEarning.toLocaleString("en-IN")}`, IndianRupee],
+        ['Profit', `₹${profit.toLocaleString("en-IN")}`, IndianRupee],
+      ].map(([label, value, Icon]) => <div key={label} className="rounded-2xl bg-slate-50 p-4"><Icon className="text-emerald-600" size={20} /><p className="mt-3 text-2xl font-bold text-slate-900">{value ?? 0}</p><p className="text-sm text-slate-500">{label}</p></div>)}
     </div>}
 
     {tab === "users" && <div className="pt-5"><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search users by phone or role" className="mb-4 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500" /><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead><tr className="border-b text-slate-500"><th className="p-3">Phone</th><th className="p-3">Role</th><th className="p-3">Status</th><th className="p-3">Action</th></tr></thead><tbody>{filteredUsers.map((user) => <tr key={user._id} className="border-b"><td className="p-3">{user.phone}</td><td className="p-3">{user.role}</td><td className="p-3">{user.isBlocked ? "Blocked" : "Active"}</td><td className="p-3"><button type="button" onClick={() => onUserStatus(user)} className="rounded-lg border px-3 py-2 font-medium">{user.isBlocked ? "Unblock" : "Block"}</button></td></tr>)}</tbody></table></div></div>}

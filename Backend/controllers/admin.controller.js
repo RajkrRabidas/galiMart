@@ -209,10 +209,67 @@ const getOverview = async (req, res) => {
   const [users, shops, riders, pendingShops, pendingRiders, orders, revenue, complaints] = await Promise.all([
     userModel.countDocuments(), shopModel.countDocuments(), riderModel.countDocuments(),
     shopModel.countDocuments({ isVerified: false, status: { $ne: "rejected" } }), riderModel.countDocuments({ isVerified: false, verificationStatus: { $ne: "rejected" } }),
-    orderModel.countDocuments(), orderModel.aggregate([{ $match: { paymentStatus: "paid" } }, { $group: { _id: null, amount: { $sum: { $ifNull: ["$totalAmount", 0] } }, count: { $sum: 1 } } }]),
+    orderModel.countDocuments(),
+    orderModel.aggregate([
+      {
+        $match: { paymentStatus: "paid" },
+      },
+      {
+        $group: {
+          _id: null,
+          amount: { $sum: { $ifNull: ["$totalAmount", 0] } },
+          count: { $sum: 1 },
+          totalEarning: { $sum: { $ifNull: ["$platformRevenue", 0] } },
+          totalRiderPayout: { $sum: { $ifNull: ["$riderPayout", 0] } },
+          totalRiderIncentive: { $sum: { $ifNull: ["$riderIncentive", 0] } },
+          todayEarning: {
+            $sum: {
+              $cond: [
+                {
+                  $gte: [
+                    "$createdAt",
+                    new Date(new Date().setHours(0, 0, 0, 0)),
+                  ],
+                },
+                { $ifNull: ["$platformRevenue", 0] },
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]),
     complaintModel.countDocuments({ status: { $in: ["open", "in_progress"] } }),
   ]);
-  res.json({ users, shops, riders, pendingShops, pendingRiders, orders, openComplaints: complaints, revenue: revenue[0] || { amount: 0, count: 0 } });
+
+  const summary = revenue[0] || {
+    amount: 0,
+    count: 0,
+    totalEarning: 0,
+    totalRiderPayout: 0,
+    totalRiderIncentive: 0,
+    todayEarning: 0,
+  };
+
+  const totalEarning = Number(summary.totalEarning || 0);
+  const todayEarning = Number(summary.todayEarning || 0);
+  const actualEarning = Math.max(0, totalEarning - Number(summary.totalRiderPayout || 0));
+  const profit = Math.max(0, actualEarning - Number(summary.totalRiderIncentive || 0));
+
+  res.json({
+    users,
+    shops,
+    riders,
+    pendingShops,
+    pendingRiders,
+    orders,
+    openComplaints: complaints,
+    revenue: { amount: totalEarning, count: summary.count },
+    totalEarning,
+    todayEarning,
+    actualEarning,
+    profit,
+  });
 };
 
 const getComplaints = async (req, res) => {
