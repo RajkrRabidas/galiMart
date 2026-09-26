@@ -12,6 +12,7 @@ const pageTitles = {
   "/profile": "My Profile",
   "/addresses": "My Addresses",
   "/settings": "Settings",
+  "/privacy-policy": "Privacy Policy",
   "/help": "Help & Support",
   "/notifications": "Notifications",
   "/my-service-bookings": "My Service Bookings",

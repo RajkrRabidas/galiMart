@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 import {
   Moon,
@@ -11,6 +12,7 @@ import {
 import toast from "react-hot-toast";
 
 const Settings = () => {
+  const navigate = useNavigate();
 
   const [darkMode, setDarkMode] = useState(false);
 
@@ -71,7 +73,7 @@ const Settings = () => {
           </button>
 
           <button
-            onClick={() => toast("Privacy Policy")}
+            onClick={() => navigate("/privacy-policy")}
             className="w-full flex justify-between items-center p-5 hover:bg-gray-50 cursor-pointer"
           >
             <div className="flex items-center gap-4">

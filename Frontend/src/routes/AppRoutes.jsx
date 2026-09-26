@@ -13,6 +13,7 @@ import OrderDetails from "../pages/Customer/OrderDetails";
 import Profile from "../pages/Customer/Profile";
 import Addresses from "../pages/Customer/Addresses";
 import Settings from "../pages/Customer/Settings";
+import PrivacyPolicy from "../pages/Customer/PrivacyPolicy";
 import Help from "../pages/Customer/Help";
 import Notifications from "../pages/Customer/Notifications";
 import TrackOrder from "../pages/Customer/TrackOrder";
@@ -59,6 +60,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
       <Route path="/addresses" element={<ProtectedRoute allowedRoles={["user"]}><Addresses /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={["user"]}><Settings /></ProtectedRoute>} />
+      <Route path="/privacy-policy" element={<ProtectedRoute allowedRoles={["user"]}><PrivacyPolicy /></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute allowedRoles={["user"]}><Help /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
       <Route path="/track-order/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackOrder /></ProtectedRoute>} />
