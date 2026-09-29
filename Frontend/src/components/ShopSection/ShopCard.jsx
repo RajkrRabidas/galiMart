@@ -9,10 +9,10 @@ const ShopCard = ({ shop }) => {
   return (
     <motion.article
       onClick={() => navigate(`/shop/${shop._id}`)}
-      whileHover={{ y: -6, scale: 1.02 }}
+      whileHover={{ y: -3 }}
       whileTap={{ scale: 0.97 }}
       transition={{ type: "spring", stiffness: 340, damping: 22 }}
-      className="min-w-[220px] max-w-[260px] cursor-pointer overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] transition duration-300 hover:shadow-[0_24px_65px_rgba(15,23,42,0.14)]"
+      className="min-w-55 max-w-65 cursor-pointer overflow-hidden rounded-xl border border-slate-200 bg-white transition duration-200 hover:border-blue-200 hover:shadow-md"
     >
       <div className="relative h-40 overflow-hidden bg-slate-100">
         <motion.img
@@ -33,7 +33,7 @@ const ShopCard = ({ shop }) => {
             )
           }
 
-        <span className="absolute left-3 top-3 rounded-2xl bg-white/90 px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-sm">
+        <span className="absolute left-3 top-3 rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-slate-800 shadow-sm">
           {formatShopDistance(shop)} km away
         </span>
       </div>
@@ -42,7 +42,7 @@ const ShopCard = ({ shop }) => {
         <h3 className="truncate text-lg font-bold text-slate-900">{shop.name}</h3>
         <p className="mt-2 line-clamp-2 text-sm text-slate-500">{shop.autoLocation?.formattedAddress || "Grocery store"}</p>
         <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1 rounded-2xl bg-emerald-50 px-3 py-1 text-emerald-700">
+          <span className="inline-flex items-center gap-1 rounded-lg bg-amber-50 px-2.5 py-1 text-amber-800">
             <Star size={13} className="fill-amber-400 text-amber-400" />
             {shop.rating || "4.8"}
           </span>

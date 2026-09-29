@@ -30,6 +30,11 @@ const OTP_RESEND_LIMIT = 5;
 const OTP_RESEND_COOLDOWN_SECONDS = 60;
 
 const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
+const isLocalFallbackMode = () =>
+  process.env.NODE_ENV === "development" ||
+  process.env.NODE_ENV === "test" ||
+  (process.env.NODE_ENV !== "production" &&
+    (process.env.OTP_SMS_FALLBACK === "true" || process.env.LOCALHOST === "true"));
 
 const createValidationErrorResponse = (validation) => {
   const zodError = validation.error;
@@ -75,8 +80,12 @@ const sendOtpSms = async (phone, otp) => {
   const apitxtPhone = cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`;
 
   if (!apitxtAuthKey) {
-    console.log(`[OTP] APITxT config missing. Phone: ${apitxtPhone}, OTP: ${otp}`);
-    return true;
+    if (isLocalFallbackMode()) {
+      console.log(`[OTP] APITxT config missing. Phone: ${apitxtPhone}, OTP: ${otp}`);
+      return true;
+    }
+
+    throw new Error("APITxT SMS configuration is missing.");
   }
 
   if (!apitxtPhone || apitxtPhone.length < 10) {
@@ -129,13 +138,7 @@ const sendOtpSms = async (phone, otp) => {
 
     return true;
   } catch (error) {
-    const isLocalFallbackMode =
-      process.env.NODE_ENV === "development" ||
-      process.env.NODE_ENV === "test" ||
-      process.env.OTP_SMS_FALLBACK === "true" ||
-      process.env.LOCALHOST === "true";
-
-    if (isLocalFallbackMode) {
+    if (isLocalFallbackMode()) {
       console.warn(`[OTP] SMS provider unreachable. Falling back to local dev mode. Phone: ${apitxtPhone}, OTP: ${otp}. Reason: ${error?.code || error?.message || "unknown"}`);
       return true;
     }
@@ -171,7 +174,7 @@ const issueOtp = async ({ phone, role, purpose }) => {
 
   await logAuthEvent("otp_sent", { phone: normalizedPhone, purpose });
 
-  return { status: 202, body: { message: "OTP sent successfully.", otp } };
+  return { status: 202, body: { message: "OTP sent successfully." } };
 };
 
 const verifyOtpAgainstStoredValue = async ({ phone, otp, purpose }) => {

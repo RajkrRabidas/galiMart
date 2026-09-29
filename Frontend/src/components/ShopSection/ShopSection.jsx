@@ -11,20 +11,33 @@ const ShopSection = ({ shops: propShops, loading: propLoading }) => {
   const loading = propLoading !== undefined ? propLoading : contextLoading;
 
   return (
-    <section className="mt-9 rounded-4xl bg-white/90 p-5 shadow-[0_24px_50px_rgba(15,23,42,0.06)] sm:p-6">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-2xl font-black text-slate-900">Nearby Stores</h2>
           <p className="mt-1 text-sm text-slate-500">Free delivery from nearby shops.</p>
         </div>
 
-        <button className="inline-flex items-center gap-1 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800 cursor-pointer">
+        <button className="inline-flex items-center gap-1 text-sm font-semibold text-[#2874f0] transition hover:text-[#1557bf]">
           View all
           <ArrowRight size={18} />
         </button>
       </div>
 
-      {shops.length === 0 ? (
+      {loading ? (
+        <div className="mt-6 flex gap-4 overflow-hidden" aria-label="Loading nearby stores">
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="min-w-55 animate-pulse overflow-hidden rounded-xl border border-slate-200 bg-white">
+              <div className="h-40 bg-slate-200" />
+              <div className="space-y-3 p-4">
+                <div className="h-4 w-3/4 rounded bg-slate-200" />
+                <div className="h-3 w-full rounded bg-slate-100" />
+                <div className="h-6 w-2/3 rounded bg-slate-100" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : shops.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

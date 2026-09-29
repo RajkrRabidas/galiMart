@@ -19,8 +19,10 @@ const cors = require("cors");
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://localhost",
+  "capacitor://localhost",
   "https://galimart.up.railway.app",
-  "https://galimart-production.up.railway.app", // <-- add this
+  "https://galimart-production.up.railway.app",
   "https://galimart.co.in",
   "https://www.galimart.co.in",
   "https://galimart.vercel.app",
