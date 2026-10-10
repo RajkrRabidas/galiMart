@@ -67,7 +67,7 @@ const OTPInput = ({ otp, setOtp }) => {
 
   return (
     <div
-      className="flex justify-between gap-3"
+      className="grid w-full grid-cols-6 gap-2 sm:gap-3"
       onPaste={handlePaste}
     >
       {otp.map((digit, index) => (
@@ -85,8 +85,9 @@ const OTPInput = ({ otp, setOtp }) => {
             handleKeyDown(e, index)
           }
           className="
-            w-14
             h-14
+            w-full
+            min-w-0
             rounded-xl
             border
             border-gray-300

@@ -21,7 +21,7 @@ router.post("/login", loginUser);
 router.post("/verify-login-otp", verifyLoginOtp);
 router.post("/resend-otp", resendOtp);
 router.post("/refresh-token", refreshToken);
-router.post("/logout", isAuth, logoutUser);
+router.post("/logout", logoutUser);
 router.get("/me", isAuth, myProfile);
 
 router.get(

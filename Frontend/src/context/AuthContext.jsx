@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { completeProfile as completeProfileApi, getMyProfile, logoutUser } from "../api/authApi";
+import { setLoggingOut } from "../api/axios";
 
 const AuthContext = createContext(null);
 
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }) => {
     setUserState(value);
 
     if (value) {
+      setLoggingOut(false);
       localStorage.setItem("auth_user", JSON.stringify(value));
     } else {
       localStorage.removeItem("auth_user");
@@ -56,20 +58,33 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
+    setLoggingOut(true);
     try {
       await logoutUser();
-    } catch (error) {
-      console.error("Logout failed", error);
     } finally {
-      setUser(null);
+      setUserState(null);
+      localStorage.removeItem("auth_user");
       setProfileState(null);
       // Clear token from localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("access_token");
     }
-  };
+  }, []);
 
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setLoggingOut(false);
+      setUser(null);
+      setProfileState(null);
+      localStorage.removeItem("token");
+      localStorage.removeItem("access_token");
+    };
+
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
 
 
   useEffect(() => {

@@ -39,7 +39,11 @@ const getValidSocketToken = async () => {
             return refreshedToken;
         }
     } catch (error) {
-        console.error("Socket token refresh failed:", error);
+        if ([401, 403].includes(error.response?.status)) {
+            window.dispatchEvent(new Event("auth:session-expired"));
+        } else {
+            console.error("Socket token refresh failed:", error);
+        }
     }
 
     return null;
@@ -63,6 +67,10 @@ export const SocketProvider = ({children}) => {
                 return;
             }
 
+            if (!socketToken) {
+                return;
+            }
+
             const nextSocket = io(import.meta.env.VITE_SOCKET_URL || "http://localhost:3000", {
                 auth: socketToken ? { token: socketToken } : {},
                 withCredentials: true,
@@ -81,13 +89,24 @@ export const SocketProvider = ({children}) => {
             });
 
             nextSocket.on("disconnect", () => {
-                console.log("Disconnected from socket server");
+                if (isActive) {
+                    console.log("Disconnected from socket server");
+                }
             });
 
             nextSocket.on("connect_error", (err) => {
-                console.error("Socket connection error:", err);
                 nextSocket.disconnect();
                 setSocket(null);
+                if (!isActive) {
+                    return;
+                }
+
+                if (err.message?.toLowerCase().includes("authentication")) {
+                    window.dispatchEvent(new Event("auth:session-expired"));
+                    return;
+                }
+
+                console.error("Socket connection error:", err);
             });
 
             return nextSocket;

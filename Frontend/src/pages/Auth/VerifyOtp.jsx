@@ -132,9 +132,9 @@ if (shop) {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
+    <div className="min-h-screen w-full overflow-x-hidden bg-linear-to-br from-emerald-50 via-white to-gray-100 flex items-center justify-center px-4">
 
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md">
+      <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-md">
 
         <div className="text-center">
 

@@ -6,6 +6,13 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+// Keep refresh requests outside the main interceptors to avoid refresh loops.
+const refreshApi = axios.create({
+  baseURL: api.defaults.baseURL,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
 // Add request interceptor to include auth token
 api.interceptors.request.use(
   (config) => {
@@ -19,7 +26,12 @@ api.interceptors.request.use(
 );
 
 let isRefreshing = false;
+let isLoggingOut = false;
 let pendingQueue = [];
+
+export const setLoggingOut = (value) => {
+  isLoggingOut = value;
+};
 
 const processQueue = (error) => {
   pendingQueue.forEach(({ resolve, reject }) => {
@@ -32,8 +44,18 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const skipRefresh = ["/auth/refresh-token", "/auth/logout"].some((path) =>
+      originalRequest?.url?.includes(path)
+    );
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !skipRefresh &&
+      !isLoggingOut &&
+      localStorage.getItem("auth_user")
+    ) {
       originalRequest._retry = true;
 
       if (isRefreshing) {
@@ -46,11 +68,20 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        await api.post("/auth/refresh-token");
+        const refreshResponse = await refreshApi.post("/auth/refresh-token");
+        const accessToken = refreshResponse.data?.tokens?.accessToken;
+        if (accessToken) {
+          localStorage.setItem("token", accessToken);
+          localStorage.removeItem("access_token");
+        }
         processQueue(null);
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError);
+        localStorage.removeItem("token");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("auth_user");
+        window.dispatchEvent(new Event("auth:session-expired"));
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

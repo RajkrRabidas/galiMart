@@ -5,7 +5,13 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",            // true in production (HTTPS)
   sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // none in prod for cross-site
+  path: "/",
   // Optional: domain: process.env.COOKIE_DOMAIN || undefined
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie("access_token", cookieOptions);
+  res.clearCookie("refresh_token", cookieOptions);
 };
 
 const jwtSecret = process.env.JWT_SECRET;
@@ -91,4 +97,5 @@ module.exports = {
   generateNewAccessToken,
   rotateRefreshToken,
   revokeRefreshToken,
+  clearAuthCookies,
 };

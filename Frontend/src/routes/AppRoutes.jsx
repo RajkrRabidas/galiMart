@@ -4,6 +4,7 @@ import { ProtectedRoute, PublicRoute } from "./ProtectedRoute";
 import Register from "../pages/Auth/Register";
 import VerifyOtp from "../pages/Auth/VerifyOtp";
 import Login from "../pages/Auth/Login";
+import Logout from "../pages/Auth/Logout";
 import Home from "../pages/Customer/Home";
 import ProductDetails from "../pages/Customer/ProductDetails";
 import Cart from "../pages/Customer/Cart";
@@ -63,6 +64,7 @@ const AppRoutes = () => {
       <Route path="/privacy-policy" element={<ProtectedRoute allowedRoles={["user"]}><PrivacyPolicy /></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute allowedRoles={["user"]}><Help /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
+      <Route path="/logout" element={<ProtectedRoute allowedRoles={["user"]}><Logout /></ProtectedRoute>} />
       <Route path="/track-order/:id" element={<ProtectedRoute allowedRoles={["user"]}><TrackOrder /></ProtectedRoute>} />
       <Route path="/my-service-bookings" element={<ProtectedRoute allowedRoles={["user"]}><MyServiceBookings /></ProtectedRoute>} />
 

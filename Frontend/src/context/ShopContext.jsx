@@ -32,7 +32,9 @@ const fetchNearbyShops = useCallback(async (params) => {
     const data = await getNearbyShops(params);
     setShops(data.shop ?? []);
   } catch (error) {
-    console.error("Fetch Nearby Shops Error:", error);
+    if (![401, 403].includes(error.response?.status)) {
+      console.error("Fetch Nearby Shops Error:", error);
+    }
     setShops([]);
   } finally {
     setLoading(false);

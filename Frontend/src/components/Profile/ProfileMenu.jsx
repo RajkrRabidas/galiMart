@@ -71,6 +71,7 @@ const ProfileMenu = () => {
       navigate("/login");
     } catch {
       toast.error("Could not log out right now");
+      navigate("/login");
     }
   }}
 />

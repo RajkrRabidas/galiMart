@@ -12,6 +12,7 @@ const {
   VerifyRefreshToken,
   rotateRefreshToken,
   revokeRefreshToken,
+  clearAuthCookies,
 } = require("../config/generateToken");
 const userDetailsModel = require("../models/userDetails.model");
 
@@ -483,28 +484,22 @@ const refreshToken = async (req, res) => {
 };
 
 const logoutUser = async (req, res) => {
-  try {
-    const userId = req.user?.id;
-    const refreshTokenValue = req.cookies?.refresh_token || req.body?.refreshToken;
+  const userId = req.user?.id || req.user?._id;
+  const refreshTokenValue = req.cookies?.refresh_token || req.body?.refreshToken;
+  clearAuthCookies(res);
 
+  try {
     if (userId) {
       await revokeRefreshToken(userId);
     } else if (refreshTokenValue) {
-      try {
-        const decoded = jwt.decode(refreshTokenValue);
-        if (decoded?.id) {
-          await revokeRefreshToken(decoded.id);
-        }
-      } catch (error) {
-        console.error("Logout decode error:", error);
+      const decoded = jwt.decode(refreshTokenValue);
+      if (decoded?.id) {
+        await revokeRefreshToken(decoded.id);
       }
     }
 
-    res.clearCookie("access_token", { httpOnly: true, secure: false, sameSite: "none" });
-    res.clearCookie("refresh_token", { httpOnly: true, secure: false, sameSite: "none" });
     await logAuthEvent("logout", { userId });
-
-    res.status(200).json({ message: "Logged out successfully." });
+    return res.status(200).json({ message: "Logged out successfully." });
   } catch (error) {
     console.error("Logout error:", error);
     return res.status(500).json({ message: "Internal server error" });
