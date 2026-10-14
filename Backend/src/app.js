@@ -58,6 +58,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use("/api/auth", authRouter);
 app.use("/api/address", addressRoutes)
+app.use("/api/addresses", addressRoutes)
 app.use("/api/shops", shopRouter);
 app.use("/api/items", menuRouter)
 app.use("/api/cart", cartRouter);

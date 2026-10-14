@@ -1,4 +1,3 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
@@ -17,28 +16,31 @@ import "./index.css";
 import { CartProvider } from "./context/CartContext";
 import { AuthProvider } from "./context/AuthContext";
 import { SocketProvider } from "./context/SocketContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <BrowserRouter>
-    <AuthProvider>
-      <CartProvider>
-        <OrderProvider> 
-          <NotificationProvider>
-            <ShopProvider>
-              <MarketplaceProvider>
-                <ServiceProvider>
-                  <ServiceBookingProvider>
-                    <SocketProvider>
-                    <App />
-                    <Toaster position="top-right" />
-                    </SocketProvider>
-                  </ServiceBookingProvider>
-                </ServiceProvider>
-              </MarketplaceProvider>
-            </ShopProvider>
-          </NotificationProvider>
-        </OrderProvider>
-      </CartProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <CartProvider>
+          <OrderProvider>
+            <NotificationProvider>
+              <ShopProvider>
+                <MarketplaceProvider>
+                  <ServiceProvider>
+                    <ServiceBookingProvider>
+                      <SocketProvider>
+                        <App />
+                        <Toaster position="top-right" />
+                      </SocketProvider>
+                    </ServiceBookingProvider>
+                  </ServiceProvider>
+                </MarketplaceProvider>
+              </ShopProvider>
+            </NotificationProvider>
+          </OrderProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </BrowserRouter>
 );

@@ -17,7 +17,7 @@ const sections = [
         <p>Depending on how you use GaliMart, we may collect these categories of information:</p>
         <ul>
           <li><strong>Account and contact details:</strong> your mobile number, account role, and any name or email address you choose to add to your profile or delivery address. We use a one-time password (OTP) to verify your number.</li>
-          <li><strong>Delivery and location details:</strong> saved delivery addresses and, when you choose a location feature or provide an address, the address text and associated map coordinates. Your browser or device asks permission before sharing its current location.</li>
+          <li><strong>Delivery and location details:</strong> saved delivery addresses you enter and, when you choose a separate location feature, location data needed to find nearby shops or support delivery navigation. Your browser or device asks permission before sharing its current location.</li>
           <li><strong>Marketplace activity:</strong> cart contents, products or services viewed or ordered, order status, delivery instructions, and related customer-service messages.</li>
           <li><strong>Transaction details:</strong> order totals, payment method, and payment status or references. Online payments are handled through Razorpay; GaliMart does not ask you to provide or store your full card number or card security code in the app.</li>
           <li><strong>Device and technical information:</strong> information sent automatically when you use the app or website, such as IP address, browser/device type, logs, and session or security data. Our hosting and service providers may also process technical logs.</li>
@@ -35,7 +35,7 @@ const sections = [
         <p>We use information as needed to operate and improve GaliMart, including to:</p>
         <ul>
           <li>create and secure accounts, verify phone numbers, and provide customer support;</li>
-          <li>show nearby shops or services, find and format an address, and prepare or deliver orders;</li>
+          <li>show nearby shops or services and prepare or deliver orders using the address you provide;</li>
           <li>manage carts, bookings, orders, payments, refunds, and order updates;</li>
           <li>share the minimum practical order and delivery details with the relevant shop and delivery partner;</li>
           <li>verify shop or service-provider applications, prevent fraud or misuse, and protect users and the platform;</li>
@@ -50,8 +50,8 @@ const sections = [
     title: "3. Location and address information",
     content: (
       <>
-        <p>GaliMart only accesses your device's current location when you choose a location feature and grant permission. You can deny or later revoke that permission in your browser or device settings; some delivery or nearby-shop features may then be limited.</p>
-        <p>When you use address lookup, coordinates may be sent to OpenStreetMap's Nominatim service to return a readable address. If that service is unavailable and configured, Google Maps may be used as a fallback. A location you save as a delivery address is stored with your account so it can be used for future orders. You can manage saved addresses in the app.</p>
+        <p>GaliMart only accesses your device's current location when you choose a separate location feature and grant permission. You can deny or later revoke that permission in your browser or device settings; nearby-shop or navigation features may then be limited.</p>
+        <p>Delivery addresses are entered manually and stored with your account so they can be used for future orders. Older saved addresses may retain coordinates from the previous address picker. You can add, edit, set a default, or delete saved addresses in the app.</p>
       </>
     ),
   },
@@ -65,7 +65,7 @@ const sections = [
           <li><strong>Shops and delivery partners:</strong> order items, recipient name, delivery address, and contact details needed to accept, prepare, and deliver an order. A shop may also receive the details needed to fulfil a service booking.</li>
           <li><strong>Payment provider:</strong> Razorpay processes online payment details under its own terms and privacy notice. Payment data handled on its checkout may be subject to its practices.</li>
           <li><strong>OTP and messaging providers:</strong> your phone number and OTP delivery information may be sent to our configured SMS provider to verify your account and send requested service messages.</li>
-          <li><strong>Infrastructure and feature providers:</strong> service providers that host or operate our database, cache, image storage, address lookup, maps, or app delivery may process information on our behalf.</li>
+          <li><strong>Infrastructure and feature providers:</strong> service providers that host or operate our database, cache, image storage, maps, or app delivery may process information on our behalf.</li>
           <li><strong>Legal and safety purposes:</strong> information may be disclosed where required by law or where reasonably necessary to respond to valid legal requests, prevent fraud, or protect users, GaliMart, and the public.</li>
           <li><strong>Business changes:</strong> information may be transferred as part of a merger, financing, acquisition, or sale, subject to appropriate safeguards and applicable law.</li>
         </ul>
@@ -112,7 +112,7 @@ const sections = [
     id: "third-party-services",
     title: "9. Third-party services and links",
     content: (
-      <p>Some features rely on third-party services, including payment checkout, SMS delivery, map/address lookup, and image or infrastructure hosting. Those providers may process information under their own privacy notices and terms. External links or maps are not operated by GaliMart; please review the relevant provider's policies before using them.</p>
+      <p>Some features rely on third-party services, including payment checkout, SMS delivery, maps, and image or infrastructure hosting. Those providers may process information under their own privacy notices and terms. External links or maps are not operated by GaliMart; please review the relevant provider's policies before using them.</p>
     ),
   },
   {
@@ -129,7 +129,7 @@ const sections = [
 ];
 
 const PrivacyPolicy = () => (
-  <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-white to-slate-100">
+  <div className="min-h-screen bg-linear-to-b from-emerald-50 via-white to-slate-100">
     <main className="mx-auto max-w-5xl px-4 py-8 pb-32 sm:px-6 lg:px-8">
       <Link
         to="/settings"
@@ -138,7 +138,7 @@ const PrivacyPolicy = () => (
         <ArrowLeft size={17} /> Back to Settings
       </Link>
 
-      <header className="relative overflow-hidden rounded-[2rem] bg-emerald-950 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10">
+      <header className="relative overflow-hidden rounded-4xl bg-emerald-950 px-6 py-8 text-white shadow-xl sm:px-10 sm:py-10">
         <div className="absolute -right-12 -top-20 h-64 w-64 rounded-full bg-emerald-500/20 blur-3xl" />
         <div className="relative">
           <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/20">

@@ -3,6 +3,7 @@ import axios from "../../api/axios";
 import { useCart } from "../../context/CartContext";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
 
 const Checkout = () => {
   const { cartItems, clearCart } = useCart();
@@ -18,12 +19,12 @@ const Checkout = () => {
   useEffect(() => {
     const fetchAddress = async () => {
       try {
-        const response = await axios.get("/address/my-address");
+        const response = await axios.get("/addresses");
         const fetchedAddresses = response.data.addresses || [];
         setAddresses(fetchedAddresses);
-        setSelectedAddress((prev) => prev || fetchedAddresses[0] || null);
+        setSelectedAddress((prev) => prev || fetchedAddresses.find((address) => address.isDefault) || fetchedAddresses[0] || null);
       } catch (error) {
-        console.error("Error fetching address:", error);
+        toast.error(error.response?.data?.message || "Unable to load saved addresses.");
       }
       setLoadingAddress(false);
     };
@@ -143,7 +144,7 @@ const Checkout = () => {
         <div className="rounded-xl bg-white p-4 shadow-sm">
           <h2 className="text-lg font-semibold">{shop?.name || "Gali Mart"}</h2>
           <p className="text-sm text-gray-500">
-            {shop?.autoLocation.formattedAddress || "Shop Address"}
+            {shop?.autoLocation?.formattedAddress || "Shop Address"}
           </p>
         </div>
 
@@ -152,11 +153,12 @@ const Checkout = () => {
           {loadingAddress ? (
             <p className="text-sm text-gray-500">Loading addresses...</p>
           ) : addresses.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              No address found. Please add one.
-            </p>
+            <div className="rounded-lg border border-dashed p-4 text-sm text-gray-500">
+              No address found. <Link to="/addresses" className="font-semibold text-[#e23744] underline">Add a delivery address</Link>.
+            </div>
           ) : (
-            addresses.map((add) => (
+            <div className="space-y-3">
+            {addresses.map((add) => (
               <label
                 key={add._id}
                 className={`flex gap-3 rounded-lg border p-3 cursor-pointer transition ${selectedAddressId === add._id ? "border-[#e23744] bg-red-50" : "hover:bg-gray-50"}`}
@@ -168,11 +170,14 @@ const Checkout = () => {
                   onChange={() => setSelectedAddress(add)}
                 />
                <div>
-                 <p className="text-sm font-medium">{add.formattedAddress}</p>
-                 <p className="text-sm text-gray-500">{add.mobile}</p>
+                 <p className="text-sm font-semibold">{add.fullName} <span className="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-normal">{add.addressType || "Address"}</span>{add.isDefault && <span className="ml-2 text-xs font-medium text-emerald-700">Default</span>}</p>
+                 <p className="mt-1 text-sm text-gray-600">{add.formattedAddress}</p>
+                 <p className="mt-1 text-xs text-gray-500">+91 {add.phoneNumber?.replace(/^\+91/, "") || add.mobile}{add.pinCode ? ` · PIN ${add.pinCode}` : ""}</p>
                </div>
               </label>
-            ))
+            ))}
+            <Link to="/addresses" className="inline-flex min-h-10 items-center text-sm font-semibold text-[#e23744] hover:underline">Manage saved addresses</Link>
+            </div>
           )}
         </div>
 

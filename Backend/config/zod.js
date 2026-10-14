@@ -59,6 +59,26 @@ const completeProfileSchema = z.object({
   }
 });
 
+const addressPhoneSchema = z.preprocess(
+  (value) => typeof value === "string" ? value.trim().replace(/[()\s-]/g, "") : value,
+  z.string().regex(/^(?:\+91)?[6-9]\d{9}$/, "Enter a valid 10-digit Indian mobile number")
+    .transform((value) => value.slice(-10)),
+);
+
+const addressSchema = z.object({
+  fullName: z.string().trim().min(1, "Full name is required").max(100),
+  phoneNumber: addressPhoneSchema,
+  pinCode: z.string().trim().regex(/^\d{6}$/, "PIN code must be exactly 6 digits"),
+  city: z.string().trim().min(1, "City is required").max(100),
+  state: z.string().trim().min(1, "State is required").max(100),
+  locality: z.string().trim().min(1, "Locality / Area / Street is required").max(200),
+  buildingName: z.string().trim().min(1, "Flat / Building name is required").max(200),
+  landmark: z.string().trim().max(200).optional().default(""),
+  addressType: z.enum(["Home", "Work", "Other"], {
+    errorMap: () => ({ message: "Choose Home, Work, or Other" }),
+  }),
+}).strict();
+
 const aadhaarNumberSchema = z.preprocess(
   (value) => {
     if (typeof value === "number") return value.toString();
@@ -96,6 +116,7 @@ module.exports = {
   registerSchema,
   loginSchema,
   completeProfileSchema,
+  addressSchema,
   createShopSchema,
   updateShopSchema,
   updateShopStatusSchema,

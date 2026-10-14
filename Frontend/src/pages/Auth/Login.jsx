@@ -10,10 +10,12 @@ const Login = () => {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("user");
   const [error, setError] = useState("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   
   const handleSubmit = async (e) => {
   e.preventDefault();
+  if (isLoggingIn) return;
 
   if (phone.trim() === "") {
     setError("Phone number is required.");
@@ -26,6 +28,7 @@ const Login = () => {
   }
 
   try {
+    setIsLoggingIn(true);
     setError("");
 
     await loginUser({
@@ -44,6 +47,8 @@ const Login = () => {
     const message = error.response?.data?.message || "Failed to send OTP";
     setError(message);
     toast.error(message);
+  } finally {
+    setIsLoggingIn(false);
   }
 };
 
@@ -181,12 +186,13 @@ const Login = () => {
           <button
 
             type="submit"
+            disabled={isLoggingIn}
 
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-semibold disabled:cursor-not-allowed disabled:opacity-70"
 
           >
 
-            Login
+            {isLoggingIn ? "Logging in..." : "Login"}
 
           </button>
 

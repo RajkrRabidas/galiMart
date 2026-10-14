@@ -61,23 +61,14 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const addressCoordinates = address.location?.coordinates;
   const shopCoordinates = shop.autoLocation?.coordinates;
-  if (
-    !Array.isArray(addressCoordinates) ||
-    addressCoordinates.length < 2 ||
-    !Array.isArray(shopCoordinates) ||
-    shopCoordinates.length < 2 ||
-    !addressCoordinates.slice(0, 2).every(Number.isFinite) ||
-    !shopCoordinates.slice(0, 2).every(Number.isFinite)
-  ) {
-    return res.status(400).json({ message: "Invalid address or shop location" });
-  }
-
-  const distance = getDistanceKM(
-    addressCoordinates[1],
-    addressCoordinates[0],
-    shopCoordinates[1],
-    shopCoordinates[0]
-  );
+  const hasCoordinates = (coordinates) =>
+    Array.isArray(coordinates) && coordinates.length >= 2 && coordinates.slice(0, 2).every(Number.isFinite);
+  const canCalculateDistance = hasCoordinates(addressCoordinates) && hasCoordinates(shopCoordinates);
+  // Manually entered delivery addresses do not have coordinates. Keep checkout
+  // functional and let riders navigate using the saved formatted address.
+  const distance = canCalculateDistance
+    ? getDistanceKM(addressCoordinates[1], addressCoordinates[0], shopCoordinates[1], shopCoordinates[0])
+    : 0;
 
   let subTotal = 0;
 
@@ -111,7 +102,7 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
 
-  const [longitude, latitude] = addressCoordinates;
+  const [longitude, latitude] = canCalculateDistance ? addressCoordinates : [];
 
   const order = await orderModel.create({
     userId: user._id.toString(),
@@ -139,6 +130,14 @@ const createOrder = asyncHandler(async (req, res) => {
       fullName: address.fullName,
       formattedAddress: address.formattedAddress,
       mobile: address.mobile,
+      phoneNumber: address.phoneNumber || `+91${String(address.mobile).slice(-10)}`,
+      pinCode: address.pinCode,
+      city: address.city,
+      state: address.state,
+      locality: address.locality,
+      buildingName: address.buildingName,
+      landmark: address.landmark,
+      addressType: address.addressType,
       latitude,
       longitude,
     },

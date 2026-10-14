@@ -382,7 +382,6 @@ const CategoryShops = () => {
           </section>
         </main>
 
-        <BottomNavbar />
       </div>
     </div>
   );
