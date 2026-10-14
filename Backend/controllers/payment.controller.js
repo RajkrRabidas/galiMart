@@ -24,6 +24,13 @@ const createRazorpayOrder = async (req, res) => {
       });
     }
 
+    if (order.paymentMethod !== "razorpay") {
+      return res.status(400).json({
+        success: false,
+        message: "This order is not payable through Razorpay",
+      });
+    }
+
     if (order.paymentStatus === "paid") {
       return res.status(400).json({
         success: false,
@@ -69,6 +76,14 @@ const verifyRazorpayPayment = async (req, res) => {
     rezorpay_signature = razorpay_signature,
     orderId,
   } = req.body;
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return res.status(404).json({ message: "Order not found" });
+  }
+  if (order.paymentMethod !== "razorpay") {
+    return res.status(400).json({ message: "This order does not use Razorpay" });
+  }
 
   const isValid = verifyRezorpaySignature(
     rezorpay_order_id,

@@ -5,6 +5,7 @@ const userModel = require("../models/user.model");
 const orderModel = require("../models/order");
 const complaintModel = require("../models/complaint.model");
 const adminActivityModel = require("../models/adminActivity.model");
+const { decryptPayoutDetails, toPublicPayoutDetails } = require("../utils/payoutDetails");
 
 const logActivity = (req, action, entityType, entityId, reason = null, metadata = null) =>
   adminActivityModel.create({ adminId: req.user._id, action, entityType, entityId: entityId ? String(entityId) : null, reason, metadata });
@@ -205,6 +206,150 @@ const getOrders = async (req, res) => {
   res.json({ count: orders.length, orders });
 };
 
+const getManualPayoutQueue = async (req, res) => {
+  const completedPaidOrderMatch = {
+    paymentStatus: "paid",
+    status: "delivered",
+    settlementStatus: { $nin: ["refunded", "cancelled"] },
+  };
+
+  const [sellerTotals, riderTotals] = await Promise.all([
+    orderModel.aggregate([
+      { $match: completedPaidOrderMatch },
+      {
+        $group: {
+          _id: "$shopId",
+          amount: { $sum: { $ifNull: ["$sellerPayout", 0] } },
+          completedOrders: { $sum: 1 },
+        },
+      },
+      { $match: { amount: { $gt: 0 } } },
+    ]),
+    orderModel.aggregate([
+      { $match: { ...completedPaidOrderMatch, riderId: { $nin: [null, ""] } } },
+      {
+        $group: {
+          _id: "$riderId",
+          amount: {
+            $sum: {
+              $cond: [
+                { $gt: [{ $ifNull: ["$riderPayout", 0] }, 0] },
+                "$riderPayout",
+                { $ifNull: ["$riderAmount", 0] },
+              ],
+            },
+          },
+          completedOrders: { $sum: 1 },
+        },
+      },
+      { $match: { amount: { $gt: 0 } } },
+    ]),
+  ]);
+
+  const [shops, riders] = await Promise.all([
+    sellerTotals.length
+      ? shopModel
+          .find({ _id: { $in: sellerTotals.map(({ _id }) => _id) } })
+          .select("name phone payoutDetails.method payoutDetails.accountHolderName payoutDetails.accountLast4 payoutDetails.upiIdMasked payoutDetails.updatedAt")
+          .lean()
+      : [],
+    riderTotals.length
+      ? riderModel
+          .find({ _id: { $in: riderTotals.map(({ _id }) => _id) } })
+          .select("name phoneNumber payoutDetails.method payoutDetails.accountHolderName payoutDetails.accountLast4 payoutDetails.upiIdMasked payoutDetails.updatedAt")
+          .lean()
+      : [],
+  ]);
+
+  const shopById = new Map(shops.map((shop) => [String(shop._id), shop]));
+  const riderById = new Map(riders.map((rider) => [String(rider._id), rider]));
+  const sellerPayouts = sellerTotals.map((total) => {
+    const shop = shopById.get(String(total._id));
+    return {
+      entityId: String(total._id),
+      name: shop?.name || "Unknown shop",
+      phone: shop?.phone || null,
+      cumulativeEarnings: total.amount,
+      completedOrders: total.completedOrders,
+      payoutDetails: toPublicPayoutDetails(shop?.payoutDetails),
+    };
+  });
+  const riderPayouts = riderTotals.map((total) => {
+    const rider = riderById.get(String(total._id));
+    return {
+      entityId: String(total._id),
+      name: rider?.name || "Unknown rider",
+      phone: rider?.phoneNumber || null,
+      cumulativeEarnings: total.amount,
+      completedDeliveries: total.completedOrders,
+      payoutDetails: toPublicPayoutDetails(rider?.payoutDetails),
+    };
+  });
+
+  await logActivity(req, "view_manual_payout_queue", "payout", null, null, {
+    sellerCount: sellerPayouts.length,
+    riderCount: riderPayouts.length,
+  });
+
+  return res.json({
+    sellers: sellerPayouts,
+    riders: riderPayouts,
+    note: "Amounts are cumulative completed earnings. Reconcile against the manual transfer sheet before paying; transfers are not recorded in the app.",
+  });
+};
+
+const getManualPayoutDetails = async (req, res) => {
+  const { type, entityId } = req.params;
+  if (!["seller", "rider"].includes(type)) {
+    return res.status(400).json({ message: "Payout type must be seller or rider." });
+  }
+  if (!findByIdOrBadRequest(entityId, "payout entity", res)) return;
+
+  const match = {
+    paymentStatus: "paid",
+    status: "delivered",
+    settlementStatus: { $nin: ["refunded", "cancelled"] },
+    [type === "seller" ? "shopId" : "riderId"]: entityId,
+  };
+  const amountExpression = type === "seller"
+    ? { $ifNull: ["$sellerPayout", 0] }
+    : {
+        $cond: [
+          { $gt: [{ $ifNull: ["$riderPayout", 0] }, 0] },
+          "$riderPayout",
+          { $ifNull: ["$riderAmount", 0] },
+        ],
+      };
+  const [earnings] = await orderModel.aggregate([
+    { $match: match },
+    { $group: { _id: null, amount: { $sum: amountExpression } } },
+  ]);
+  if (!earnings?.amount) {
+    return res.status(404).json({ message: "No completed earnings are available for this payout." });
+  }
+
+  const model = type === "seller" ? shopModel : riderModel;
+  const entity = await model
+    .findById(entityId)
+    .select("name payoutDetails.method payoutDetails.accountHolderName +payoutDetails.encryptedPayload");
+  if (!entity) {
+    return res.status(404).json({ message: `${type === "seller" ? "Shop" : "Rider"} not found.` });
+  }
+
+  let details;
+  try {
+    details = decryptPayoutDetails(entity.payoutDetails);
+  } catch (error) {
+    return res.status(error.statusCode || 500).json({ message: error.message });
+  }
+  if (!details) {
+    return res.status(404).json({ message: "Payout details have not been provided yet." });
+  }
+
+  await logActivity(req, "view_manual_payout_details", type, entityId);
+  return res.json({ payoutDetails: details });
+};
+
 const getOverview = async (req, res) => {
   const [users, shops, riders, pendingShops, pendingRiders, orders, revenue, complaints] = await Promise.all([
     userModel.countDocuments(), shopModel.countDocuments(), riderModel.countDocuments(),
@@ -322,6 +467,8 @@ module.exports = {
   getUsers,
   updateUserStatus,
   getOrders,
+  getManualPayoutQueue,
+  getManualPayoutDetails,
   getComplaints,
   updateComplaint,
   getActivityLogs,

@@ -14,6 +14,8 @@ import {
   getAdminOrders,
   getAdminOverview,
   getAdminUsers,
+  getManualPayoutDetails,
+  getManualPayoutQueue,
   rejectRider,
   rejectShop,
   suspendRider,
@@ -152,17 +154,55 @@ const ApplicationDetails = ({ application, onClose, onVerify, onReject, onUnveri
 
 const AdminTools = ({ overview, users, orders, complaints, logs, search, setSearch, orderStatus, setOrderStatus, onUserStatus, onComplaintStatus, onSuspend }) => {
   const [tab, setTab] = useState("overview");
+  const [payoutQueue, setPayoutQueue] = useState(null);
+  const [payoutLoading, setPayoutLoading] = useState(false);
+  const [revealedPayouts, setRevealedPayouts] = useState({});
+  const [revealingPayout, setRevealingPayout] = useState("");
   const filteredUsers = users.filter((user) => !search || user.phone?.includes(search) || user.role?.includes(search));
   const filteredOrders = orders.filter((order) => !orderStatus || order.status === orderStatus);
   const totalEarning = Number(overview.totalEarning ?? overview.revenue?.amount ?? 0);
   const todayEarning = Number(overview.todayEarning ?? 0);
   const actualEarning = Number(overview.actualEarning ?? totalEarning ?? 0);
   const profit = Number(overview.profit ?? actualEarning ?? 0);
-  const tabs = [["overview", "Overview", ShieldCheck], ["users", "Users", Users], ["orders", "Orders", Package], ["complaints", "Complaints", MessageSquare], ["logs", "Activity logs", ClipboardList]];
+  const tabs = [["overview", "Overview", ShieldCheck], ["users", "Users", Users], ["orders", "Orders", Package], ["payouts", "Manual payouts", IndianRupee], ["complaints", "Complaints", MessageSquare], ["logs", "Activity logs", ClipboardList]];
+
+  const loadPayoutQueue = async () => {
+    setPayoutLoading(true);
+    try {
+      setPayoutQueue(await getManualPayoutQueue());
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load manual payout list");
+    } finally {
+      setPayoutLoading(false);
+    }
+  };
+
+  const revealPayoutDetails = async (type, item) => {
+    const key = `${type}:${item.entityId}`;
+    if (revealedPayouts[key]) {
+      setRevealedPayouts((current) => ({ ...current, [key]: null }));
+      return;
+    }
+
+    setRevealingPayout(key);
+    try {
+      const response = await getManualPayoutDetails(type, item.entityId);
+      setRevealedPayouts((current) => ({ ...current, [key]: response.payoutDetails }));
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to reveal payout details");
+    } finally {
+      setRevealingPayout("");
+    }
+  };
+
+  const payoutRows = [
+    ...(payoutQueue?.sellers || []).map((item) => ({ ...item, payoutType: "seller", completedCount: item.completedOrders })),
+    ...(payoutQueue?.riders || []).map((item) => ({ ...item, payoutType: "rider", completedCount: item.completedDeliveries })),
+  ];
 
   return <section className="mt-10 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
     <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-4">
-      {tabs.map(([key, label, Icon]) => <button key={key} type="button" onClick={() => setTab(key)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${tab === key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Icon size={16} />{label}</button>)}
+      {tabs.map(([key, label, Icon]) => <button key={key} type="button" onClick={() => { setTab(key); if (key === "payouts") loadPayoutQueue(); else setRevealedPayouts({}); }} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold ${tab === key ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}><Icon size={16} />{label}</button>)}
     </div>
 
     {tab === "overview" && <div className="grid gap-4 pt-5 sm:grid-cols-2 xl:grid-cols-4">
@@ -185,6 +225,30 @@ const AdminTools = ({ overview, users, orders, complaints, logs, search, setSear
     {tab === "complaints" && <div className="space-y-3 pt-5">{complaints.map((complaint) => <div key={complaint._id} className="rounded-xl bg-slate-50 p-4"><div className="flex flex-wrap justify-between gap-2"><b>{complaint.subject}</b><span className="text-sm text-slate-500">{complaint.status}</span></div><p className="mt-2 text-sm text-slate-600">{complaint.description}</p><div className="mt-3 flex gap-2"><button type="button" onClick={() => onComplaintStatus(complaint, "in_progress")} className="rounded-lg border px-3 py-2 text-sm">In progress</button><button type="button" onClick={() => onComplaintStatus(complaint, "resolved")} className="rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white">Resolve</button></div></div>)}</div>}
 
     {tab === "logs" && <div className="space-y-2 pt-5">{logs.map((log) => <div key={log._id} className="rounded-xl bg-slate-50 p-3 text-sm"><b>{log.action}</b> · {log.entityType} {log.entityId ? `(${log.entityId.slice(-6)})` : ""}<span className="ml-2 text-slate-500">{new Date(log.createdAt).toLocaleString()}</span>{log.reason && <p className="mt-1 text-slate-600">Reason: {log.reason}</p>}</div>)}</div>}
+
+    {tab === "payouts" && <div className="pt-5">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <div><h3 className="font-bold text-slate-900">Manual payout reconciliation</h3><p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">{payoutQueue?.note || "Transfers are made manually. Review the amount against your reconciliation sheet before paying."}</p></div>
+        <button type="button" onClick={loadPayoutQueue} disabled={payoutLoading} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-60">{payoutLoading ? "Refreshing…" : "Refresh list"}</button>
+      </div>
+      {payoutLoading && !payoutQueue ? <p className="py-8 text-center text-slate-500">Loading payout totals…</p> : payoutRows.length === 0 ? <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No completed earnings to reconcile yet.</p> : <div className="space-y-3">
+        {payoutRows.map((item) => {
+          const key = `${item.payoutType}:${item.entityId}`;
+          const fullDetails = revealedPayouts[key];
+          return <article key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div><p className="font-bold text-slate-900">{item.name} <span className="ml-1 rounded-full bg-white px-2 py-1 text-[10px] uppercase tracking-wide text-slate-500">{item.payoutType}</span></p><p className="mt-1 text-sm text-slate-500">{item.phone || "No phone listed"} · {item.completedCount} completed {item.payoutType === "seller" ? "orders" : "deliveries"}</p></div>
+              <p className="text-lg font-black text-emerald-700">₹{Number(item.cumulativeEarnings || 0).toLocaleString("en-IN")}</p>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-3">
+              <p className="text-xs text-slate-600">{item.payoutDetails ? `${item.payoutDetails.method === "upi" ? "UPI" : "Bank"} · ${item.payoutDetails.method === "upi" ? item.payoutDetails.upiIdMasked : `•••• ${item.payoutDetails.accountLast4}`}` : "Payout details not provided"}</p>
+              {item.payoutDetails && <button type="button" onClick={() => revealPayoutDetails(item.payoutType, item)} disabled={revealingPayout === key} className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{revealingPayout === key ? "Loading…" : fullDetails ? "Hide full details" : "Reveal for transfer"}</button>}
+            </div>
+            {fullDetails && <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-semibold">{fullDetails.accountHolderName}</p>{fullDetails.method === "upi" ? <p className="mt-1 font-mono">UPI ID: {fullDetails.upiId}</p> : <><p className="mt-1 font-mono">Account: {fullDetails.accountNumber}</p><p className="mt-1 font-mono">IFSC: {fullDetails.ifsc}</p></>}<p className="mt-3 text-xs">Sensitive details shown for manual transfer. Do not copy them into a shared sheet.</p></div>}
+          </article>;
+        })}
+      </div>}
+    </div>}
   </section>;
 };
 

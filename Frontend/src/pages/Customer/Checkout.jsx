@@ -15,6 +15,7 @@ const Checkout = () => {
 
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("razorpay");
 
   useEffect(() => {
     const fetchAddress = async () => {
@@ -67,8 +68,8 @@ const Checkout = () => {
       });
 
       return data;
-    } catch {
-      toast.error("Failed to create order.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to create order.");
     } finally {
       setCreatingOrder(false);
     }
@@ -131,6 +132,23 @@ const Checkout = () => {
     } catch (error) {
       console.error("Error during payment:", error);
       toast.error("Payment failed, please refresh the page and try again.");
+    } finally {
+      setLoadingPayment(false);
+    }
+  };
+
+  const placeCodOrder = async () => {
+    try {
+      setLoadingPayment(true);
+      const order = await createOrder("cod");
+      if (!order) return;
+
+      await clearCart();
+      toast.success("Order placed! Pay cash when it arrives.");
+      navigate(`/orders/${order.orderId}`);
+    } catch (error) {
+      console.error("Error placing COD order:", error);
+      toast.error(error.response?.data?.message || "Unable to place your order.");
     } finally {
       setLoadingPayment(false);
     }
@@ -232,12 +250,43 @@ const Checkout = () => {
 
           <h3 className="font-semibold">Payment Method</h3>
 
-          <button 
-            disabled={!selectedAddressId || loadingPayment || creatingOrder} 
-            onClick={paywithRazorpay} 
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#2d7ff9] px-4 py-3 text-white font-semibold transition hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+          <div className="space-y-2">
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="razorpay"
+                checked={paymentMethod === "razorpay"}
+                onChange={() => setPaymentMethod("razorpay")}
+              />
+              <span className="text-sm font-medium">Pay online with Razorpay</span>
+            </label>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border p-3">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value="cod"
+                checked={paymentMethod === "cod"}
+                onChange={() => setPaymentMethod("cod")}
+              />
+              <span className="text-sm font-medium">Cash on delivery</span>
+            </label>
+          </div>
+
+          <button
+            disabled={!selectedAddressId || loadingPayment || creatingOrder}
+            onClick={paymentMethod === "cod" ? placeCodOrder : paywithRazorpay}
+            className={`flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3 font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer ${
+              paymentMethod === "cod"
+                ? "bg-emerald-600 hover:bg-emerald-700"
+                : "bg-[#2d7ff9] hover:bg-blue-600"
+            }`}
           >
-            {loadingPayment || creatingOrder ? "Processing..." : "Pay with Razorpay"}
+            {loadingPayment || creatingOrder
+              ? "Processing..."
+              : paymentMethod === "cod"
+                ? "Place order · Pay on delivery"
+                : "Pay with Razorpay"}
           </button>
 
         </div>

@@ -17,6 +17,10 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const { paymentMethod, addressId } = req.body;
 
+  if (!["razorpay", "cod"].includes(paymentMethod)) {
+    return res.status(400).json({ message: "A valid payment method is required" });
+  }
+
   if (!addressId)
     return res.status(400).json({ message: "Address is required" });
 
@@ -93,14 +97,18 @@ const createOrder = asyncHandler(async (req, res) => {
 
   const deliveryFee = subTotal > FREE_DELIVERY_THRESHOLD_RUPEES ? 0 : DELIVERY_FEE_RUPEES;
   const platformFee = PLATFORM_FEE_RUPEES;
+  const riderAmount = Math.ceil(distance || 0) * 17;
   const settlement = calculateOrderSettlement({
     subtotal: subTotal,
     platformFee,
     deliveryFee,
+    riderPayout: riderAmount,
   });
   const totalAmount = settlement.customerPayable;
 
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes from now
+  const expiresAt = paymentMethod === "razorpay"
+    ? new Date(Date.now() + 15 * 60 * 1000)
+    : undefined;
 
   const [longitude, latitude] = canCalculateDistance ? addressCoordinates : [];
 
@@ -124,7 +132,6 @@ const createOrder = asyncHandler(async (req, res) => {
     riderIncentive: settlement.riderIncentive,
     platformRevenue: settlement.platformRevenue,
     settlementStatus: settlement.settlementStatus,
-    paymentStatus: "pending",
     addressId: address._id.toString(),
     deliveryAddress: {
       fullName: address.fullName,
@@ -142,12 +149,21 @@ const createOrder = asyncHandler(async (req, res) => {
       longitude,
     },
     riderDistance: distance,
-    riderAmount: Math.ceil(distance || 0) * 17,
+    riderAmount,
     paymentMethod,
     paymentStatus: "pending",
     status: "placed",
-    expiresAt,
+    ...(expiresAt && { expiresAt }),
   });
+
+  if (paymentMethod === "cod") {
+    await cartModel.deleteMany({ userId: user._id });
+    emitRealtimeEvent({
+      event: "order:new",
+      room: `shop:${order.shopId}`,
+      payload: { orderId: order._id },
+    });
+  }
 
   res.status(201).json({
     message: "Order created successfully",
@@ -191,7 +207,10 @@ const fetchShopOrders = asyncHandler(async (req, res) => {
   const orders = await orderModel
     .find({
       shopId,
-      paymentStatus: "paid",
+      $or: [
+        { paymentStatus: "paid" },
+        { paymentMethod: "cod", paymentStatus: "pending" },
+      ],
     })
     .sort({ createdAt: -1 })
     .limit(limit);
@@ -224,7 +243,7 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "Order not found" });
   }
 
-  if (order.paymentStatus !== "paid") {
+  if (order.paymentStatus !== "paid" && order.paymentMethod !== "cod") {
     return res.status(400).json({ message: "Order not completed yet" });
   }
 
@@ -341,7 +360,10 @@ const getMyOrders = asyncHandler(async (req, res) => {
   const orders = await orderModel
     .find({
       userId: req.user._id.toString(),
-      paymentStatus: "paid",
+      $or: [
+        { paymentStatus: "paid" },
+        { paymentMethod: "cod", paymentStatus: "pending" },
+      ],
     })
     .sort({ createdAt: -1 });
 
@@ -487,7 +509,14 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
   }
 
   if (order.status === "picked_up") {
+    if (order.paymentMethod === "cod" && req.body?.cashCollected !== true) {
+      return res.status(400).json({
+        message: "Confirm cash collection before completing this COD delivery",
+      });
+    }
+
     order.status = "delivered";
+    if (order.paymentMethod === "cod") order.paymentStatus = "paid";
     await order.save();
 
     emitRealtimeEvent({

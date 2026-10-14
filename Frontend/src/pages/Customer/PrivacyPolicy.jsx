@@ -20,6 +20,7 @@ const sections = [
           <li><strong>Delivery and location details:</strong> saved delivery addresses you enter and, when you choose a separate location feature, location data needed to find nearby shops or support delivery navigation. Your browser or device asks permission before sharing its current location.</li>
           <li><strong>Marketplace activity:</strong> cart contents, products or services viewed or ordered, order status, delivery instructions, and related customer-service messages.</li>
           <li><strong>Transaction details:</strong> order totals, payment method, and payment status or references. Online payments are handled through Razorpay; GaliMart does not ask you to provide or store your full card number or card security code in the app.</li>
+          <li><strong>Seller and rider payout details:</strong> when a seller or rider has completed-order earnings eligible for a manual payout, we may collect an account-holder name and either bank account/IFSC details or a UPI ID. Bank and UPI identifiers are encrypted in storage and made available to authorised administrators only when needed to arrange a manual transfer.</li>
           <li><strong>Device and technical information:</strong> information sent automatically when you use the app or website, such as IP address, browser/device type, logs, and session or security data. Our hosting and service providers may also process technical logs.</li>
           <li><strong>Partner and shop information:</strong> if you register as a shopkeeper or service provider, we may collect business contact and location details, profile images, and documents submitted for verification (which may include government identity information).</li>
         </ul>
@@ -37,6 +38,7 @@ const sections = [
           <li>create and secure accounts, verify phone numbers, and provide customer support;</li>
           <li>show nearby shops or services and prepare or deliver orders using the address you provide;</li>
           <li>manage carts, bookings, orders, payments, refunds, and order updates;</li>
+          <li>calculate seller balances and rider earnings, collect payout details when earnings become eligible, and arrange manual bank or UPI transfers;</li>
           <li>share the minimum practical order and delivery details with the relevant shop and delivery partner;</li>
           <li>verify shop or service-provider applications, prevent fraud or misuse, and protect users and the platform;</li>
           <li>diagnose errors, maintain service reliability, meet legal obligations, and enforce our terms; and</li>
@@ -64,6 +66,7 @@ const sections = [
         <ul>
           <li><strong>Shops and delivery partners:</strong> order items, recipient name, delivery address, and contact details needed to accept, prepare, and deliver an order. A shop may also receive the details needed to fulfil a service booking.</li>
           <li><strong>Payment provider:</strong> Razorpay processes online payment details under its own terms and privacy notice. Payment data handled on its checkout may be subject to its practices.</li>
+          <li><strong>Authorised payout administrators:</strong> an administrator may access the submitted bank or UPI details when arranging a seller or rider transfer. We do not use those details to initiate automated payouts.</li>
           <li><strong>OTP and messaging providers:</strong> your phone number and OTP delivery information may be sent to our configured SMS provider to verify your account and send requested service messages.</li>
           <li><strong>Infrastructure and feature providers:</strong> service providers that host or operate our database, cache, image storage, maps, or app delivery may process information on our behalf.</li>
           <li><strong>Legal and safety purposes:</strong> information may be disclosed where required by law or where reasonably necessary to respond to valid legal requests, prevent fraud, or protect users, GaliMart, and the public.</li>
@@ -79,6 +82,7 @@ const sections = [
     content: (
       <>
         <p>Your information may be stored in GaliMart's systems and those of our service providers. We keep it for as long as reasonably needed to provide the service, maintain account and transaction records, resolve disputes, prevent misuse, and meet legal or accounting requirements. Retention periods can vary by data type and legal obligations.</p>
+        <p>Bank account and UPI identifiers submitted for payouts are encrypted in GaliMart's application database. Access to their decrypted values is restricted to an authenticated administrator viewing a specific manual-payout record; payout access is logged.</p>
         <p>We use reasonable technical and organizational measures intended to protect information. No website, app, or transmission method can be guaranteed completely secure, so please protect your device and account credentials and contact us if you suspect unauthorized access.</p>
       </>
     ),

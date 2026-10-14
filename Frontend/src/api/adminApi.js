@@ -4,6 +4,8 @@ export const getAdminOverview = async () => (await api.get("/admin/overview")).d
 export const getAdminUsers = async (search = "") => (await api.get("/admin/users", { params: { search } })).data;
 export const updateAdminUserStatus = async (id, blocked, reason = "") => (await api.patch(`/admin/users/${id}/status`, { blocked, reason })).data;
 export const getAdminOrders = async (params = {}) => (await api.get("/admin/orders", { params })).data;
+export const getManualPayoutQueue = async () => (await api.get("/admin/payouts/manual")).data;
+export const getManualPayoutDetails = async (type, entityId) => (await api.get(`/admin/payouts/manual/${type}/${entityId}`)).data;
 export const getAdminComplaints = async (status = "") => (await api.get("/admin/complaints", { params: { status } })).data;
 export const updateAdminComplaint = async (id, payload) => (await api.patch(`/admin/complaints/${id}`, payload)).data;
 export const getAdminActivityLogs = async () => (await api.get("/admin/activity-logs")).data;

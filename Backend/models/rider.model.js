@@ -64,6 +64,14 @@ const riderSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
+    payoutDetails: {
+        method: { type: String, enum: ["bank", "upi"], default: null },
+        accountHolderName: { type: String, trim: true, default: null },
+        accountLast4: { type: String, default: null },
+        upiIdMasked: { type: String, default: null },
+        encryptedPayload: { type: String, select: false, default: null },
+        updatedAt: { type: Date, default: null },
+    },
     lastActiveAt :{
         type: Date,
         default: Date.now

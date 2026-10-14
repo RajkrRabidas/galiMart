@@ -8,6 +8,8 @@ const {
   getNearByShop,
   fetchSingleShop,
   getMyShop,
+  getMySellerBalance,
+  saveMySellerPayoutDetails,
   verifyShop,
 } = require("../controllers/shop.controller")
 
@@ -38,5 +40,7 @@ router.put("/verify/:shopId", isAuth, isAdmin, verifyShop)
 router.get("/get-nearby-shops", isAuth, getNearByShop)
 router.get("/getAll/:id", isAuth, fetchSingleShop)
 router.get("/my-shop", isAuth, getMyShop);
+router.get("/my-balance", isAuth, isSeller, getMySellerBalance);
+router.post("/payout-details", isAuth, isSeller, saveMySellerPayoutDetails);
 
 module.exports = router

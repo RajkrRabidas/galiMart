@@ -16,6 +16,7 @@ import QuickActions from "../../components/Shopkeeper/Dashboard/QuickActions";
 import RecentOrders from "../../components/Shopkeeper/Dashboard/RecentOrders";
 import OrdersNeedAttention from "../../components/Shopkeeper/Dashboard/OrdersNeedAttention";
 import BottomNavbar from "../../components/Shopkeeper/BottomNavbar";
+import PayoutDetailsForm from "../../components/PayoutDetailsForm";
 
 // Icons
 import { TrendingUp, ShoppingBag, Clock, Package } from "lucide-react";
@@ -23,6 +24,8 @@ import { TrendingUp, ShoppingBag, Clock, Package } from "lucide-react";
 const Dashboard = () => {
   const [shop, setShop] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [sellerBalance, setSellerBalance] = useState(0);
+  const [sellerPayout, setSellerPayout] = useState({ eligible: false, details: null });
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
@@ -83,6 +86,16 @@ const Dashboard = () => {
       // Handle different possible response formats
       const ordersData = response.orders || response.data || response || [];
       setOrders(Array.isArray(ordersData) ? ordersData : []);
+      try {
+        const balanceResponse = await api.get("/shops/my-balance");
+        setSellerBalance(Number(balanceResponse.data?.balance) || 0);
+        setSellerPayout({
+          eligible: Boolean(balanceResponse.data?.payoutEligible),
+          details: balanceResponse.data?.payoutDetails || null,
+        });
+      } catch (balanceError) {
+        console.error("Error fetching seller balance:", balanceError);
+      }
     } catch (error) {
       console.error("Error fetching orders:", error);
       // Don't show toast error on initial load - it's optional data
@@ -212,10 +225,10 @@ const Dashboard = () => {
   };
 
   const paidOrders = orders.filter((order) => order.paymentStatus === "paid");
-  const todayOrders = paidOrders.filter((order) => new Date(order.createdAt) >= todayStart);
+  const completedOrders = paidOrders.filter((order) => order.status === "delivered");
+  const todayOrders = completedOrders.filter((order) => new Date(order.createdAt) >= todayStart);
   const todaySales = todayOrders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
   const todayEarning = todayOrders.reduce((sum, order) => sum + toSafeNumber(order.sellerPayout), 0);
-  const totalEarning = paidOrders.reduce((sum, order) => sum + toSafeNumber(order.sellerPayout), 0);
   const pendingOrders = orders.filter((order) =>
     ["placed", "accepted", "preparing", "ready_for_rider", "rider_assigned", "picked_up"].includes(
       order.status
@@ -256,17 +269,17 @@ const Dashboard = () => {
           <h2 className="text-lg font-semibold mb-4 text-gray-900">Today's Business</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatsCard
-              title="Today's Earnings"
+              title="Today's Seller Earnings"
               value={`₹${todayEarning.toLocaleString("en-IN")}`}
-              subtext={todayOrders.length === 0 ? "No payout yet" : "Seller payout"}
+              subtext={todayOrders.length === 0 ? "No completed orders" : "From completed orders"}
               icon={statIcons.earning}
               color="bg-emerald-100"
               loading={ordersLoading}
             />
             <StatsCard
-              title="Total Earnings"
-              value={`₹${totalEarning.toLocaleString("en-IN")}`}
-              subtext="All payouts"
+              title="Seller Balance"
+              value={`₹${sellerBalance.toLocaleString("en-IN")}`}
+              subtext="Completed orders; transfer manually"
               icon={statIcons.earning}
               color="bg-cyan-100"
               loading={ordersLoading}
@@ -288,6 +301,16 @@ const Dashboard = () => {
               loading={ordersLoading}
             />
           </div>
+        </div>
+
+        <div className="mb-8">
+          <PayoutDetailsForm
+            title="Seller"
+            eligible={sellerPayout.eligible}
+            details={sellerPayout.details}
+            endpoint="/shops/payout-details"
+            onSaved={(details) => setSellerPayout((current) => ({ ...current, details }))}
+          />
         </div>
 
         {/* Quick Actions */}

@@ -1,4 +1,6 @@
 const shopModel = require("../models/shop.model");
+const orderModel = require("../models/order");
+const { createStoredPayoutDetails, toPublicPayoutDetails } = require("../utils/payoutDetails");
 const uploadCloudinary = require("../utils/cloudinary");
 const asyncHandler = require("../utils/asyncHandler");
 const jwt = require("jsonwebtoken");
@@ -189,6 +191,81 @@ const fetchMyShop = asyncHandler(async (req, res) => {
   }
 
   return res.json(shop)
+});
+
+const getSellerBalanceSummary = async (shopId) => {
+  const [summary] = await orderModel.aggregate([
+    {
+      $match: {
+        shopId: String(shopId),
+        paymentStatus: "paid",
+        status: "delivered",
+        settlementStatus: { $nin: ["refunded", "cancelled"] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        balance: { $sum: { $ifNull: ["$sellerPayout", 0] } },
+        completedOrders: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return {
+    balance: summary?.balance || 0,
+    completedOrders: summary?.completedOrders || 0,
+  };
+};
+
+const getMySellerBalance = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return sendError(res, 401, UNAUTHORIZED);
+  }
+
+  const shop = await shopModel
+    .findOne({ ownerId: req.user._id })
+    .select("_id payoutDetails.method payoutDetails.accountHolderName payoutDetails.accountLast4 payoutDetails.upiIdMasked payoutDetails.updatedAt");
+  if (!shop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  const summary = await getSellerBalanceSummary(shop._id);
+
+  return res.json({
+    ...summary,
+    payoutEligible: summary.balance > 0,
+    payoutDetails: toPublicPayoutDetails(shop.payoutDetails),
+    payoutMethod: "Manual bank transfer",
+  });
+});
+
+const saveMySellerPayoutDetails = asyncHandler(async (req, res) => {
+  if (!req.user) {
+    return sendError(res, 401, UNAUTHORIZED);
+  }
+
+  const shop = await shopModel.findOne({ ownerId: req.user._id });
+  if (!shop) {
+    return sendError(res, 404, SHOP_NOT_FOUND);
+  }
+
+  const summary = await getSellerBalanceSummary(shop._id);
+  if (!summary.balance) {
+    return sendError(res, 409, "Payout details can be added once your first completed order has an earnings balance.");
+  }
+
+  try {
+    shop.payoutDetails = createStoredPayoutDetails(req.body);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+  await shop.save();
+
+  return res.json({
+    message: "Payout details saved securely. Transfers will be made manually.",
+    payoutDetails: toPublicPayoutDetails(shop.payoutDetails),
+  });
 });
 
 const updateStatusShop = asyncHandler(async (req, res) => {
@@ -399,6 +476,8 @@ module.exports = {
   updateShop,
   getNearByShop,
   getMyShop,
+  getMySellerBalance,
+  saveMySellerPayoutDetails,
   fetchSingleShop,
   verifyShop,
 };

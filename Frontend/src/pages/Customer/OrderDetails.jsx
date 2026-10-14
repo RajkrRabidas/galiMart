@@ -46,7 +46,6 @@ const OrderDetails = () => {
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [riderLocation, setRiderLocation] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -77,21 +76,6 @@ const OrderDetails = () => {
       socket.emit("leave", `user:${id}`);
     };
   }, [socket, id]);
-
-  useEffect(() => {
-    if (!socket) return;
-
-    const onRiderLocation = ({ latitude, longitude }) => {
-      console.log("Received rider location:", latitude, longitude);
-      setRiderLocation({ lat: latitude, lng: longitude });
-    };
-
-    socket.on("rider:location", onRiderLocation);
-
-    return () => {
-      socket.off("rider:location", onRiderLocation);
-    };
-  }, [socket]);
 
   if (loading) {
     return <PageMessage message="Loading order details..." />;
@@ -148,7 +132,7 @@ const OrderDetails = () => {
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
                     {item.image ? (
                       <img
-                        src={item.image || placeholderImage}
+                        src={item.image}
                         alt=""
                         className="h-full w-full object-cover"
                       />
@@ -201,12 +185,17 @@ const OrderDetails = () => {
             </div>
           </div>
           <div className="mt-5 flex items-center gap-2 text-xs text-slate-500">
-            <CheckCircle2 size={15} className="text-emerald-600" />
+            {order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? (
+              <Clock3 size={15} className="text-amber-600" />
+            ) : (
+              <CheckCircle2 size={15} className="text-emerald-600" />
+            )}
             Payment:{" "}
             {order.paymentMethod === "razorpay"
-              ? "Razorpay"
-              : "Cash on delivery"}{" "}
-            · {order.paymentStatus || "pending"}
+              ? `Razorpay · ${order.paymentStatus || "pending"}`
+              : order.paymentStatus === "paid"
+                ? "Cash collected"
+                : "Cash due on delivery"}
           </div>
         </section>
 

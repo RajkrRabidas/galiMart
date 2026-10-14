@@ -26,12 +26,14 @@ import { useSocket } from "../../context/SocketContext";
 import newRiderSound from "../../assets/riderNotification.wav";
 import { createNotificationPlayer } from "../../utils/notificationSound";
 import RiderOrderMap from "./RiderOrderMap";
+import PayoutDetailsForm from "../../components/PayoutDetailsForm";
 
 
 const Dashboard = () => {
   const { user } = useAuth();
 
   const [profile, setProfile] = useState(null);
+  const [earningsSummary, setEarningsSummary] = useState({ totalEarnings: 0, completedDeliveries: 0, payoutEligible: false, payoutDetails: null });
   const [loading, setLoading] = useState(true);
   const [profileError, setProfileError] = useState(false);
   const [toggling, setToggling] = useState(false);
@@ -77,6 +79,12 @@ const Dashboard = () => {
     try {
       const response = await api.get("/rider/myprofile");
       setProfile(response.data.riderProfile || null);
+      try {
+        const earningsResponse = await api.get("/rider/earnings");
+        setEarningsSummary(earningsResponse.data || { totalEarnings: 0, completedDeliveries: 0, payoutEligible: false, payoutDetails: null });
+      } catch (earningsError) {
+        console.error("Error fetching rider earnings:", earningsError);
+      }
     } catch (error) {
       setProfileError(error.response?.status !== 404);
       if (error.response?.status !== 404) {
@@ -85,6 +93,7 @@ const Dashboard = () => {
         );
       }
       setProfile(null);
+      setEarningsSummary({ totalEarnings: 0, completedDeliveries: 0, payoutEligible: false, payoutDetails: null });
     } finally {
       setLoading(false);
     }
@@ -334,9 +343,16 @@ const Dashboard = () => {
   const handleAdvanceOrder = async () => {
     if (!currentOrder?._id) return;
 
+    if (currentOrder.status === "picked_up" && currentOrder.paymentMethod === "cod") {
+      const amount = Number(currentOrder.totalAmount || 0).toLocaleString("en-IN");
+      if (!window.confirm(`Confirm you collected ₹${amount} in cash from the customer?`)) return;
+    }
+
     try {
       setUpdatingOrder(true);
-      const response = await updateRiderOrderStatus(currentOrder._id);
+      const cashCollected =
+        currentOrder.paymentMethod === "cod" && currentOrder.status === "picked_up";
+      const response = await updateRiderOrderStatus(currentOrder._id, { cashCollected });
       setCurrentOrder(response.order || null);
       toast.success(
         response.order?.status === "delivered"
@@ -469,7 +485,7 @@ const Dashboard = () => {
   }
 
   const riderName = profile.name || user.name || "Rider";
-  const earnings = currentOrder?.riderAmount;
+  const earnings = Number(earningsSummary.totalEarnings || 0);
 
   return (
     <div className="min-h-screen bg-[#f3faf7] pb-32 text-slate-900">
@@ -516,10 +532,17 @@ const Dashboard = () => {
               <div className="grid grid-cols-2 gap-3">
                 <OverviewCard label="Incoming" value={incoming.length} icon={<Package size={18} />} />
                 <OverviewCard label="Active" value={currentOrder ? 1 : 0} icon={<Truck size={18} />} />
-                {earnings !== undefined && <OverviewCard label="Earnings" value={`₹${Number(earnings).toLocaleString("en-IN")}`} icon={<CheckCircle2 size={18} />} />}
+                <OverviewCard label="Completed deliveries" value={earningsSummary.completedDeliveries} icon={<CheckCircle2 size={18} />} />
               </div>
             </section>
-            {currentOrder?.riderAmount !== undefined && <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100"><p className="text-sm font-medium text-slate-500">Today's Earnings</p><p className="mt-1 text-3xl font-bold">₹{Number(currentOrder.riderAmount).toLocaleString("en-IN")}</p><p className="mt-2 text-sm text-slate-500">For this active delivery</p></section>}
+            <section className="rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-100"><p className="text-sm font-medium text-slate-500">Rider Earnings</p><p className="mt-1 text-3xl font-bold">₹{earnings.toLocaleString("en-IN")}</p><p className="mt-2 text-sm text-slate-500">Completed delivery total; transfer manually by UPI/bank</p></section>
+            <PayoutDetailsForm
+              title="Rider"
+              eligible={earningsSummary.payoutEligible}
+              details={earningsSummary.payoutDetails}
+              endpoint="/rider/payout-details"
+              onSaved={(details) => setEarningsSummary((current) => ({ ...current, payoutDetails: details }))}
+            />
           </aside>
         </div>
       </main>
@@ -567,7 +590,8 @@ const ActiveDelivery = ({ order, onAdvance, updating }) => {
     <div className="mt-5 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-stretch"><LocationCard icon={<Store size={17} />} label="Pickup from shop" name={order.shopName || "Shop"} address={order.pickupAddress || "Pickup location available in navigation"} phone={shopPhone} phoneLabel="Call shopkeeper" /><div className="hidden items-center justify-center text-emerald-500 md:flex"><ArrowRight size={20} /></div><LocationCard icon={<MapPin size={17} />} label="Drop to customer" name={order.deliveryAddress?.fullName || "Customer"} address={dropAddress || "Address unavailable"} phone={customerPhone} phoneLabel="Call customer" /></div>
     <div className="mt-5 flex items-center justify-between gap-2">{stages.map((stage, index) => <div key={stage.status} className="flex items-center gap-2"><div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${index <= currentIndex ? "bg-emerald-600 text-white" : "bg-slate-100 text-slate-400"}`}>{index < currentIndex ? <Check size={14} /> : index + 1}</div>{index < stages.length - 1 && <div className={`h-px w-5 sm:w-10 ${index < currentIndex ? "bg-emerald-500" : "bg-slate-200"}`} />}</div>)}</div>
     <div className="mt-4 flex items-center justify-end text-xs text-slate-500"><MapsLink order={order} label="Navigate to drop" /></div>
-    {nextLabel && <button onClick={onAdvance} disabled={updating} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">{updating ? "Updating..." : nextLabel}</button>}
+    {order.paymentMethod === "cod" && order.status === "picked_up" && <p className="mt-5 rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-800">Collect {formatMoney(order.totalAmount)} from the customer before completing this delivery.</p>}
+    {nextLabel && <button onClick={onAdvance} disabled={updating} className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60">{updating ? "Updating..." : order.paymentMethod === "cod" && order.status === "picked_up" ? "Confirm cash & complete delivery" : nextLabel}</button>}
   </article>;
 };
 const SummaryStat = ({ label, value, accent }) => <div className={`rounded-2xl p-3 ${accent ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-900"}`}><p className={`text-[10px] font-bold uppercase tracking-wider ${accent ? "text-emerald-100" : "text-slate-400"}`}>{label}</p><p className="mt-1 truncate text-lg font-black">{value}</p></div>;

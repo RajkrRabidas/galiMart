@@ -2,7 +2,7 @@ const express = require("express")
 
 const {isAuth} = require("../middlewares/auth.middleware")
 const uploadFile = require("../middlewares/multer.middleware")
-const {addRidderProfile, fetchMyProfile, toggleRiderAvailability,acceptOrder, fetchMyCrrentOrder, fetchAvailableOrders, updateOrderStatus} = require("../controllers/rider.controller")
+const {addRidderProfile, fetchMyProfile, fetchMyEarnings, saveMyPayoutDetails, toggleRiderAvailability,acceptOrder, fetchMyCrrentOrder, fetchAvailableOrders, updateOrderStatus} = require("../controllers/rider.controller")
 
 const router = express.Router()
 
@@ -16,6 +16,8 @@ router.post(
 	addRidderProfile,
 )
 router.get("/myprofile", isAuth, fetchMyProfile)
+router.get("/earnings", isAuth, fetchMyEarnings)
+router.post("/payout-details", isAuth, saveMyPayoutDetails)
 router.patch("/toggle-availability", isAuth, toggleRiderAvailability)
 router.post("/accept/:orderId", isAuth, acceptOrder)
 router.get("/order/current", isAuth, fetchMyCrrentOrder)

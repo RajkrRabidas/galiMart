@@ -7,6 +7,8 @@ router.get('/overview', isAuth, isAdmin, controller.getOverview);
 router.get('/users', isAuth, isAdmin, controller.getUsers);
 router.patch('/users/:userId/status', isAuth, isAdmin, controller.updateUserStatus);
 router.get('/orders', isAuth, isAdmin, controller.getOrders);
+router.get('/payouts/manual', isAuth, isAdmin, controller.getManualPayoutQueue);
+router.get('/payouts/manual/:type/:entityId', isAuth, isAdmin, controller.getManualPayoutDetails);
 router.get('/complaints', isAuth, isAdmin, controller.getComplaints);
 router.patch('/complaints/:complaintId', isAuth, isAdmin, controller.updateComplaint);
 router.get('/activity-logs', isAuth, isAdmin, controller.getActivityLogs);

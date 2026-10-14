@@ -49,8 +49,8 @@ export const acceptRiderOrder = async (orderId) => {
   return response.data;
 };
 
-export const updateRiderOrderStatus = async (orderId) => {
-  const response = await api.put(`/rider/order/update/${orderId}`);
+export const updateRiderOrderStatus = async (orderId, { cashCollected = false } = {}) => {
+  const response = await api.put(`/rider/order/update/${orderId}`, { cashCollected });
   return response.data;
 };
 

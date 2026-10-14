@@ -3,6 +3,7 @@ const orderModel = require("../models/order");
 const Shop = require("../models/shop.model");
 const { emitRealtimeEvent } = require("../services/realtime.service");
 const { getIO } = require("../services/socket");
+const { createStoredPayoutDetails, toPublicPayoutDetails } = require("../utils/payoutDetails");
 
 const addShopDetails = async (orders) => {
   const shopIds = [...new Set(orders.map((order) => order.shopId).filter(Boolean))];
@@ -150,6 +151,90 @@ const fetchMyProfile = async (req, res) => {
   }
 };
 
+const getRiderEarningsSummary = async (riderId) => {
+  const [summary] = await orderModel.aggregate([
+    {
+      $match: {
+        riderId: String(riderId),
+        paymentStatus: "paid",
+        status: "delivered",
+        settlementStatus: { $nin: ["refunded", "cancelled"] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalEarnings: {
+          $sum: {
+            $cond: [
+              { $gt: [{ $ifNull: ["$riderPayout", 0] }, 0] },
+              "$riderPayout",
+              { $ifNull: ["$riderAmount", 0] },
+            ],
+          },
+        },
+        completedDeliveries: { $sum: 1 },
+      },
+    },
+  ]);
+
+  return {
+    totalEarnings: summary?.totalEarnings || 0,
+    completedDeliveries: summary?.completedDeliveries || 0,
+  };
+};
+
+const fetchMyEarnings = async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const rider = await Rider.findOne({ userId }).select(
+    "_id payoutDetails.method payoutDetails.accountHolderName payoutDetails.accountLast4 payoutDetails.upiIdMasked payoutDetails.updatedAt",
+  );
+  if (!rider) {
+    return res.status(404).json({ message: "Rider profile not found" });
+  }
+
+  const summary = await getRiderEarningsSummary(rider._id);
+  return res.json({
+    ...summary,
+    payoutEligible: summary.totalEarnings > 0,
+    payoutDetails: toPublicPayoutDetails(rider.payoutDetails),
+    payoutMethod: "Manual UPI/bank transfer",
+  });
+};
+
+const saveMyPayoutDetails = async (req, res) => {
+  const userId = req.user?._id;
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const rider = await Rider.findOne({ userId });
+  if (!rider) {
+    return res.status(404).json({ message: "Rider profile not found" });
+  }
+
+  const summary = await getRiderEarningsSummary(rider._id);
+  if (!summary.totalEarnings) {
+    return res.status(409).json({ message: "Payout details can be added after your first completed delivery." });
+  }
+
+  try {
+    rider.payoutDetails = createStoredPayoutDetails(req.body);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ message: error.message });
+  }
+  await rider.save();
+
+  return res.json({
+    message: "Payout details saved securely. Transfers will be made manually.",
+    payoutDetails: toPublicPayoutDetails(rider.payoutDetails),
+  });
+};
+
 const toggleRiderAvailability = async (req, res) => {
   const user = req.user;
 
@@ -248,6 +333,7 @@ const acceptOrder = async (req, res) => {
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
+
     if (order.riderId) {
       return res.status(400).json({ message: "Order already assigned" });
     }
@@ -331,7 +417,10 @@ const fetchAvailableOrders = async (req, res) => {
     .find({
       riderId: null,
       status: "ready_for_rider",
-      paymentStatus: "paid",
+      $or: [
+        { paymentStatus: "paid" },
+        { paymentMethod: "cod", paymentStatus: "pending" },
+      ],
     })
     .sort({ createdAt: -1 })
     .limit(20);
@@ -359,16 +448,47 @@ const updateOrderStatus = async (req, res) => {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    if (String(order.riderId) !== rider._id.toString()) {
+      return res.status(403).json({ message: "You are not assigned to this order" });
+    }
+
     if (order.status === "rider_assigned") {
       order.status = "picked_up";
       await order.save();
+      emitRealtimeEvent({
+        event: "order:rider_assigned",
+        room: `shop:${order.shopId}`,
+        payload: order,
+      });
+      emitRealtimeEvent({
+        event: "order:rider_assigned",
+        room: `user:${order.userId}`,
+        payload: order,
+      });
       const [enrichedOrder] = await addShopDetails([order]);
       return res.json({ message: "Order status updated successfully", order: enrichedOrder });
     }
 
     if (order.status === "picked_up") {
+      if (order.paymentMethod === "cod" && req.body?.cashCollected !== true) {
+        return res.status(400).json({
+          message: "Confirm cash collection before completing this COD delivery",
+        });
+      }
+
       order.status = "delivered";
+      if (order.paymentMethod === "cod") order.paymentStatus = "paid";
       await order.save();
+      emitRealtimeEvent({
+        event: "order:rider_assigned",
+        room: `shop:${order.shopId}`,
+        payload: order,
+      });
+      emitRealtimeEvent({
+        event: "order:rider_assigned",
+        room: `user:${order.userId}`,
+        payload: order,
+      });
       const [enrichedOrder] = await addShopDetails([order]);
       return res.json({ message: "Order status updated successfully", order: enrichedOrder });
     }
@@ -386,6 +506,8 @@ const updateOrderStatus = async (req, res) => {
 module.exports = {
   addRidderProfile,
   fetchMyProfile,
+  fetchMyEarnings,
+  saveMyPayoutDetails,
   toggleRiderAvailability,
   acceptOrder,
   fetchMyCrrentOrder,

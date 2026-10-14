@@ -58,6 +58,14 @@ const shopSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    payoutDetails: {
+        method: { type: String, enum: ["bank", "upi"], default: null },
+        accountHolderName: { type: String, trim: true, default: null },
+        accountLast4: { type: String, default: null },
+        upiIdMasked: { type: String, default: null },
+        encryptedPayload: { type: String, select: false, default: null },
+        updatedAt: { type: Date, default: null },
+    },
     shopType: {
         type: String,
         enum: ["groceries", "restaurants", "fashion", "medicine", "electronics", "services"],

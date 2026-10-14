@@ -110,7 +110,7 @@ const Orders = () => {
   const { getMyShop } = useShops();
   const notificationPlayerRef = useRef(null);
 
-  if (!notificationPlayerRef.current) {
+  if (notificationPlayerRef.current == null) {
     notificationPlayerRef.current = createNotificationPlayer(newOrderSound);
   }
 
@@ -365,6 +365,11 @@ const Orders = () => {
 
                     <div className="text-right">
                       <div className="text-xl font-black tracking-tight text-emerald-700">{formatMoney(order.totalAmount)}</div>
+                      <p className={`mt-1 text-[11px] font-semibold ${order.paymentMethod === "cod" && order.paymentStatus !== "paid" ? "text-amber-700" : "text-slate-500"}`}>
+                        {order.paymentMethod === "cod"
+                          ? order.paymentStatus === "paid" ? "COD · cash collected" : "COD · collect at delivery"
+                          : "Paid online"}
+                      </p>
                     </div>
                   </div>
 
