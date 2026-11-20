@@ -37,6 +37,20 @@ const isLocalFallbackMode = () =>
   (process.env.NODE_ENV !== "production" &&
     (process.env.OTP_SMS_FALLBACK === "true" || process.env.LOCALHOST === "true"));
 
+const getPlayReviewOtpConfig = () => {
+  if (process.env.PLAY_REVIEW_MODE !== "true") {
+    return null;
+  }
+
+  const phone = userModel.normalizePhone(process.env.PLAY_REVIEW_PHONE);
+  const otp = process.env.PLAY_REVIEW_OTP;
+  if (!/^\d{10}$/.test(phone) || !/^\d{6}$/.test(otp || "")) {
+    throw new Error("Play review OTP requires a valid PLAY_REVIEW_PHONE and six-digit PLAY_REVIEW_OTP.");
+  }
+
+  return { phone, otp };
+};
+
 const createValidationErrorResponse = (validation) => {
   const zodError = validation.error;
   let firstErrorMessage = "Validation Failed";
@@ -62,6 +76,30 @@ const createValidationErrorResponse = (validation) => {
 
 const isValidUserRole = (role) => Object.values(ROLES).includes(role);
 
+const getOtpDeliveryErrorResponse = (error) => {
+  if (error?.code === "SMS_PROVIDER_PAYMENT_REQUIRED") {
+    return {
+      status: 503,
+      body: {
+        code: error.code,
+        message: "SMS delivery is temporarily unavailable. Please check the SMS provider account balance or billing.",
+      },
+    };
+  }
+
+  if (error?.code === "SMS_PROVIDER_FAILURE") {
+    return {
+      status: 502,
+      body: {
+        code: error.code,
+        message: "SMS delivery failed. Please try again later.",
+      },
+    };
+  }
+
+  return null;
+};
+
 const logAuthEvent = async (event, payload) => {
   try {
     if (typeof redisClient?.lPush !== "function") {
@@ -82,7 +120,7 @@ const sendOtpSms = async (phone, otp) => {
 
   if (!apitxtAuthKey) {
     if (isLocalFallbackMode()) {
-      console.log(`[OTP] APITxT config missing. Phone: ${apitxtPhone}, OTP: ${otp}`);
+      console.log("[OTP] APITxT config missing; continuing in local fallback mode.");
       return true;
     }
 
@@ -90,7 +128,9 @@ const sendOtpSms = async (phone, otp) => {
   }
 
   if (!apitxtPhone || apitxtPhone.length < 10) {
-    throw new Error(`APITxT SMS failed: invalid mobile number received. Raw: ${phone}`);
+    const error = new Error("APITxT SMS failed: invalid mobile number.");
+    error.code = "SMS_INVALID_PHONE";
+    throw error;
   }
 
   const requestBody = new URLSearchParams({
@@ -134,23 +174,44 @@ const sendOtpSms = async (phone, otp) => {
       Number(responseStatus) === 200;
 
     if (!isSuccessResponse) {
-      throw new Error(`APITxT SMS failed: ${JSON.stringify(responseData)}`);
+      const error = new Error("APITxT SMS provider rejected the request.");
+      error.code = "SMS_PROVIDER_FAILURE";
+      error.providerStatus = responseStatus;
+      throw error;
     }
 
     return true;
   } catch (error) {
     if (isLocalFallbackMode()) {
-      console.warn(`[OTP] SMS provider unreachable. Falling back to local dev mode. Phone: ${apitxtPhone}, OTP: ${otp}. Reason: ${error?.code || error?.message || "unknown"}`);
+      console.warn(`[OTP] SMS provider unavailable in local fallback mode (${error?.code || error?.response?.status || "unknown"}).`);
       return true;
     }
 
-    throw error;
+    const providerStatus = error?.response?.status || error?.providerStatus;
+    const safeError = new Error(
+      providerStatus === 402
+        ? "SMS provider requires payment or sufficient balance."
+        : "SMS provider request failed.",
+    );
+    safeError.code =
+      providerStatus === 402
+        ? "SMS_PROVIDER_PAYMENT_REQUIRED"
+        : "SMS_PROVIDER_FAILURE";
+    if (Number.isInteger(providerStatus)) {
+      safeError.providerStatus = providerStatus;
+    }
+    throw safeError;
   }
 };
 
 const issueOtp = async ({ phone, role, purpose }) => {
   const normalizedPhone = userModel.normalizePhone(phone);
-  const otp = generateOtp();
+  const reviewConfig = getPlayReviewOtpConfig();
+  const isPlayReviewLogin =
+    purpose === "login" &&
+    role === ROLES.CUSTOMER &&
+    reviewConfig?.phone === normalizedPhone;
+  const otp = isPlayReviewLogin ? reviewConfig.otp : generateOtp();
   const hashedOtp = await bcrypt.hash(otp, 10);
   const activeOtpKey = purpose === "login" ? `verify-login-token:${normalizedPhone}` : `verify-register-token:${normalizedPhone}`;
   const attemptKey = `otp-attempt:${normalizedPhone}:${purpose}`;
@@ -171,11 +232,28 @@ const issueOtp = async ({ phone, role, purpose }) => {
   await redisClient.del(attemptKey);
   await redisClient.set(resendKey, currentResends + 1, { EX: OTP_RESEND_COOLDOWN_SECONDS });
   await redisClient.set(cooldownKey, "true", { EX: OTP_RESEND_COOLDOWN_SECONDS });
-  await sendOtpSms(normalizedPhone, otp);
+  if (!isPlayReviewLogin) {
+    try {
+      await sendOtpSms(normalizedPhone, otp);
+    } catch (error) {
+      await redisClient.del(activeOtpKey, attemptKey);
+      throw error;
+    }
+  }
 
-  await logAuthEvent("otp_sent", { phone: normalizedPhone, purpose });
+  await logAuthEvent(isPlayReviewLogin ? "play_review_otp_ready" : "otp_sent", {
+    phone: normalizedPhone,
+    purpose,
+  });
 
-  return { status: 202, body: { message: "OTP sent successfully." } };
+  return {
+    status: 202,
+    body: {
+      message: isPlayReviewLogin
+        ? "Review verification code is ready."
+        : "OTP sent successfully.",
+    },
+  };
 };
 
 const verifyOtpAgainstStoredValue = async ({ phone, otp, purpose }) => {
@@ -280,6 +358,14 @@ const registerUser = async (req, res) => {
   otpResult.body
 );
   } catch (error) {
+    const otpErrorResponse = getOtpDeliveryErrorResponse(error);
+    if (otpErrorResponse) {
+      console.error("Register OTP delivery failed:", {
+        code: error.code,
+        providerStatus: error.providerStatus,
+      });
+      return res.status(otpErrorResponse.status).json(otpErrorResponse.body);
+    }
     console.error("Register error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
@@ -362,6 +448,14 @@ const loginUser = async (req, res) => {
 
     return res.status(otpResult.status).json(otpResult.body);
   } catch (error) {
+    const otpErrorResponse = getOtpDeliveryErrorResponse(error);
+    if (otpErrorResponse) {
+      console.error("Login OTP delivery failed:", {
+        code: error.code,
+        providerStatus: error.providerStatus,
+      });
+      return res.status(otpErrorResponse.status).json(otpErrorResponse.body);
+    }
     console.error("Login error:", error);
     return res.status(500).json({ message: "Internal server error" });
   }
@@ -419,6 +513,7 @@ const resendOtp = async (req, res) => {
       return res.status(400).json({ message: "Phone and purpose are required." });
     }
 
+    let accountRole;
     if (purpose === "register") {
       const existingUser = await userModel.findOne({ phone: normalizedPhone });
       if (existingUser) {
@@ -429,9 +524,14 @@ const resendOtp = async (req, res) => {
       if (!existingUser || existingUser.isBlocked || existingUser.isDeleted) {
         return res.status(404).json({ message: "No active account found." });
       }
+      accountRole = existingUser.role;
     }
 
-    const otpResult = await issueOtp({ phone: normalizedPhone, role: purpose === "register" ? ROLES.CUSTOMER : undefined, purpose });
+    const otpResult = await issueOtp({
+      phone: normalizedPhone,
+      role: purpose === "register" ? ROLES.CUSTOMER : accountRole,
+      purpose,
+    });
     if (otpResult.status !== 202) {
       return res.status(otpResult.status).json(otpResult.body);
     }

@@ -4,6 +4,14 @@ const cartModel = require("../models/cart.model");
 const Rider = require("../models/rider.model");
 const { emitRealtimeEvent } = require("../services/realtime.service");
 
+const isValidCoordinates = (latitude, longitude) =>
+  Number.isFinite(latitude) &&
+  Number.isFinite(longitude) &&
+  latitude >= -90 &&
+  latitude <= 90 &&
+  longitude >= -180 &&
+  longitude <= 180;
+
 const startPaymentConsumer = async () => {
   try {
     const channel = getChannel();
@@ -89,11 +97,6 @@ const startOrderConsumer = async () => {
       if (!msg) return;
 
       try {
-        console.log(
-          "Received message from RIDER_READY_QUEUE:",
-          msg.content.toString(),
-        );
-
         const event = JSON.parse(msg.content.toString());
 
         console.log("event type:", event.type);
@@ -110,35 +113,54 @@ const startOrderConsumer = async () => {
 
         const { orderId, shopId, shopName, location } = event.data;
         const order = await orderModel.findById(orderId);
-        const riderLocation = {
-          type: "Point",
-          coordinates: [Number(location.longitude), Number(location.latitude)],
-        };
+        const latitude =
+          location?.latitude === undefined ||
+          location?.latitude === null ||
+          String(location.latitude).trim() === ""
+            ? Number.NaN
+            : Number(location.latitude);
+        const longitude =
+          location?.longitude === undefined ||
+          location?.longitude === null ||
+          String(location.longitude).trim() === ""
+            ? Number.NaN
+            : Number(location.longitude);
+        const hasValidLocation = isValidCoordinates(latitude, longitude);
 
         console.log(
           "Searching for rider nearby for order:",
           orderId,
-          "at location:",
-          location,
         );
 
-        let riders = await Rider.find({
-          isAvailable: true,
-          isVerified: true,
-          location: {
-            $near: {
-              $geometry: riderLocation,
-              $maxDistance: 2000,
+        let riders = [];
+        if (hasValidLocation) {
+          riders = await Rider.find({
+            isAvailable: true,
+            isVerified: true,
+            location: {
+              $near: {
+                $geometry: {
+                  type: "Point",
+                  coordinates: [longitude, latitude],
+                },
+                $maxDistance: 2000,
+              },
             },
-          },
-        });
+          });
+        } else {
+          console.warn(
+            `Order ${orderId} has no valid delivery coordinates; using online riders fallback`,
+          );
+        }
 
         if (riders.length === 0) {
           riders = await Rider.find({
             isAvailable: true,
             isVerified: true,
           }).sort({ lastActiveAt: -1 }).limit(20);
-          console.log(`No nearby riders; found ${riders.length} online riders as fallback`);
+          console.log(
+            `${hasValidLocation ? "No nearby riders" : "No delivery coordinates"}; found ${riders.length} online riders as fallback`,
+          );
         }
 
         console.log(`found ${riders.length} riders for order ${orderId}`);
