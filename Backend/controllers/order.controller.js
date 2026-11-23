@@ -509,12 +509,6 @@ const updateOrderStatusRider = asyncHandler(async (req, res) => {
   }
 
   if (order.status === "picked_up") {
-    if (order.paymentMethod === "cod" && req.body?.cashCollected !== true) {
-      return res.status(400).json({
-        message: "Confirm cash collection before completing this COD delivery",
-      });
-    }
-
     order.status = "delivered";
     if (order.paymentMethod === "cod") order.paymentStatus = "paid";
     await order.save();
