@@ -162,21 +162,24 @@ const makeRes = () => {
     await verifyLoginOtp({ body: { phone: otherAccount.phone, otp: "123456" } }, otherOtpRes);
     assert.strictEqual(otherOtpRes.statusCode, 200, "normal customer should authenticate with their generated OTP");
 
-    reviewAccount.role = "seller";
-    await redisClient.del(
-      "otp-resend:9876543210:login",
-      "otp-cooldown:9876543210:login",
-    );
-    const sellerLoginRes = makeRes();
-    await loginUser({ body: { phone: reviewAccount.phone } }, sellerLoginRes);
-    assert.strictEqual(sellerLoginRes.statusCode, 202, "seller account should use the standard login flow");
-    assert.strictEqual(smsCalls, 2, "review code must not bypass OTP for non-customer roles");
+    for (const role of ["seller", "rider", "service_provider", "admin"]) {
+      reviewAccount.role = role;
+      await redisClient.del(
+        "otp-resend:9876543210:login",
+        "otp-cooldown:9876543210:login",
+      );
 
-    const sellerReviewCodeRes = makeRes();
-    await verifyLoginOtp({
-      body: { phone: reviewAccount.phone, otp: process.env.PLAY_REVIEW_OTP },
-    }, sellerReviewCodeRes);
-    assert.strictEqual(sellerReviewCodeRes.statusCode, 400, "review code must not authenticate non-customer roles");
+      const roleLoginRes = makeRes();
+      await loginUser({ body: { phone: reviewAccount.phone } }, roleLoginRes);
+      assert.strictEqual(roleLoginRes.statusCode, 202, `${role} should be able to request the review code`);
+      assert.strictEqual(smsCalls, 1, `${role} review login should not send SMS`);
+
+      const roleVerifyRes = makeRes();
+      await verifyLoginOtp({
+        body: { phone: reviewAccount.phone, otp: process.env.PLAY_REVIEW_OTP },
+      }, roleVerifyRes);
+      assert.strictEqual(roleVerifyRes.statusCode, 200, `review code should authenticate ${role}`);
+    }
 
     rejectSmsWithPaymentRequired = true;
     const originalConsoleError = console.error;

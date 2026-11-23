@@ -2,9 +2,9 @@
 
 ## Google Play review login
 
-For Play Console app access, use a dedicated customer account with sample data. To let
-the reviewer sign in without receiving an SMS, configure these variables on the
-backend deployment:
+For Play Console app access or local testing, use a dedicated account with
+sample data. To let the account sign in without receiving an SMS, configure
+these variables on the backend deployment:
 
 ```env
 PLAY_REVIEW_MODE=true
@@ -17,10 +17,10 @@ access**. Do not put the code in frontend code, source control, or public
 documentation.
 
 The configured code is accepted only for login to the exact configured phone
-number when that account has the customer role. It is not available for
-registration or other accounts. Normal users continue to receive SMS OTPs.
-Keep the account limited to review data and disable `PLAY_REVIEW_MODE` if this
-review login is no longer needed. When disabled, the three variables are ignored.
+number, for any account role. It is not available for registration or other
+phone numbers. Normal users continue to receive SMS OTPs. Keep the configured
+account limited to testing/review data and disable `PLAY_REVIEW_MODE` when this
+login is no longer needed. When disabled, the three variables are ignored.
 
 The backend rejects an enabled configuration unless the phone normalizes to a
 10-digit number and the code contains exactly six digits.

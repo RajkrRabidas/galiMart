@@ -209,7 +209,6 @@ const issueOtp = async ({ phone, role, purpose }) => {
   const reviewConfig = getPlayReviewOtpConfig();
   const isPlayReviewLogin =
     purpose === "login" &&
-    role === ROLES.CUSTOMER &&
     reviewConfig?.phone === normalizedPhone;
   const otp = isPlayReviewLogin ? reviewConfig.otp : generateOtp();
   const hashedOtp = await bcrypt.hash(otp, 10);
