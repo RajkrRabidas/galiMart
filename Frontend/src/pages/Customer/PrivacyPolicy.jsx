@@ -10,123 +10,253 @@ import BottomNavbar from "../../components/BottomNavbar/BottomNavbar";
 
 const sections = [
   {
+    id: "introduction",
+    title: "1. Introduction",
+    content: (
+      <>
+        <p>Welcome to GaliMart.</p>
+        <p>GaliMart is a hyperlocal marketplace platform that connects customers with local shops, delivery partners and service providers.</p>
+        <p>This Privacy Policy explains how GaliMart collects, uses, stores, processes and shares your personal information when you use our mobile application, website and related services.</p>
+        <p>By using GaliMart, you acknowledge that you have read this Privacy Policy.</p>
+      </>
+    ),
+  },
+  {
     id: "information-we-collect",
-    title: "1. Information we collect",
+    title: "2. Information We Collect",
     content: (
       <>
-        <p>Depending on how you use GaliMart, we may collect these categories of information:</p>
+        <p>We may collect the following categories of information depending on the features you use.</p>
+        <p><strong>A. Personal Information</strong></p>
         <ul>
-          <li><strong>Account and contact details:</strong> your mobile number, account role, and any name or email address you choose to add to your profile or delivery address. We use a one-time password (OTP) to verify your number.</li>
-          <li><strong>Delivery and location details:</strong> saved delivery addresses you enter and, when you choose a separate location feature, location data needed to find nearby shops or support delivery navigation. Your browser or device asks permission before sharing its current location.</li>
-          <li><strong>Marketplace activity:</strong> cart contents, products or services viewed or ordered, order status, delivery instructions, and related customer-service messages.</li>
-          <li><strong>Transaction details:</strong> order totals, payment method, and payment status or references. Online payments are handled through Razorpay; GaliMart does not ask you to provide or store your full card number or card security code in the app.</li>
-          <li><strong>Seller and rider payout details:</strong> when a seller or rider has completed-order earnings eligible for a manual payout, we may collect an account-holder name and either bank account/IFSC details or a UPI ID. Bank and UPI identifiers are encrypted in storage and made available to authorised administrators only when needed to arrange a manual transfer.</li>
-          <li><strong>Device and technical information:</strong> information sent automatically when you use the app or website, such as IP address, browser/device type, logs, and session or security data. Our hosting and service providers may also process technical logs.</li>
-          <li><strong>Partner and shop information:</strong> if you register as a shopkeeper or service provider, we may collect business contact and location details, profile images, and documents submitted for verification (which may include government identity information).</li>
+          <li>Full name</li>
+          <li>Mobile phone number</li>
+          <li>Email address (if provided or obtained through Google Sign-In)</li>
+          <li>Profile photograph</li>
+          <li>Account ID</li>
+          <li>User role (Customer, Shopkeeper, Delivery Partner or Service Provider)</li>
         </ul>
-        <p>Please do not submit sensitive personal information unless it is specifically requested and needed for the service.</p>
-      </>
-    ),
-  },
-  {
-    id: "how-we-use-information",
-    title: "2. How we use information",
-    content: (
-      <>
-        <p>We use information as needed to operate and improve GaliMart, including to:</p>
+        <p><strong>B. Address Information</strong></p>
         <ul>
-          <li>create and secure accounts, verify phone numbers, and provide customer support;</li>
-          <li>show nearby shops or services and prepare or deliver orders using the address you provide;</li>
-          <li>manage carts, bookings, orders, payments, refunds, and order updates;</li>
-          <li>calculate seller balances and rider earnings, collect payout details when earnings become eligible, and arrange manual bank or UPI transfers;</li>
-          <li>share the minimum practical order and delivery details with the relevant shop and delivery partner;</li>
-          <li>verify shop or service-provider applications, prevent fraud or misuse, and protect users and the platform;</li>
-          <li>diagnose errors, maintain service reliability, meet legal obligations, and enforce our terms; and</li>
-          <li>send service messages such as OTPs and important order or account updates. We will seek any consent required for optional promotional messages.</li>
+          <li>House number and street address</li>
+          <li>City, district and state</li>
+          <li>PIN code</li>
+          <li>Delivery address</li>
+          <li>Saved addresses</li>
         </ul>
-      </>
-    ),
-  },
-  {
-    id: "location",
-    title: "3. Location and address information",
-    content: (
-      <>
-        <p>GaliMart only accesses your device's current location when you choose a separate location feature and grant permission. You can deny or later revoke that permission in your browser or device settings; nearby-shop or navigation features may then be limited.</p>
-        <p>Delivery addresses are entered manually and stored with your account so they can be used for future orders. Older saved addresses may retain coordinates from the previous address picker. You can add, edit, set a default, or delete saved addresses in the app.</p>
-      </>
-    ),
-  },
-  {
-    id: "sharing",
-    title: "4. When information is shared",
-    content: (
-      <>
-        <p>We do not sell personal information. We share information only as appropriate to provide the service, protect people, or comply with law:</p>
+        <p><strong>C. Location Information</strong></p>
+        <p>With your permission, GaliMart may collect your device&apos;s location to:</p>
         <ul>
-          <li><strong>Shops and delivery partners:</strong> order items, recipient name, delivery address, and contact details needed to accept, prepare, and deliver an order. A shop may also receive the details needed to fulfil a service booking.</li>
-          <li><strong>Payment provider:</strong> Razorpay processes online payment details under its own terms and privacy notice. Payment data handled on its checkout may be subject to its practices.</li>
-          <li><strong>Authorised payout administrators:</strong> an administrator may access the submitted bank or UPI details when arranging a seller or rider transfer. We do not use those details to initiate automated payouts.</li>
-          <li><strong>OTP and messaging providers:</strong> your phone number and OTP delivery information may be sent to our configured SMS provider to verify your account and send requested service messages.</li>
-          <li><strong>Infrastructure and feature providers:</strong> service providers that host or operate our database, cache, image storage, maps, or app delivery may process information on our behalf.</li>
-          <li><strong>Legal and safety purposes:</strong> information may be disclosed where required by law or where reasonably necessary to respond to valid legal requests, prevent fraud, or protect users, GaliMart, and the public.</li>
-          <li><strong>Business changes:</strong> information may be transferred as part of a merger, financing, acquisition, or sale, subject to appropriate safeguards and applicable law.</li>
+          <li>Find nearby shops and services.</li>
+          <li>Calculate delivery distance.</li>
+          <li>Show available services in your area.</li>
+          <li>Help delivery partners navigate to delivery destinations.</li>
+          <li>Provide order tracking functionality.</li>
         </ul>
-        <p>We do not control the privacy practices of independent shops, delivery partners, payment services, or external websites. Please review their notices when relevant.</p>
+        <p>Location access is requested when required by the relevant feature. Background location collection, if implemented, will be separately disclosed and requested with the necessary permissions.</p>
+        <p><strong>D. Transaction Information</strong></p>
+        <p>When you place orders or make payments, we may process:</p>
+        <ul>
+          <li>Order details</li>
+          <li>Purchased products and services</li>
+          <li>Transaction IDs</li>
+          <li>Payment status</li>
+          <li>Billing and delivery information</li>
+          <li>Refund information</li>
+        </ul>
+        <p>Payment card details and sensitive payment credentials are handled by the applicable payment service provider, where supported, and are not intended to be stored directly by GaliMart.</p>
+        <p><strong>E. User-Generated Information</strong></p>
+        <ul>
+          <li>Shop names and descriptions</li>
+          <li>Shop logos and banners</li>
+          <li>Product images</li>
+          <li>Service descriptions</li>
+          <li>Reviews and ratings</li>
+          <li>Uploaded business documents, where required</li>
+          <li>Customer support messages</li>
+        </ul>
+        <p><strong>F. Device and Technical Information</strong></p>
+        <ul>
+          <li>Device model</li>
+          <li>Operating system</li>
+          <li>App version</li>
+          <li>IP address</li>
+          <li>Device and diagnostic information</li>
+          <li>Crash reports and technical logs, where enabled</li>
+        </ul>
       </>
     ),
   },
   {
-    id: "storage-security",
-    title: "5. Storage, retention, and security",
+    id: "how-we-use",
+    title: "3. How We Use Your Information",
     content: (
       <>
-        <p>Your information may be stored in GaliMart's systems and those of our service providers. We keep it for as long as reasonably needed to provide the service, maintain account and transaction records, resolve disputes, prevent misuse, and meet legal or accounting requirements. Retention periods can vary by data type and legal obligations.</p>
-        <p>Bank account and UPI identifiers submitted for payouts are encrypted in GaliMart's application database. Access to their decrypted values is restricted to an authenticated administrator viewing a specific manual-payout record; payout access is logged.</p>
-        <p>We use reasonable technical and organizational measures intended to protect information. No website, app, or transmission method can be guaranteed completely secure, so please protect your device and account credentials and contact us if you suspect unauthorized access.</p>
+        <p>We use collected information to:</p>
+        <ol className="list-decimal space-y-2 pl-6">
+          <li>Create and manage user accounts.</li>
+          <li>Verify phone numbers through OTP authentication.</li>
+          <li>Support Google Sign-In, if enabled.</li>
+          <li>Process orders and service bookings.</li>
+          <li>Connect customers with shops and service providers.</li>
+          <li>Assign and manage delivery partners.</li>
+          <li>Calculate delivery distances and display nearby businesses.</li>
+          <li>Process payments and refunds through payment providers.</li>
+          <li>Send order updates and important notifications.</li>
+          <li>Prevent fraud, unauthorized access and misuse.</li>
+          <li>Improve application performance and user experience.</li>
+          <li>Respond to customer support requests.</li>
+          <li>Comply with applicable legal obligations.</li>
+        </ol>
       </>
     ),
   },
   {
-    id: "your-choices",
-    title: "6. Your choices and privacy requests",
+    id: "user-roles",
+    title: "4. User Roles and Information Sharing",
     content: (
       <>
-        <p>You can manage saved addresses and device location permissions in the app or your device settings. You may request access to, correction of, or deletion of personal information associated with your account, subject to identity checks and records we must retain by law.</p>
-        <p>To make a privacy request or ask a question, email <a className="font-semibold text-emerald-700 underline underline-offset-4" href="mailto:galimart03@gmail.com">galimart03@gmail.com</a> from your registered contact address or include your registered phone number. Do not email OTPs, passwords, or payment-card details. We will take reasonable steps to respond within the period required by applicable law.</p>
-        <p>You can stop using GaliMart at any time. Signing out does not itself delete information already associated with your account or transaction records.</p>
+        <p>GaliMart supports multiple user roles.</p>
+        <p><strong>Customers</strong></p>
+        <p>Customer information necessary to fulfil an order may be shared with the relevant shopkeeper and assigned delivery partner.</p>
+        <p><strong>Shopkeepers</strong></p>
+        <p>Shopkeepers may access the customer information necessary to prepare and fulfil orders assigned to their shops.</p>
+        <p><strong>Delivery Partners</strong></p>
+        <p>Delivery partners may receive relevant customer contact, delivery address and order information to complete assigned deliveries.</p>
+        <p><strong>Service Providers</strong></p>
+        <p>Service providers may receive customer information necessary to fulfil accepted service bookings.</p>
+        <p><strong>Administrators</strong></p>
+        <p>Authorized GaliMart administrators may access information necessary for platform management, verification, customer support, fraud prevention and dispute resolution.</p>
       </>
     ),
   },
   {
-    id: "cookies-and-device-storage",
-    title: "7. Cookies and device storage",
+    id: "third-party",
+    title: "5. Third-Party Services",
     content: (
-      <p>GaliMart uses browser or device storage for essential functions such as keeping you signed in, remembering selected settings, and retaining a location you chose to save on your device. You can clear this data through your browser or device settings, but some features may stop working or require you to sign in again. Our hosting or security providers may use technical logs to operate and protect the service.</p>
+      <>
+        <p>GaliMart may use third-party service providers to operate its platform.</p>
+        <p>These may include:</p>
+        <ul>
+          <li><strong>MongoDB Atlas:</strong> Database hosting</li>
+          <li><strong>Hostinger:</strong> Server and website hosting</li>
+          <li><strong>Cloudinary:</strong> Image and media storage</li>
+          <li><strong>Google Maps Platform:</strong> Maps and location services</li>
+          <li><strong>Firebase / MSG91:</strong> OTP authentication, if integrated</li>
+          <li><strong>Google Sign-In:</strong> Google account authentication, if enabled</li>
+          <li><strong>Razorpay / other payment gateway:</strong> Payment processing, if integrated</li>
+        </ul>
+        <p>These providers may process relevant information to provide their services under their applicable terms and privacy policies.</p>
+        <p>We do not sell users&apos; personal and sensitive information.</p>
+      </>
+    ),
+  },
+  {
+    id: "data-security",
+    title: "6. Data Security",
+    content: (
+      <>
+        <p>We take reasonable technical and organizational measures to protect user information against unauthorized access, alteration, disclosure, loss or misuse.</p>
+        <p>Security measures may include:</p>
+        <ul>
+          <li>HTTPS encryption for data transmission.</li>
+          <li>Secure authentication mechanisms.</li>
+          <li>Access control and role-based permissions.</li>
+          <li>Protected database access.</li>
+          <li>Secure handling of authentication tokens.</li>
+          <li>Restricted access to administrative information.</li>
+        </ul>
+        <p>However, no electronic storage or transmission method can be guaranteed to be completely secure.</p>
+      </>
+    ),
+  },
+  {
+    id: "data-retention",
+    title: "7. Data Retention",
+    content: (
+      <>
+        <p>We retain personal information only for as long as necessary to:</p>
+        <ul>
+          <li>Provide our services.</li>
+          <li>Maintain user accounts.</li>
+          <li>Complete orders and transactions.</li>
+          <li>Resolve disputes.</li>
+          <li>Prevent fraud and security issues.</li>
+          <li>Comply with applicable legal and regulatory requirements.</li>
+        </ul>
+        <p>When information is no longer required, we will take reasonable steps to delete or anonymize it, subject to applicable legal retention obligations.</p>
+      </>
+    ),
+  },
+  {
+    id: "account-deletion",
+    title: "8. Account Deletion",
+    content: (
+      <>
+        <p>Users can request deletion of their GaliMart accounts.</p>
+        <p>Account deletion can be requested through:</p>
+        <p><strong>In-App:</strong> Profile → Settings → Delete Account.</p>
+        <p><strong>Website:</strong> <a className="font-semibold text-emerald-700 underline underline-offset-4" href="https://www.galimart.co.in">https://www.galimart.co.in</a></p>
+        <p><strong>Email:</strong> <a className="font-semibold text-emerald-700 underline underline-offset-4" href="mailto:galimart03@gmail.com">galimart03@gmail.com</a></p>
+        <p>Upon receiving a valid deletion request, we will delete the associated personal information unless certain information must be retained for legal, regulatory, security, fraud-prevention or transaction-related purposes.</p>
+        <p>Where retention is legally required, we will restrict the use of such information to the applicable purpose and retain it only for the required period.</p>
+        <p>Deleting an account may permanently remove access to account history and associated services.</p>
+      </>
+    ),
+  },
+  {
+    id: "user-rights",
+    title: "9. User Rights",
+    content: (
+      <>
+        <p>Depending on applicable laws, users may request to:</p>
+        <ul>
+          <li>Access their personal information.</li>
+          <li>Correct inaccurate information.</li>
+          <li>Update their profile.</li>
+          <li>Request deletion of their account and associated data.</li>
+          <li>Raise concerns about data processing.</li>
+          <li>Withdraw consent where applicable.</li>
+        </ul>
+        <p>Users can contact us using the details below.</p>
+      </>
     ),
   },
   {
     id: "children",
-    title: "8. Children's privacy",
-    content: (
-      <p>GaliMart is not intended for children who are not legally able to use the service or create an account under applicable law. We do not knowingly seek to collect children's personal information without the required consent. If you believe a child has provided personal information improperly, contact us so we can review the request.</p>
-    ),
-  },
-  {
-    id: "third-party-services",
-    title: "9. Third-party services and links",
-    content: (
-      <p>Some features rely on third-party services, including payment checkout, SMS delivery, maps, and image or infrastructure hosting. Those providers may process information under their own privacy notices and terms. External links or maps are not operated by GaliMart; please review the relevant provider's policies before using them.</p>
-    ),
-  },
-  {
-    id: "changes-and-contact",
-    title: "10. Changes and contact",
+    title: "10. Children's Privacy",
     content: (
       <>
-        <p>We may update this policy as GaliMart or applicable requirements change. We will post the current version here and update the date below. If a change requires notice or consent under applicable law, we will take the appropriate steps.</p>
-        <p><strong>Privacy contact:</strong> <a className="font-semibold text-emerald-700 underline underline-offset-4" href="mailto:galimart03@gmail.com">galimart03@gmail.com</a></p>
-        <p>This policy is intended to explain GaliMart's current app features in plain language; it is not legal advice. Please have the operating business verify and approve it before publication, especially the legal entity name, contact details, data retention, and applicable jurisdiction.</p>
+        <p>GaliMart is not intended for children under the age of 18.</p>
+        <p>We do not knowingly collect personal information from children in violation of applicable laws.</p>
+        <p>If we become aware that personal information has been collected from a child inappropriately, we will take reasonable steps to address and delete such information.</p>
+      </>
+    ),
+  },
+  {
+    id: "changes",
+    title: "11. Changes to This Privacy Policy",
+    content: (
+      <>
+        <p>We may update this Privacy Policy from time to time to reflect changes in our services, technology, legal requirements or data-handling practices.</p>
+        <p>Updated policies will be published on this page with a revised Last Updated date.</p>
+      </>
+    ),
+  },
+  {
+    id: "contact",
+    title: "12. Contact Information",
+    content: (
+      <>
+        <p>For privacy-related questions, complaints or requests, contact us:</p>
+        <ul>
+          <li><strong>Application Name:</strong> GaliMart</li>
+          <li><strong>Website:</strong> <a className="font-semibold text-emerald-700 underline underline-offset-4" href="https://www.galimart.co.in">https://www.galimart.co.in</a></li>
+          <li><strong>Business / Developer Name:</strong> GaliMart</li>
+          <li><strong>Privacy Contact Email:</strong> <a className="font-semibold text-emerald-700 underline underline-offset-4" href="mailto:galimart03@gmail.com">galimart03@gmail.com</a></li>
+          <li><strong>Contact Number:</strong>+91 6290 392 522</li>
+          <li><strong>Business Address:</strong>Howrah, West Bengal</li>
+        </ul>
       </>
     ),
   },
@@ -153,7 +283,7 @@ const PrivacyPolicy = () => (
           <p className="mt-4 max-w-2xl text-sm leading-6 text-emerald-50/80 sm:text-base">
             This policy explains what information may be collected when you use GaliMart, why it is used, and the choices available to you.
           </p>
-          <p className="mt-5 text-xs font-medium text-emerald-100/70">Last updated: 26 September 2026</p>
+          <p className="mt-5 text-xs font-medium text-emerald-100/70">Last updated: 24 November 2026</p>
         </div>
       </header>
 
