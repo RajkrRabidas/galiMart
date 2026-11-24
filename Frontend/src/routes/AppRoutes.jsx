@@ -61,7 +61,7 @@ const AppRoutes = () => {
       <Route path="/profile" element={<ProtectedRoute allowedRoles={["user"]}><Profile /></ProtectedRoute>} />
       <Route path="/addresses" element={<ProtectedRoute allowedRoles={["user"]}><Addresses /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute allowedRoles={["user"]}><Settings /></ProtectedRoute>} />
-      <Route path="/privacy-policy" element={<ProtectedRoute allowedRoles={["user"]}><PrivacyPolicy /></ProtectedRoute>} />
+      <Route path="/privacy" element={<ProtectedRoute allowedRoles={["user"]}><PrivacyPolicy /></ProtectedRoute>} />
       <Route path="/help" element={<ProtectedRoute allowedRoles={["user"]}><Help /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute allowedRoles={["user"]}><Notifications /></ProtectedRoute>} />
       <Route path="/logout" element={<ProtectedRoute allowedRoles={["user"]}><Logout /></ProtectedRoute>} />
